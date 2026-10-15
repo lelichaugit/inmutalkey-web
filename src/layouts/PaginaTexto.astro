@@ -1,5 +1,9 @@
 ---
-// Páginas de lectura (verificar, aviso de privacidad, términos): cabecera breve y columna de texto cómoda.
+// Páginas de lectura (verificar, aviso de privacidad, términos, reseña): cabecera breve y columna de texto cómoda.
+// Cabecera con el lenguaje clínico-tec del sitio (ruta en monoespaciada, visor, cuadrícula y una línea de escáner que
+// la recorre una vez al cargar). El texto se ve desde el primer pintado; solo lo decorativo se mueve.
+// En la columna, títulos y bloques suben al entrar en vista con animaciones ligadas al scroll de CSS
+// (animation-timeline: view(), sin JS); donde no existen, el texto aparece quieto.
 import Base from './Base.astro';
 
 interface Props {
@@ -14,16 +18,22 @@ interface Props {
 }
 
 const { titulo, descripcion, antetitulo, borrador = false, actualizado, indexar = true } = Astro.props;
+const ruta = Astro.url.pathname.replace(/\.html$/, '').replace(/\/$/, '') || '/';
 ---
 
 <Base titulo={titulo} descripcion={descripcion} indexar={indexar}>
   <header class="pagina-cabecera fondo-luz fondo-cuadricula">
-    <div class="contenedor entrada">
-      {antetitulo && <p class="pildora">{antetitulo}</p>}
-      <h1>{titulo}</h1>
-      <p class="texto-grande tenue">{descripcion}</p>
-      {borrador && <p class="pildora pildora-ejemplo">Borrador: revisar con abogado antes de publicar</p>}
-      {actualizado && <p class="tenue pagina-fecha">Última actualización: {actualizado}</p>}
+    <span class="pagina-escaner" aria-hidden="true"></span>
+    <div class="contenedor pagina-marco">
+      <span class="pagina-visor" aria-hidden="true"></span>
+      <div class="entrada">
+        <p class="pagina-ruta" aria-hidden="true"><span>inmutalkey.com</span>{ruta}</p>
+        {antetitulo && <p class="pildora">{antetitulo}</p>}
+        <h1>{titulo}</h1>
+        <p class="texto-grande tenue">{descripcion}</p>
+        {borrador && <p class="pildora pildora-ejemplo">Borrador: revisar con abogado antes de publicar</p>}
+        {actualizado && <p class="tenue pagina-fecha">Última actualización: {actualizado}</p>}
+      </div>
     </div>
   </header>
   <article class="contenedor prosa">
@@ -35,7 +45,9 @@ const { titulo, descripcion, antetitulo, borrador = false, actualizado, indexar 
   .pagina-cabecera {
     position: relative;
     margin-top: calc(-1 * var(--altura-nav));
-    padding: calc(var(--altura-nav) + clamp(48px, 7vw, 96px)) 0 clamp(40px, 6vw, 72px);
+    padding: calc(var(--altura-nav) + clamp(40px, 6vw, 88px)) 0 clamp(40px, 6vw, 72px);
+    border-bottom: 1px solid var(--linea-oscura);
+    overflow: clip;
     isolation: isolate;
   }
 
@@ -43,18 +55,110 @@ const { titulo, descripcion, antetitulo, borrador = false, actualizado, indexar 
     font-size: clamp(2.125rem, 1.5rem + 2.6vw, 3.5rem);
   }
 
+  .pagina-marco {
+    position: relative;
+  }
+
+  /* Visor: esquinas finas que enfocan el encabezado (solo en pantallas con aire alrededor). */
+  .pagina-visor {
+    display: none;
+  }
+
+  @media (min-width: 900px) {
+    .pagina-visor {
+      --c: rgb(46 159 224 / 0.55);
+      --l: 16px;
+      --g: 1.5px;
+      position: absolute;
+      inset: -28px -32px;
+      display: block;
+      background:
+        linear-gradient(var(--c) 0 0) top left / var(--l) var(--g),
+        linear-gradient(var(--c) 0 0) top left / var(--g) var(--l),
+        linear-gradient(var(--c) 0 0) top right / var(--l) var(--g),
+        linear-gradient(var(--c) 0 0) top right / var(--g) var(--l),
+        linear-gradient(var(--c) 0 0) bottom left / var(--l) var(--g),
+        linear-gradient(var(--c) 0 0) bottom left / var(--g) var(--l),
+        linear-gradient(var(--c) 0 0) bottom right / var(--l) var(--g),
+        linear-gradient(var(--c) 0 0) bottom right / var(--g) var(--l);
+      background-repeat: no-repeat;
+      pointer-events: none;
+    }
+  }
+
+  .pagina-ruta {
+    color: var(--azul-vivo);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.75rem;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+  }
+
+  .pagina-ruta span {
+    color: var(--texto-tenue);
+  }
+
   .pagina-fecha {
     font-size: 0.95rem;
   }
+
+  /* Línea de escáner que baja una vez por la cabecera al cargar (decorativa; transform y opacidad). */
+  .pagina-escaner {
+    position: absolute;
+    inset: 0 0 auto;
+    z-index: -1;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--azul-vivo) 30%, #e8f6ff 50%, var(--azul-vivo) 70%, transparent);
+    box-shadow: 0 0 18px 2px rgb(46 159 224 / 0.45);
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .pagina-escaner {
+      animation: pagina-escaner 2.4s cubic-bezier(0.65, 0, 0.35, 1) 0.2s;
+    }
+  }
+
+  @keyframes pagina-escaner {
+    0% {
+      opacity: 0;
+      transform: translate3d(0, calc(var(--altura-nav) + 8px), 0);
+    }
+    15%,
+    80% {
+      opacity: 0.9;
+    }
+    100% {
+      opacity: 0;
+      transform: translate3d(0, 420px, 0);
+    }
+  }
+
+  /* ── Columna de texto ── */
 
   .prosa {
     max-width: 760px;
     padding-block: clamp(40px, 6vw, 80px) clamp(64px, 8vw, 120px);
   }
 
+  /* Títulos con una marca azul corta encima, como la escala de un instrumento. */
   .prosa :global(h2) {
+    position: relative;
     margin: 2.4em 0 0.6em;
+    padding-top: 18px;
     font-size: clamp(1.4rem, 1.2rem + 0.8vw, 1.75rem);
+  }
+
+  .prosa :global(h2)::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 28px;
+    height: 2px;
+    border-radius: 2px;
+    background: var(--azul-vivo);
   }
 
   .prosa :global(h2:first-child) {
@@ -82,6 +186,54 @@ const { titulo, descripcion, antetitulo, borrador = false, actualizado, indexar 
     padding-left: 1.3em;
   }
 
+  .prosa :global(ul li::marker) {
+    color: var(--azul-vivo);
+  }
+
+  /* Pasos numerados: número en monoespaciada dentro de un círculo, unidos por una línea fina. */
+  .prosa > :global(ol) {
+    gap: 0;
+    padding-left: 0;
+    list-style: none;
+    counter-reset: paso;
+  }
+
+  .prosa > :global(ol > li) {
+    position: relative;
+    min-height: 44px;
+    padding: 6px 0 14px 46px;
+    counter-increment: paso;
+  }
+
+  .prosa > :global(ol > li)::before {
+    content: counter(paso, decimal-leading-zero);
+    position: absolute;
+    top: 2px;
+    left: 0;
+    display: grid;
+    place-items: center;
+    width: 30px;
+    height: 30px;
+    border: 1px solid rgb(46 159 224 / 0.5);
+    border-radius: 50%;
+    background: var(--medianoche);
+    color: var(--azul-vivo);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+
+  .prosa > :global(ol > li:not(:last-child))::after {
+    content: '';
+    position: absolute;
+    top: 34px;
+    bottom: 0;
+    left: 15px;
+    width: 1px;
+    background: linear-gradient(180deg, rgb(46 159 224 / 0.4), rgb(255 255 255 / 0.08));
+  }
+
   .prosa :global(strong) {
     color: var(--texto);
   }
@@ -91,27 +243,55 @@ const { titulo, descripcion, antetitulo, borrador = false, actualizado, indexar 
   }
 
   .prosa :global(.aviso) {
+    position: relative;
     margin: 1.4em 0;
-    padding: 16px 18px;
+    padding: 18px 20px;
     border: 1px solid var(--linea-oscura-fuerte);
-    border-left: 4px solid var(--azul-vivo);
-    border-radius: 12px;
-    background: rgb(255 255 255 / 0.03);
+    border-left: 3px solid var(--azul-vivo);
+    border-radius: 14px;
+    background:
+      radial-gradient(80% 120% at 0% 0%, rgb(46 159 224 / 0.08), transparent 70%),
+      rgb(255 255 255 / 0.03);
   }
 
-  /* Comandos: la única excepción a "sin monoespaciada", por claridad. */
+  /* Comandos: la única excepción a "sin monoespaciada", por claridad. El comando se parte en renglones en lugar de
+     esconder el final tras un scroll horizontal (se ve completo y se copia igual). */
   .prosa :global(pre) {
     margin: 1em 0;
     padding: 14px 16px;
     border: 1px solid var(--linea-oscura-fuerte);
     border-radius: 12px;
     background: #03060c;
-    overflow-x: auto;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
   }
 
   .prosa :global(code) {
     font-family: ui-monospace, 'Cascadia Mono', Consolas, Menlo, monospace;
     font-size: 0.925em;
     color: var(--texto);
+  }
+
+  /* Revelado sobrio ligado al scroll, solo CSS (Chrome/Edge 115+, Safari 26+), y solo en bloques cortos (uno alto,
+     como el formulario de reseña, seguiría a medio aparecer mientras se usa). Lo que ya está en la ventana al cargar
+     se ve completo; en navegadores sin view() todo queda quieto. */
+  @supports (animation-timeline: view()) {
+    @media (prefers-reduced-motion: no-preference) {
+      .prosa > :global(h2),
+      .prosa > :global(.aviso),
+      .prosa > :global(pre),
+      .prosa > :global(ol) {
+        animation: prosa-sube linear both;
+        animation-timeline: view();
+        animation-range: entry 0% entry 70%;
+      }
+    }
+  }
+
+  @keyframes prosa-sube {
+    from {
+      opacity: 0;
+      transform: translate3d(0, 22px, 0);
+    }
   }
 </style>

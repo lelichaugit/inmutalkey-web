@@ -1,32 +1,43 @@
 ---
+// Portada. La llave (Isotipo3D) es la protagonista del sitio: aquí se presenta, en "Cómo funciona" sella la nota y
+// vuelve en el cierre (CtaFinal).
+//
+// Intro al cargar (solo CSS, ≤ 1.8 s, no espera al scroll): la llave aparece como plano técnico azul, el escáner baja
+// materializando el render sólido (--materia 0 → 1) y una luz la recorre. El texto se ve desde el primer pintado.
+//
+// Escena fijada (scroll.ts, solo con .movimiento): el texto sube y se desvanece, la llave viaja al centro con un giro
+// 3D sutil y los aros del visor se abren; aparece la frase y, al final, la llave se encoge y baja hacia la sección
+// siguiente. Sin JS o con movimiento reducido no se fija: se ve la portada completa y quieta, con la frase debajo.
 import { enlaceWhatsApp } from '../../lib/whatsapp';
 import { sitio } from '../../site.config';
 import Icono from '../Icono.astro';
 import Isotipo3D from '../Isotipo3D.astro';
 
 const prueba = enlaceWhatsApp(sitio.contacto.whatsapp, sitio.contacto.mensajes.prueba);
+const dias = sitio.licencia.diasPrueba;
 ---
 
-<section class="hero fondo-oscuro fondo-cuadricula" id="inicio" data-progreso-scroll aria-labelledby="hero-titulo">
-  <div class="hero-luz" aria-hidden="true"></div>
+<section class="hero" id="inicio" data-escena data-escena-marcas="0.3 0.7" data-hero aria-labelledby="hero-titulo">
+  <div class="hero-escenario" data-escenario>
+    <div class="hero-fondo" aria-hidden="true"></div>
+    <span class="hero-sonda" data-hero-sonda aria-hidden="true"></span>
 
-  <div class="contenedor hero-rejilla">
-    <div class="hero-texto">
-      <p class="pildora hero-pildora">
+    <div class="hero-rejilla">
+      <p class="pildora hero-pildora hero-t">
         <Icono nombre="estetoscopio" />
         Expediente clínico para consultorio privado
       </p>
-      <h1 id="hero-titulo">Tus notas clínicas, selladas y en tu computadora.</h1>
-      <p class="texto-grande tenue hero-sub">
+      <h1 id="hero-titulo" class="hero-titulo hero-t">Tus notas clínicas, selladas y en tu computadora.</h1>
+      <p class="hero-sub hero-t">
         Cada nota que firmas queda sellada: nadie puede cambiarla sin que se note. Diseñado para la
-        <span class="sin-corte">NOM-004</span>, funciona sin internet y tus expedientes nunca salen de tu consultorio.
+        <span class="sin-corte">NOM-004</span> y funciona sin internet.
       </p>
-      <div class="hero-acciones">
+      <div class="hero-acciones hero-t">
         {
           prueba && (
             <a class="boton boton-primario" href={prueba} target="_blank" rel="noopener noreferrer">
               <Icono nombre="chat" />
-              Pide tus {sitio.licencia.diasPrueba} días de prueba
+              Pide tus {dias} días de prueba
             </a>
           )
         }
@@ -35,117 +46,266 @@ const prueba = enlaceWhatsApp(sitio.contacto.whatsapp, sitio.contacto.mensajes.p
           Pruébalo aquí mismo
         </a>
       </div>
-      <ul class="hero-confianza">
-        <li><Icono nombre="check" />Prueba completa de {sitio.licencia.diasPrueba} días</li>
+      <ul class="hero-confianza hero-t">
+        <li><Icono nombre="check" />Prueba completa de {dias} días</li>
         <li><Icono nombre="check" />Windows 10 y 11</li>
         <li><Icono nombre="check" />Licencia vitalicia</li>
       </ul>
-    </div>
 
-    <div class="hero-llave" data-isotipo-principal>
-      <div class="hero-llave-scroll">
-        <div class="hero-llave-flotar">
-          <span class="hero-llave-halo" aria-hidden="true"></span>
-          <Isotipo3D
-            prioridad
-            brillo
-            sizes="(min-width: 960px) 260px, 100px"
-            alt="Isotipo de InmutalKey: una llave con la vara de Asclepio"
-            class="hero-isotipo"
-          />
+      <div class="hero-llave" data-isotipo-principal data-hero-llave>
+        <div class="hero-llave-mov">
+          <span class="hero-foco" aria-hidden="true"></span>
+          <span class="hero-aros" aria-hidden="true">
+            <svg viewBox="0 0 200 200" fill="none" focusable="false">
+              <circle class="aro aro-exterior" cx="100" cy="100" r="99" pathLength="100"></circle>
+              <circle class="aro aro-marcas" cx="100" cy="100" r="92"></circle>
+              <circle class="aro aro-interior" cx="100" cy="100" r="78" pathLength="100"></circle>
+              <path class="aro aro-arco" d="M 100 1 A 99 99 0 0 1 185.7 50.5" pathLength="100"></path>
+              <path class="aro aro-arco" d="M 100 199 A 99 99 0 0 1 14.3 149.5" pathLength="100"></path>
+            </svg>
+          </span>
+          <span class="hero-piso" aria-hidden="true"></span>
+          <div class="hero-llave-giro">
+            <Isotipo3D
+              prioridad
+              brillo
+              plano
+              reflejo
+              sizes="(min-width: 960px) 300px, 140px"
+              alt="Isotipo de InmutalKey: una llave con la vara de Asclepio"
+              class="hero-isotipo"
+            />
+          </div>
+          <span class="hero-visor" aria-hidden="true">
+            <span class="hero-etiqueta hero-etiqueta-a">Ed25519</span>
+            <span class="hero-etiqueta hero-etiqueta-b">SHA-256</span>
+          </span>
+          <span class="hero-nota hero-nota-firma" aria-hidden="true">
+            <span class="hero-nota-texto"><b>Firma</b> Ed25519</span>
+            <span class="hero-nota-linea"></span>
+          </span>
+          <span class="hero-nota hero-nota-sello" aria-hidden="true">
+            <span class="hero-nota-linea"></span>
+            <span class="hero-nota-texto"><b>Sello</b> SHA-256</span>
+          </span>
         </div>
       </div>
-      <span class="hero-llave-reflejo" aria-hidden="true"></span>
     </div>
-  </div>
 
-  <a class="hero-bajar" href="#integridad">
-    <span>Mira cómo funciona</span>
-    <span class="hero-bajar-linea" aria-hidden="true"></span>
-  </a>
+    <p class="hero-frase">
+      <span class="hero-frase-a">Una llave única para tu consultorio.</span>
+      <span class="hero-frase-b">Con ella se sella cada nota que firmas.</span>
+    </p>
+
+    <a class="hero-bajar" href="#integridad">
+      <span>Mira cómo funciona</span>
+      <span class="hero-bajar-linea" aria-hidden="true"></span>
+    </a>
+  </div>
 </section>
+
+<script>
+  // La escena la mueve el motor (scroll.ts). Aquí solo se mide lo que el CSS no puede saber y se escribe con CSSOM:
+  //  · --dx / --dy: cuánto viaja la llave desde su lugar en la rejilla hasta el centro de la ventana con la escena fija
+  //    (el centro vertical lo fija el CSS en --centro-y, entre la barra y el borde inferior).
+  //  · --alto-esc: alto real del escenario. Si el contenido no cabe en una pantalla (celular bajo, letra grande), el
+  //    escenario se fija por su borde inferior en lugar de recortarse.
+  //  · La intro (plano → escáner) espera al render si aún no llega, para no "materializar" un hueco (máx. 2.5 s).
+  const hero = document.querySelector<HTMLElement>('[data-hero]');
+  if (hero) iniciarHero(hero);
+
+  function iniciarHero(hero: HTMLElement): void {
+    const escenario = hero.querySelector<HTMLElement>('[data-escenario]');
+    const llave = hero.querySelector<HTMLElement>('[data-hero-llave]');
+    const sonda = hero.querySelector<HTMLElement>('[data-hero-sonda]');
+    if (!escenario || !llave) return;
+
+    const render = llave.querySelector<HTMLImageElement>('.llave-render img');
+    if (render && !render.complete) {
+      hero.classList.add('hero-esperando');
+      const listo = (): void => hero.classList.remove('hero-esperando');
+      render.addEventListener('load', listo, { once: true });
+      render.addEventListener('error', listo, { once: true });
+      window.setTimeout(listo, 2500);
+    }
+
+    const escritos = new Map<string, string>();
+    const escribir = (nombre: string, valor: string): void => {
+      if (escritos.get(nombre) === valor) return;
+      escritos.set(nombre, valor);
+      hero.style.setProperty(nombre, valor);
+    };
+
+    const medir = (): void => {
+      const estilo = getComputedStyle(hero);
+      const barra = Number.parseFloat(estilo.getPropertyValue('--altura-nav')) || 72;
+      const centroY = Number.parseFloat(estilo.getPropertyValue('--centro-y')) || 0.5;
+      // 100svh real (en iOS, innerHeight cambia al ocultarse la barra de Safari; el escenario usa svh).
+      const pantalla = sonda?.offsetHeight || window.innerHeight;
+      const alto = escenario.offsetHeight;
+      escribir('--alto-esc', `${alto}px`);
+
+      // Rectángulos sin transform de por medio (ni la llave ni sus ancestros hasta el escenario se transforman).
+      const e = escenario.getBoundingClientRect();
+      const l = llave.getBoundingClientRect();
+      const arriba = Math.min(0, pantalla - alto);
+      const destinoX = escenario.clientWidth / 2;
+      const destinoY = barra + (pantalla - barra) * centroY - arriba;
+      escribir('--dx', `${Math.round(destinoX - (l.left - e.left + l.width / 2))}px`);
+      escribir('--dy', `${Math.round(destinoY - (l.top - e.top + l.height / 2))}px`);
+    };
+
+    let pendiente = false;
+    const pedir = (): void => {
+      if (pendiente) return;
+      pendiente = true;
+      window.requestAnimationFrame(() => {
+        pendiente = false;
+        medir();
+      });
+    };
+    if ('ResizeObserver' in window) new ResizeObserver(pedir).observe(escenario);
+    window.addEventListener('resize', pedir, { passive: true });
+    window.addEventListener('load', pedir, { once: true });
+    void document.fonts?.ready.then(pedir);
+    medir();
+  }
+</script>
 
 <style>
   /*
-   * Capas de la llave (de fuera hacia dentro):
-   *   .hero-llave         alto y lugar en la rejilla; NO crea contexto de apilamiento (ni transform ni perspective)
-   *   .hero-llave-scroll  lo que hace el scroll (--s) + `mix-blend-mode: screen` para TODO el grupo
-   *   .hero-llave-flotar  entrada al cargar y respiración en reposo
-   *   .hero-isotipo       el render (o el logo plano de respaldo) y su brillo
-   * El render es blanco sobre negro puro. Cualquier transform/opacity en un ancestro aísla la mezcla y el negro se
-   * vería como un recuadro; por eso la mezcla vive en la capa exterior, cuyo contexto es la sección (isolation).
+   * Capas de la llave (de fuera hacia dentro), un transform por capa:
+   *   .hero-llave        lugar en la rejilla (alto explícito; la llave toma el alto de su contenedor)
+   *   .hero-llave-mov    escena: viaja al centro, crece y al final se encoge y baja
+   *   .hero-aros         visor circular: se abre con el scroll
+   *   .hero-llave-giro   giro 3D sutil (rotateY ≤ 12°) + intro (--materia por @keyframes)
+   * Todo lo que depende de --p vive bajo .movimiento: sin JS o con movimiento reducido la portada se ve quieta.
    */
   .hero {
-    /* Avance de salida del hero (0 → 1), lo pone base.ts. Sin JS vale 0: todo quieto y completo. */
-    --s: var(--salida, 0);
+    --nav: var(--altura-nav);
+    /* Celular: escena corta. Escritorio: ver media query. */
+    --largo: 1.7;
+    --alto-llave: clamp(200px, 36svh, 420px);
+    --crece: 1.32;
+    --centro-y: 0.4;
+    /* Al irse, se encoge y baja hacia el borde inferior, rumbo a la sección siguiente, mientras se apaga. */
+    --baja: calc((100svh - var(--nav)) * (1 - var(--centro-y)) * 0.78);
+    --aros-reposo: 0;
+    --reflejo-reposo: 0;
+    --reflejo-centro: 0.3;
     position: relative;
-    isolation: isolate;
-    display: grid;
-    align-items: center;
-    min-height: 100svh;
-    margin-top: calc(-1 * var(--altura-nav));
-    padding-top: calc(var(--altura-nav) + clamp(12px, 4vw, 48px));
-    padding-bottom: clamp(48px, 9vw, 112px);
-    overflow-x: clip;
+    margin-top: calc(-1 * var(--nav));
+    background: var(--medianoche);
+    color: var(--texto);
   }
 
-  .hero-luz {
+  .hero-escenario {
+    position: relative;
+    display: grid;
+    align-content: center;
+    min-height: 100vh;
+    min-height: 100svh;
+    padding: calc(var(--nav) + 12px) 0 max(20px, env(safe-area-inset-bottom));
+    overflow: hidden;
+    overflow: clip;
+  }
+
+  .hero-sonda {
     position: absolute;
-    inset: 0;
-    z-index: -1;
-    background:
-      radial-gradient(55% 60% at 78% 62%, rgb(1 120 176 / 0.28), transparent 70%),
-      radial-gradient(70% 55% at 100% 110%, rgb(46 159 224 / 0.32), transparent 70%);
-    /* Se funde con la sección siguiente (mismo fondo) en lugar de cortarse en el borde. */
-    -webkit-mask-image: linear-gradient(#000 62%, transparent);
-    mask-image: linear-gradient(#000 62%, transparent);
+    top: 0;
+    left: 0;
+    width: 1px;
+    height: 100vh;
+    height: 100svh;
+    visibility: hidden;
     pointer-events: none;
   }
 
+  /* Negro con luz azul tenue y cuadrícula de instrumento; abajo se funde con la sección siguiente. */
+  .hero-fondo {
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(60% 45% at 50% 38%, rgb(1 120 176 / 0.16), transparent 72%),
+      linear-gradient(180deg, #02050b 0%, #030814 62%, var(--medianoche) 100%);
+    pointer-events: none;
+  }
+
+  .hero-fondo::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgb(255 255 255 / 0.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgb(255 255 255 / 0.05) 1px, transparent 1px);
+    background-size: 48px 48px;
+    background-position: center top;
+    -webkit-mask-image: radial-gradient(ellipse 70% 60% at 62% 45%, #000 10%, transparent 72%);
+    mask-image: radial-gradient(ellipse 70% 60% at 62% 45%, #000 10%, transparent 72%);
+  }
+
+  /* ── Rejilla: celular primero ── */
+
   .hero-rejilla {
+    position: relative;
+    z-index: 1;
     display: grid;
-    gap: clamp(20px, 4vw, 48px);
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      'pill pill'
+      'titulo llave'
+      'sub llave'
+      'acciones acciones'
+      'confianza confianza';
+    column-gap: 12px;
     align-items: center;
-  }
-
-  /* ── Texto ── */
-
-  .hero-texto {
-    max-width: 640px;
-  }
-
-  .hero-texto > * + * {
-    margin-top: clamp(1rem, 0.75rem + 1vw, 1.4rem);
+    width: min(100% - 2 * var(--margen), 1320px);
+    margin-inline: auto;
   }
 
   .hero-pildora {
+    grid-area: pill;
+    justify-self: start;
+    margin-bottom: 14px;
     color: var(--texto-tenue);
+    font-size: clamp(0.8125rem, 3.5vw, 0.9375rem);
   }
 
-  #hero-titulo {
-    font-size: clamp(2.125rem, 1.3rem + 3.9vw, 4.5rem);
+  .hero-titulo {
+    grid-area: titulo;
+    align-self: end;
+    font-size: clamp(1.75rem, 0.95rem + 4vw, 3.4rem);
+    line-height: 1.06;
   }
 
   .hero-sub {
-    max-width: 56ch;
+    grid-area: sub;
+    align-self: start;
+    margin-top: 12px;
+    max-width: 52ch;
+    color: var(--texto-tenue);
+    font-size: 1rem;
+    line-height: 1.55;
   }
 
   .hero-acciones {
+    grid-area: acciones;
     display: flex;
     flex-wrap: wrap;
-    gap: 12px;
-    padding-top: 0.25rem;
+    gap: 10px 12px;
+    margin-top: 22px;
   }
 
   .hero-confianza {
+    grid-area: confianza;
     display: flex;
     flex-wrap: wrap;
-    gap: 8px 22px;
-    margin: 0;
+    gap: 6px 18px;
+    margin: 16px 0 0;
     padding: 0;
     list-style: none;
     color: var(--texto-tenue);
-    font-size: 0.975rem;
+    font-size: 0.9375rem;
   }
 
   .hero-confianza li {
@@ -160,160 +320,269 @@ const prueba = enlaceWhatsApp(sitio.contacto.whatsapp, sitio.contacto.mensajes.p
     color: var(--azul-vivo);
   }
 
-  /* Entrada al cargar: solo CSS (no espera a JS ni a IntersectionObserver) y termina antes de 0.7 s.
-     El titular no se anima: es visible desde el primer pintado. */
-  @media (prefers-reduced-motion: no-preference) {
-    .hero-pildora,
-    .hero-sub,
-    .hero-acciones,
-    .hero-confianza {
-      animation: hero-entrar 0.5s var(--ease) backwards;
+  @media (max-width: 559px) {
+    .hero-acciones .boton {
+      width: 100%;
     }
 
-    .hero-sub {
-      animation-delay: 0.06s;
-    }
-
-    .hero-acciones {
-      animation-delay: 0.12s;
-    }
-
-    .hero-confianza {
-      animation-delay: 0.2s;
-    }
-  }
-
-  @keyframes hero-entrar {
-    from {
-      opacity: 0;
-      transform: translate3d(0, 14px, 0);
+    .hero-acciones .boton-secundario {
+      min-height: 48px;
     }
   }
 
   /* ── La llave ── */
 
-  /* Altura explícita en cada capa: las alturas en % no se resuelven dentro de la rejilla y el SVG usaría su tamaño propio. */
   .hero-llave {
-    --alto-llave: clamp(150px, 27svh, 290px);
-    /* Celular: la llave está arriba y sale pronto de la vista, así que el giro es sutil y se apaga rápido.
-       Escritorio: recorrido más amplio (ver media query). */
-    --giro: 20deg;
-    --inclinar: -3deg;
-    --alejar: 0.4;
-    --bajar: 16vh;
-    --apagar: 4;
-    /* Cuánto avanza la luz por unidad de --s: cruza la llave mientras todavía se ve. */
-    --barrido: 500%;
+    grid-area: llave;
     position: relative;
-    display: grid;
-    place-items: center;
+    justify-self: end;
+    width: calc(var(--alto-llave) * 304 / 724);
     height: var(--alto-llave);
-    order: -1;
+    pointer-events: none;
   }
 
-  /* Capa 1: el scroll. Baja más lento que la página, gira en 3D, se aleja y se apaga; al salir de vista el isotipo
-     plano aparece en la barra (base.ts, data-isotipo-principal). */
-  .hero-llave-scroll {
-    height: var(--alto-llave);
-    transform: perspective(1100px) translate3d(0, calc(var(--s) * var(--bajar)), 0)
-      rotateY(calc(var(--s) * var(--giro))) rotateZ(calc(var(--s) * var(--inclinar)))
-      scale(calc(1 - var(--s) * var(--alejar)));
-    opacity: clamp(0, calc(1 - var(--s) * var(--apagar)), 1);
-    mix-blend-mode: screen;
-    will-change: transform, opacity;
-  }
-
-  /* Capa 2: entrada y respiración en reposo. */
-  .hero-llave-flotar {
-    position: relative;
-    height: var(--alto-llave);
-    animation:
-      llave-entrada 1s var(--ease) backwards,
-      llave-flotar 7s ease-in-out 1s infinite;
-  }
-
-  /* Sin z-index: el render se mezcla con el halo dentro del grupo. */
-  .hero-llave :global(.hero-isotipo) {
-    position: relative;
-    height: var(--alto-llave);
-  }
-
-  /* Halo azul detrás de la llave: degradado ya difuso, sin filter (más barato en celulares). */
-  .hero-llave-halo {
+  .hero-llave-mov,
+  .hero-llave-giro {
     position: absolute;
-    inset: 4% -46%;
+    inset: 0;
+  }
+
+  .hero-llave-giro {
+    z-index: 2;
+  }
+
+  .hero-llave :global(.hero-isotipo) {
+    --reflejo: var(--reflejo-reposo);
+  }
+
+  /* Foco de luz azul detrás: degradado ya difuso (sin filter: más barato en celulares). */
+  .hero-foco {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: calc(var(--alto-llave) * 1.3);
+    height: calc(var(--alto-llave) * 1.3);
+    margin: calc(var(--alto-llave) * -0.65) 0 0 calc(var(--alto-llave) * -0.65);
     border-radius: 50%;
     background: radial-gradient(
       closest-side,
-      rgb(46 159 224 / 0.34),
-      rgb(1 120 176 / 0.14) 52%,
-      rgb(1 120 176 / 0.04) 78%,
+      rgb(46 159 224 / 0.3),
+      rgb(1 120 176 / 0.13) 45%,
+      rgb(1 120 176 / 0.04) 72%,
       transparent
     );
-    opacity: calc(0.8 + var(--s) * 0.6);
-    animation: halo-latido 7s ease-in-out infinite;
+    opacity: 0.75;
   }
 
-  /* Reflejo en el "piso": una línea de luz que se abre con la entrada y se estrecha al bajar. */
-  .hero-llave-reflejo {
+  /* Visor circular: aros finos y marcas de graduación. */
+  .hero-aros {
     position: absolute;
+    top: 50%;
     left: 50%;
-    bottom: -4%;
-    width: min(70%, calc(var(--alto-llave) * 0.9));
+    z-index: 1;
+    width: calc(var(--alto-llave) * 0.8);
+    height: calc(var(--alto-llave) * 0.8);
+    margin: calc(var(--alto-llave) * -0.4) 0 0 calc(var(--alto-llave) * -0.4);
+    opacity: var(--aros-reposo);
+  }
+
+  .hero-aros svg {
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+  }
+
+  .aro {
+    vector-effect: non-scaling-stroke;
+    stroke-width: 1;
+  }
+
+  .aro-exterior {
+    stroke: rgb(255 255 255 / 0.14);
+  }
+
+  .aro-interior {
+    stroke: rgb(46 159 224 / 0.22);
+    stroke-dasharray: 2 3;
+  }
+
+  .aro-marcas {
+    vector-effect: none;
+    stroke: rgb(46 159 224 / 0.38);
+    stroke-width: 2.4;
+    stroke-dasharray: 0.6 4.22;
+  }
+
+  .aro-arco {
+    stroke: var(--azul-vivo);
+    stroke-linecap: round;
+    opacity: 0.8;
+  }
+
+  /* El "piso": una línea de luz bajo la llave (el reflejo lo dibuja Isotipo3D). */
+  .hero-piso {
+    position: absolute;
+    top: 100.5%;
+    left: 50%;
+    z-index: 1;
+    width: calc(var(--alto-llave) * 0.95);
     height: 1px;
-    background: linear-gradient(90deg, transparent, rgb(46 159 224 / 0.7), transparent);
-    transform: translateX(-50%) scaleX(calc(1 - var(--s) * 0.8));
-    opacity: clamp(0, calc(0.9 - var(--s) * var(--apagar)), 0.9);
-    pointer-events: none;
-    animation: reflejo-entrada 1.2s var(--ease) 0.2s backwards;
+    margin-left: calc(var(--alto-llave) * -0.475);
+    background: linear-gradient(90deg, transparent, rgb(46 159 224 / 0.55) 30%, rgb(200 235 255 / 0.7) 50%, rgb(46 159 224 / 0.55) 70%, transparent);
+    opacity: var(--reflejo-reposo);
   }
 
-  /* La luz que recorre la llave (el brillo lo dibuja Isotipo3D, recortado a la silueta). En reposo queda justo a la
-     derecha de la llave: la entrada de Isotipo3D (desde 180 %) la hace cruzar de izquierda a derecha al cargar, y al
-     bajar regresa de derecha a izquierda con el scroll. */
-  .hero-llave :global(.isotipo-brillo) {
-    background-position: calc(-5% + var(--s) * var(--barrido)) 0;
+  .hero-piso::after {
+    content: '';
+    position: absolute;
+    left: 15%;
+    right: 15%;
+    top: -14px;
+    height: 28px;
+    border-radius: 50%;
+    background: radial-gradient(closest-side, rgb(46 159 224 / 0.28), transparent);
   }
 
-  @keyframes llave-entrada {
-    from {
-      opacity: 0;
-      transform: translate3d(0, 20px, 0) scale(0.94);
-      filter: blur(8px);
-    }
+  /* Esquinas tipo visor alrededor de la llave. */
+  .hero-visor {
+    --c: rgb(255 255 255 / 0.5);
+    --l: 14px;
+    --g: 1.5px;
+    position: absolute;
+    inset: -5% -10%;
+    z-index: 3;
+    background:
+      linear-gradient(var(--c) 0 0) top left / var(--l) var(--g),
+      linear-gradient(var(--c) 0 0) top left / var(--g) var(--l),
+      linear-gradient(var(--c) 0 0) top right / var(--l) var(--g),
+      linear-gradient(var(--c) 0 0) top right / var(--g) var(--l),
+      linear-gradient(var(--c) 0 0) bottom left / var(--l) var(--g),
+      linear-gradient(var(--c) 0 0) bottom left / var(--g) var(--l),
+      linear-gradient(var(--c) 0 0) bottom right / var(--l) var(--g),
+      linear-gradient(var(--c) 0 0) bottom right / var(--g) var(--l);
+    background-repeat: no-repeat;
   }
 
-  @keyframes llave-flotar {
-    0%,
-    100% {
-      transform: translate3d(0, 0, 0);
-    }
-    50% {
-      transform: translate3d(0, -2.5%, 0);
-    }
+  .hero-etiqueta,
+  .hero-nota-texto {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.6875rem;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    line-height: 1.3;
+    white-space: nowrap;
+    color: var(--azul-vivo);
   }
 
-  @keyframes halo-latido {
-    0%,
-    100% {
-      transform: scale(1);
-    }
-    50% {
-      transform: scale(1.06);
-    }
+  .hero-etiqueta {
+    position: absolute;
+    display: none;
   }
 
-  @keyframes reflejo-entrada {
-    from {
-      opacity: 0;
-      transform: translateX(-50%) scaleX(0);
-    }
+  .hero-etiqueta-a {
+    bottom: 100%;
+    left: 0;
+    margin-bottom: 8px;
+  }
+
+  .hero-etiqueta-b {
+    top: 100%;
+    right: 0;
+    margin-top: 8px;
+  }
+
+  /* Anotaciones del plano: aparecen con la llave al centro (solo en la escena). */
+  .hero-nota {
+    position: absolute;
+    z-index: 3;
+    display: none;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .hero-nota-texto {
+    display: grid;
+    color: var(--texto);
+    text-align: right;
+  }
+
+  .hero-nota-texto b {
+    color: var(--texto-tenue);
+    font-weight: 500;
+    text-transform: uppercase;
+  }
+
+  .hero-nota-linea {
+    position: relative;
+    width: clamp(14px, 4vw, 26px);
+    height: 1px;
+    background: var(--azul-vivo);
+  }
+
+  .hero-nota-linea::after {
+    content: '';
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--azul-vivo);
+    box-shadow: 0 0 8px var(--azul-vivo);
+  }
+
+  /* Cabeza hexagonal: a la izquierda. Paletón: a la derecha. */
+  .hero-nota-firma {
+    top: 16.5%;
+    right: 86%;
+    transform-origin: right center;
+  }
+
+  .hero-nota-sello {
+    top: 84%;
+    left: 74%;
+    transform-origin: left center;
+  }
+
+  .hero-nota-sello .hero-nota-texto {
+    text-align: left;
+  }
+
+  .hero-nota-sello .hero-nota-linea::after {
+    left: -2px;
+    right: auto;
+  }
+
+  /* ── Frase (sin escena: debajo de la portada, como pie) ── */
+
+  .hero-frase {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    gap: 0.2em;
+    width: min(100% - 2 * var(--margen), var(--ancho));
+    margin: 40px auto 0;
+    padding-top: 22px;
+    border-top: 1px solid var(--linea-oscura);
+    color: var(--texto);
+    font-family: var(--fuente-titulo);
+    font-size: var(--h3);
+    font-weight: 500;
+    line-height: 1.25;
+    letter-spacing: -0.012em;
+    text-align: center;
+    text-wrap: balance;
+  }
+
+  .hero-frase-b {
+    color: var(--texto-tenue);
   }
 
   .hero-bajar {
     position: absolute;
     left: 50%;
-    bottom: 20px;
+    bottom: 18px;
+    z-index: 1;
     display: none;
     flex-direction: column;
     align-items: center;
@@ -323,7 +592,6 @@ const prueba = enlaceWhatsApp(sitio.contacto.whatsapp, sitio.contacto.mensajes.p
     font-size: 0.875rem;
     text-decoration: none;
     transform: translateX(-50%);
-    opacity: clamp(0, calc(1 - var(--s) * 4), 1);
   }
 
   .hero-bajar:hover {
@@ -335,10 +603,10 @@ const prueba = enlaceWhatsApp(sitio.contacto.whatsapp, sitio.contacto.mensajes.p
     height: 40px;
     background: linear-gradient(var(--azul-vivo), transparent);
     transform-origin: top;
-    animation: bajar 2.2s var(--ease) infinite;
+    animation: hero-bajar 2.2s var(--ease) infinite;
   }
 
-  @keyframes bajar {
+  @keyframes hero-bajar {
     0% {
       transform: scaleY(0);
       opacity: 1;
@@ -353,94 +621,400 @@ const prueba = enlaceWhatsApp(sitio.contacto.whatsapp, sitio.contacto.mensajes.p
     }
   }
 
-  /* ── Celular ── */
+  /* ── Tableta vertical ── */
 
-  @media (max-width: 479px) {
-    /* La píldora cabe en una línea de 360 a 430 px. */
-    .hero-pildora {
-      font-size: clamp(0.8125rem, 3.6vw, 0.9375rem);
+  @media (min-width: 560px) {
+    .hero {
+      --alto-llave: clamp(200px, 44svh, 480px);
+    }
+
+    .hero-rejilla {
+      column-gap: clamp(20px, 4vw, 40px);
+    }
+
+    .hero-titulo {
+      font-size: min(clamp(2.5rem, 0.8rem + 5vw, 3.6rem), 11svh);
+    }
+
+    .hero-sub {
+      font-size: var(--texto-grande);
+    }
+
+    .hero-visor {
+      --l: 18px;
+    }
+
+    .hero-etiqueta {
+      display: block;
+    }
+  }
+
+  /* ── Escritorio y tableta horizontal: texto a la izquierda, la llave a la derecha ── */
+
+  @media (min-width: 960px) {
+    .hero {
+      --largo: 2.2;
+      --alto-llave: min(66svh, 600px);
+      --crece: 1.08;
+      --centro-y: 0.5;
+      --aros-reposo: 0.9;
+      --reflejo-reposo: 0.28;
+      /* Al centro, la llave casi toca el borde inferior: el reflejo se atenúa para no verse como una mancha. */
+      --reflejo-centro: 0.14;
+    }
+
+    .hero-rejilla {
+      grid-template-columns: minmax(0, 1fr) calc(var(--alto-llave) * 0.8);
+      grid-template-areas:
+        'pill llave'
+        'titulo llave'
+        'sub llave'
+        'acciones llave'
+        'confianza llave';
+      align-content: center;
+      column-gap: clamp(32px, 5vw, 88px);
+    }
+
+    .hero-titulo {
+      align-self: auto;
+      max-width: 12ch;
+      font-size: min(var(--h1), 8.6svh);
+    }
+
+    .hero-sub {
+      align-self: auto;
+      margin-top: 22px;
     }
 
     .hero-acciones {
-      flex-direction: column;
+      margin-top: 30px;
     }
 
-    .hero-acciones .boton {
-      width: 100%;
-    }
-  }
-
-  /* Pantallas bajas (celular): la píldora cede su lugar para que titular, subtítulo y botón quepan sin desplazarse. */
-  @media (max-width: 959px) and (max-height: 780px) {
-    .hero-pildora {
-      display: none;
-    }
-  }
-
-  @media (max-width: 959px) and (max-height: 680px) {
-    .hero-llave {
-      --alto-llave: clamp(120px, 23svh, 180px);
-    }
-
-    #hero-titulo {
-      font-size: clamp(1.875rem, 1.2rem + 3.4vw, 2.5rem);
-    }
-
-    .hero-texto > * + * {
-      margin-top: 0.875rem;
-    }
-  }
-
-  /* Celular acostado: la llave se reduce; el texto manda. */
-  @media (max-width: 959px) and (max-height: 500px) and (orientation: landscape) {
-    .hero-llave {
-      --alto-llave: 110px;
-    }
-  }
-
-  /* ── Escritorio ── */
-
-  @media (min-width: 960px) {
-    .hero-rejilla {
-      grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
-    }
-
-    .hero-texto {
-      transform: translate3d(0, calc(var(--s) * -48px), 0);
-      opacity: clamp(0, calc(1 - var(--s) * 1.4), 1);
+    .hero-confianza {
+      margin-top: 22px;
     }
 
     .hero-llave {
-      --alto-llave: min(66svh, 620px);
-      --giro: 28deg;
-      --inclinar: -5deg;
-      --alejar: 0.3;
-      --bajar: 12vh;
-      --apagar: 1.6;
-      --barrido: 250%;
-      order: 0;
+      justify-self: center;
     }
 
-    .hero-bajar {
+    .hero-visor {
+      inset: -4% -22%;
+    }
+
+  }
+
+  /* Solo con la escena: sin ella, la frase ocupa ese lugar. */
+  @media (min-width: 960px) and (min-height: 820px) {
+    :global(.movimiento) .hero-bajar {
       display: flex;
     }
   }
 
+  /* Sin escena (sin JS o con movimiento reducido): la frase queda debajo, así que sin reflejo que la cruce; en
+     escritorio, aire bajo la barra para la etiqueta del visor. */
+  :global(html:not(.movimiento)) .hero-llave :global(.hero-isotipo) {
+    --reflejo: 0;
+  }
+
+  @media (min-width: 960px) {
+    :global(html:not(.movimiento)) .hero-escenario {
+      padding-top: calc(var(--nav) + 56px);
+    }
+  }
+
+  @media (min-width: 1181px) {
+    .hero {
+      --alto-llave: min(74svh, 740px);
+    }
+
+    .hero-titulo {
+      max-width: 13ch;
+    }
+  }
+
+  /* ── Intro al cargar (por tiempo): plano técnico → escáner → brillo, en 1.8 s ── */
+
+  @media (prefers-reduced-motion: no-preference) {
+    .hero-llave-giro {
+      animation:
+        hero-aparece 0.45s ease-out backwards,
+        hero-materia 1s cubic-bezier(0.65, 0, 0.35, 1) 0.35s backwards;
+    }
+
+    .hero-llave :global(.isotipo-brillo) {
+      animation-delay: 1.2s;
+      animation-duration: 0.9s;
+    }
+
+    .hero-visor {
+      animation: hero-enfoca 0.8s var(--ease) 0.1s backwards;
+    }
+
+    .hero-etiqueta {
+      animation: hero-aparece 0.5s ease-out 1.15s backwards;
+    }
+
+    .aro-exterior,
+    .aro-arco {
+      stroke-dasharray: 100 100;
+      animation: hero-traza 1.3s var(--ease) 0.15s backwards;
+    }
+
+    .aro-arco {
+      animation-delay: 0.45s;
+    }
+
+    .aro-interior,
+    .aro-marcas {
+      animation: hero-aparece 0.9s ease-out 0.5s backwards;
+    }
+
+    .hero-foco {
+      animation: hero-aparece 1.2s ease-out backwards;
+    }
+
+    .hero-piso {
+      transform-origin: center;
+      animation: hero-piso 0.7s var(--ease) 1.05s backwards;
+    }
+
+    /* Si el render aún no llega, el plano se queda esperando (el script quita la clase). */
+    .hero-esperando .hero-llave-giro,
+    .hero-esperando .hero-llave :global(.isotipo-brillo),
+    .hero-esperando .hero-piso,
+    .hero-esperando .hero-etiqueta {
+      animation-play-state: paused;
+    }
+  }
+
+  @keyframes hero-aparece {
+    from {
+      opacity: 0;
+    }
+  }
+
+  @keyframes hero-materia {
+    from {
+      --materia: 0;
+    }
+    to {
+      --materia: 1;
+    }
+  }
+
+  @keyframes hero-enfoca {
+    from {
+      opacity: 0;
+      transform: scale(1.14);
+    }
+  }
+
+  @keyframes hero-traza {
+    from {
+      stroke-dashoffset: 100;
+    }
+  }
+
+  @keyframes hero-piso {
+    from {
+      opacity: 0;
+      transform: scaleX(0);
+    }
+  }
+
+  /* ── Escena fijada (solo con .movimiento) ── */
+
+  :global(.movimiento) .hero {
+    /* La fijación dura (--largo − 1) pantallas aunque el escenario mida más de una. */
+    height: calc(var(--alto-esc, 100svh) + (var(--largo) - 1) * 100svh);
+    /* Tramos: T = el texto sale; A = la llave viaja al centro (empieza cuando el texto ya se apaga, para no
+       cruzarlo); B = frase, aros y anotaciones; C = la llave baja y se hunde en la sección siguiente. */
+    --tt: clamp(0, var(--p, 1) / 0.2, 1);
+    --ta: clamp(0, (var(--p, 1) - 0.04) / 0.32, 1);
+    --tb: clamp(0, (var(--p, 1) - 0.3) / 0.34, 1);
+    --tc: clamp(0, (var(--p, 1) - 0.72) / 0.28, 1);
+    --ea: calc(var(--ta) * var(--ta) * (3 - 2 * var(--ta)));
+    --eb: calc(var(--tb) * var(--tb) * (3 - 2 * var(--tb)));
+    --ec: calc(var(--tc) * var(--tc) * (3 - 2 * var(--tc)));
+  }
+
+  /* Si el contenido mide más que la pantalla, se fija por su borde inferior: nada queda recortado. */
+  :global(.movimiento) .hero .hero-escenario {
+    position: sticky;
+    top: min(0px, calc(100svh - var(--alto-esc, 100svh)));
+    height: auto;
+  }
+
+  /* El texto sube y se desvanece, de arriba hacia abajo. */
+  :global(.movimiento) .hero-t {
+    --sal: clamp(0, var(--tt) * 1.7 - var(--k, 0) * 0.13, 1);
+    opacity: calc(1 - var(--sal));
+    transform: translate3d(0, calc(var(--sal) * -44px), 0);
+  }
+
+  .hero-titulo {
+    --k: 1;
+  }
+
+  .hero-sub {
+    --k: 2;
+  }
+
+  .hero-acciones {
+    --k: 3;
+  }
+
+  .hero-confianza {
+    --k: 4;
+  }
+
+  /* Ya invisible, no recibe toques; con el teclado, el foco lo vuelve a mostrar. */
+  :global(.movimiento) .hero:global(.alcanzo-1) .hero-t {
+    pointer-events: none;
+  }
+
+  :global(.movimiento) .hero .hero-t:focus-within {
+    opacity: 1;
+    transform: none;
+    pointer-events: auto;
+  }
+
+  :global(.movimiento) .hero-llave-mov {
+    transform: translate3d(
+        calc(var(--dx, 0px) * var(--ea)),
+        calc(var(--dy, 0px) * var(--ea) + var(--ec) * var(--baja)),
+        0
+      )
+      scale(calc((1 + (var(--crece) - 1) * var(--ea)) * (1 - 0.5 * var(--ec))));
+    opacity: calc(1 - clamp(0, (var(--tc) - 0.45) / 0.55, 1));
+    will-change: transform, opacity;
+  }
+
+  /* Gira mientras viaja (pico a mitad del tramo A) y se inclina un poco al irse. */
+  :global(.movimiento) .hero-llave-giro {
+    transform: perspective(900px) rotateY(calc(sin(var(--ta) * 180deg) * -12deg + var(--ec) * 9deg));
+  }
+
+  /* La luz cruza la llave mientras se presenta (tramo B). */
+  :global(.movimiento) .hero-llave :global(.hero-isotipo) {
+    --brillo: calc(1 - var(--tb));
+    --reflejo: calc((var(--reflejo-reposo) + (var(--reflejo-centro) - var(--reflejo-reposo)) * var(--ea)) * (1 - var(--tc)));
+  }
+
+  :global(.movimiento) .hero-piso {
+    opacity: calc((var(--reflejo-reposo) + (1 - var(--reflejo-reposo)) * var(--ea)) * (1 - var(--tc)));
+  }
+
+  :global(.movimiento) .hero-foco {
+    opacity: calc((0.75 + 0.25 * var(--ea)) * (1 - 0.6 * var(--tc)));
+  }
+
+  :global(.movimiento) .hero-aros {
+    transform: scale(calc(1 + 0.1 * var(--ea) + 0.32 * var(--eb)));
+    opacity: calc((var(--aros-reposo) + (1 - var(--aros-reposo)) * var(--ea)) * (1 - 0.55 * var(--eb)) * (1 - var(--tc)));
+  }
+
+  /* El visor se suelta cuando la llave empieza a viajar. */
+  :global(.movimiento) .hero-visor {
+    opacity: calc(1 - clamp(0, var(--ta) * 2.2, 1));
+  }
+
+  :global(.movimiento) .hero-nota {
+    display: flex;
+    opacity: calc(var(--eb) * (1 - clamp(0, var(--tc) * 2.5, 1)));
+  }
+
+  :global(.movimiento) .hero-nota-linea {
+    transform: scaleX(var(--eb));
+  }
+
+  .hero-nota-firma .hero-nota-linea {
+    transform-origin: right center;
+  }
+
+  .hero-nota-sello .hero-nota-linea {
+    transform-origin: left center;
+  }
+
+  /* Bruma del borde inferior: al final, el reflejo y el piso se funden con la sección siguiente. */
+  :global(.movimiento) .hero-escenario::after {
+    content: '';
+    position: absolute;
+    inset: auto 0 0;
+    z-index: 3;
+    height: 18svh;
+    background: linear-gradient(transparent, rgb(6 11 22 / 0.8) 60%, var(--medianoche));
+    opacity: calc(var(--ec) * 0.8);
+    pointer-events: none;
+  }
+
+  :global(.movimiento) .hero-bajar {
+    opacity: calc(1 - clamp(0, var(--tt) * 4, 1));
+  }
+
+  /* Frase: en la ventana visible bajo la barra. Celular: abajo, bajo la llave. Escritorio: a los lados. */
+  :global(.movimiento) .hero .hero-frase {
+    --fa: clamp(0, (var(--p, 1) - 0.36) / 0.18, 1);
+    --fb: clamp(0, (var(--p, 1) - 0.44) / 0.18, 1);
+    --fs: clamp(0, (var(--p, 1) - 0.74) / 0.14, 1);
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 2;
+    align-content: end;
+    height: calc(100svh - var(--nav));
+    margin: 0 auto;
+    padding: 0 0 max(32px, 6svh);
+    border: 0;
+    font-size: clamp(1.375rem, 1rem + 1.6vw, 2.5rem);
+    pointer-events: none;
+  }
+
+  :global(.movimiento) .hero-frase-a,
+  :global(.movimiento) .hero-frase-b {
+    display: block;
+  }
+
+  :global(.movimiento) .hero-frase-a {
+    opacity: calc(var(--fa) * (1 - var(--fs)));
+    transform: translate3d(0, calc((1 - var(--fa)) * 22px - var(--fs) * 18px), 0);
+  }
+
+  :global(.movimiento) .hero-frase-b {
+    opacity: calc(var(--fb) * (1 - var(--fs)));
+    transform: translate3d(0, calc((1 - var(--fb)) * 22px - var(--fs) * 18px), 0);
+  }
+
+  /* Celular acostado: poca altura, así que la llave no crece y la frase va a los lados, como en escritorio. */
+  @media (min-width: 560px) and (max-width: 959px) and (max-height: 600px) and (orientation: landscape) {
+    .hero {
+      --crece: 1;
+      --centro-y: 0.52;
+    }
+  }
+
+  @media (min-width: 960px), (min-width: 560px) and (max-height: 600px) and (orientation: landscape) {
+    :global(.movimiento) .hero .hero-frase {
+      grid-template-columns: minmax(0, 1fr) calc(var(--alto-llave) * 0.42 * var(--crece) + 12vw) minmax(0, 1fr);
+      align-items: center;
+      align-content: center;
+      padding: 0;
+      text-align: left;
+    }
+
+    :global(.movimiento) .hero-frase-a {
+      grid-column: 1;
+      text-align: right;
+    }
+
+    :global(.movimiento) .hero-frase-b {
+      grid-column: 3;
+    }
+  }
+
   @media (prefers-reduced-motion: reduce) {
-    .hero-texto,
-    .hero-llave-scroll {
-      transform: none;
-      opacity: 1;
-    }
-
-    .hero-llave-reflejo {
-      transform: translateX(-50%);
-      opacity: 0.9;
-    }
-
-    .hero-llave-flotar,
-    .hero-llave-halo,
-    .hero-llave-reflejo,
     .hero-bajar-linea {
       animation: none;
     }

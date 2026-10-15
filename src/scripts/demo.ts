@@ -1,6 +1,9 @@
 // Simulador de InmutalKey (sección #demo). Se reproduce solo por capítulos cuando entra en vista y se pausa
 // al salir. La nota de evolución es real: el semáforo, el IMC, la validación de SpO₂ y la búsqueda CIE-10
 // usan las mismas reglas que la app (src/lib/*). Todo el texto se escribe con textContent/value.
+//
+// La ventana llega inclinada y escalada (presentación ligada al scroll en Demo.astro): las medidas en pantalla se
+// convierten a las coordenadas propias de la ventana antes de mover el cursor simulado o el scroll interno.
 
 import { buscarCie10, type Diagnostico } from '../lib/cie10';
 import { calcularImc, clasificarImc, errorSpo2, ETIQUETA_IMC, leerNumero } from '../lib/imc';
@@ -9,8 +12,15 @@ import { calcularSemaforo, ETIQUETA_SEMAFORO, type DatosNota } from '../lib/sema
 type IdCapitulo = 'agenda' | 'consulta' | 'firma' | 'receta' | 'correccion' | 'auditoria' | 'respaldo';
 type Pantalla = 'agenda' | 'consulta' | 'expediente' | 'receta';
 type Campo = HTMLInputElement | HTMLTextAreaElement;
+type EstadoHud = 'vivo' | 'pausa' | 'turno' | 'fin';
 
 const ORDEN: readonly IdCapitulo[] = ['agenda', 'consulta', 'firma', 'receta', 'correccion', 'auditoria', 'respaldo'];
+const TEXTO_HUD: Readonly<Record<EstadoHud, string>> = {
+  vivo: 'Simulación en vivo',
+  pausa: 'En pausa',
+  turno: 'Tu turno',
+  fin: 'Recorrido completo',
+};
 const CAMPOS_NOTA = ['motivo', 'evolucion', 'taSistolica', 'taDiastolica', 'fc', 'fr', 'temperatura', 'spo2', 'peso', 'talla', 'exploracion', 'pronostico', 'plan'] as const;
 
 class Cancelado extends Error {}
@@ -24,6 +34,9 @@ class Demo {
   private readonly toasts: HTMLElement;
   private readonly botones: HTMLButtonElement[];
   private readonly pausa: HTMLButtonElement | null;
+  private readonly tira: HTMLElement | null;
+  private readonly hudEstado: HTMLElement | null;
+  private readonly hudPaso: HTMLElement | null;
   private readonly finales = new Map<Campo, string>();
   private readonly reducido = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -33,6 +46,8 @@ class Demo {
   private reproduciendo = false;
   private iniciado = false;
   private actual: IdCapitulo = 'consulta';
+  /** Última vez que el visitante tocó la tira de capítulos (no se la movemos mientras la usa). */
+  private tiraTocada = 0;
 
   constructor(private readonly seccion: HTMLElement) {
     const q = <T extends Element>(sel: string): T => {
@@ -48,6 +63,9 @@ class Demo {
     this.narracion = seccion.querySelector('[data-narracion]');
     this.botones = [...seccion.querySelectorAll<HTMLButtonElement>('[data-capitulo]')];
     this.pausa = seccion.querySelector('[data-control="pausa"]');
+    this.tira = seccion.querySelector('[data-capitulos]');
+    this.hudEstado = seccion.querySelector('[data-hud-estado]');
+    this.hudPaso = seccion.querySelector('[data-hud-paso]');
 
     for (const nombre of [...CAMPOS_NOTA, 'buscarCie10']) {
       const c = this.campo(nombre);
@@ -57,6 +75,12 @@ class Demo {
     this.enlazar();
     this.actualizarNota();
     this.vigilarVisibilidad();
+    // Con movimiento reducido no se reproduce sola: el botón invita a verla.
+    if (this.reducido && this.pausa) {
+      this.pausa.setAttribute('aria-pressed', 'true');
+      const texto = this.pausa.querySelector('[data-control-texto]');
+      if (texto) texto.textContent = 'Reproducir';
+    }
   }
 
   // ───────────── Utilidades ─────────────
@@ -101,11 +125,21 @@ class Demo {
     window.setTimeout(() => t.remove(), 3500);
   }
 
+  /** Píxeles de la ventana por píxel de pantalla (≠ 1 mientras llega inclinada y escalada). */
+  private escala(): { x: number; y: number } {
+    const a = this.app.getBoundingClientRect();
+    return {
+      x: a.width > 0 ? this.app.offsetWidth / a.width : 1,
+      y: a.height > 0 ? this.app.offsetHeight / a.height : 1,
+    };
+  }
+
+  /** Scroll interno de la ventana (nunca el de la página). */
   private desplazarA(el: Element): void {
     if (!this.principal.contains(el)) return;
     const caja = this.principal.getBoundingClientRect();
     const r = el.getBoundingClientRect();
-    const destino = this.principal.scrollTop + (r.top - caja.top) - caja.height * 0.32;
+    const destino = this.principal.scrollTop + (r.top - caja.top) * this.escala().y - this.principal.clientHeight * 0.32;
     this.principal.scrollTo({ top: Math.max(0, destino), behavior: this.reducido ? 'auto' : 'smooth' });
   }
 
@@ -115,8 +149,9 @@ class Demo {
     if (this.reducido) return;
     const a = this.app.getBoundingClientRect();
     const r = el.getBoundingClientRect();
-    this.cursor.style.setProperty('--cx', `${r.left - a.left + Math.min(r.width * 0.55, 60)}px`);
-    this.cursor.style.setProperty('--cy', `${r.top - a.top + r.height * 0.55}px`);
+    const k = this.escala();
+    this.cursor.style.setProperty('--cx', `${(r.left - a.left + Math.min(r.width * 0.55, 60)) * k.x}px`);
+    this.cursor.style.setProperty('--cy', `${(r.top - a.top + r.height * 0.55) * k.y}px`);
     this.app.classList.add('con-cursor');
     await this.esperar(820, t);
   }
@@ -562,10 +597,31 @@ class Demo {
       b.classList.toggle('es-hecho', j < i);
       b.querySelector<HTMLElement>('.capitulo-avance span')?.style.setProperty('--avance', j < i ? '1' : '0');
     });
+    if (this.hudPaso) this.hudPaso.textContent = `Paso ${i + 1} de ${ORDEN.length}`;
+    this.mostrarCapitulo(this.botones[i]);
+  }
+
+  /** En celular y tableta la tira de capítulos se desliza de lado: el capítulo actual queda a la vista. */
+  private mostrarCapitulo(b: HTMLButtonElement | undefined): void {
+    const tira = this.tira;
+    if (!b || !tira || tira.scrollWidth <= tira.clientWidth + 1) return;
+    if (performance.now() - this.tiraTocada < 2500) return;
+    const caja = tira.getBoundingClientRect();
+    const r = b.getBoundingClientRect();
+    const destino = tira.scrollLeft + (r.left - caja.left) - (tira.clientWidth - r.width) / 2;
+    tira.scrollTo({ left: Math.max(0, destino), behavior: this.reducido ? 'auto' : 'smooth' });
+  }
+
+  private hud(estado: EstadoHud): void {
+    if (!this.hudEstado) return;
+    this.hudEstado.dataset['hudEstado'] = estado;
+    const texto = this.hudEstado.querySelector('[data-hud-texto]');
+    if (texto) texto.textContent = TEXTO_HUD[estado];
   }
 
   private ponerPausa(pausado: boolean): void {
     this.pausado = pausado;
+    this.hud(pausado ? 'pausa' : 'vivo');
     if (!this.pausa) return;
     this.pausa.setAttribute('aria-pressed', String(pausado));
     const texto = this.pausa.querySelector('[data-control-texto]');
@@ -589,6 +645,7 @@ class Demo {
       this.reproduciendo = false;
       this.app.classList.remove('con-cursor');
       this.ponerPausa(true);
+      if (!opciones.soloUno) this.hud('fin');
     } catch (e) {
       if (!(e instanceof Cancelado)) throw e;
     }
@@ -641,8 +698,15 @@ class Demo {
         this.app.classList.remove('con-cursor');
         this.ponerPausa(true);
       }
+      this.hud('turno');
       this.narrar('Tu turno: borra o cambia algo y mira cómo responden el semáforo, el IMC y la búsqueda CIE-10.');
     });
+
+    const tocarTira = (): void => {
+      this.tiraTocada = performance.now();
+    };
+    this.tira?.addEventListener('pointerdown', tocarTira, { passive: true });
+    this.tira?.addEventListener('wheel', tocarTira, { passive: true });
 
     const entradaCie = this.campo('buscarCie10');
     entradaCie?.addEventListener('keydown', (ev) => {
@@ -678,12 +742,15 @@ class Demo {
   }
 
   private vigilarVisibilidad(): void {
+    // Arranca cuando media ventana está a la vista (ya casi terminó de llegar y encenderse con el scroll) y solo se
+    // pausa cuando casi sale: si el médico toca un capítulo con la ventana a medias, la reproducción no se detiene.
     const io = new IntersectionObserver(
       ([e]) => {
-        this.visible = Boolean(e?.isIntersecting);
-        if (this.visible && !this.iniciado && !this.reducido) void this.reproducirDesde('agenda');
+        const razon = e?.isIntersecting ? e.intersectionRatio : 0;
+        this.visible = razon >= 0.14;
+        if (razon >= 0.49 && !this.iniciado && !this.reducido) void this.reproducirDesde('agenda');
       },
-      { threshold: 0.35 },
+      { threshold: [0, 0.15, 0.5] },
     );
     io.observe(this.app);
   }

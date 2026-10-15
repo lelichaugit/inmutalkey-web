@@ -1,6 +1,17 @@
 ---
 // Galería de capturas reales (capturas/ → npm run capturas → src/data/capturas.json). Si no hay, no se muestra.
+//
+// Cada captura va en el marco de una pantalla (bisel fino, sin barra de título propia: la captura puede traer la de
+// Windows). El carril se desliza solo: dedo, trackpad,
+// teclado (tiene foco) y scroll-snap propio; Lenis deja pasar los gestos horizontales. Los botones anterior/siguiente
+// (para ratón) y la posición los activa src/scripts/capturas.ts, que signos.ts descarga solo si la galería existe
+// (la sección de arriba): sin capturas no se descarga nada. Sin JS no aparecen y el carril sigue funcionando.
+//
+// Movimiento (solo con .movimiento): la fila entra con escala y desplazamiento ligados al scroll (--p de
+// .galeria) y, donde el navegador tiene scroll-driven animations, la captura del centro se ve plena y las de los
+// lados más chicas y tenues.
 import capturas from '../../data/capturas.json';
+import Icono from '../Icono.astro';
 
 interface Captura {
   id: string;
@@ -13,65 +24,137 @@ interface Captura {
 
 const lista = capturas as Captura[];
 const srcset = (c: Captura, ext: string) => c.anchos.map((w) => `/capturas/${c.id}-${w}.${ext} ${w}w`).join(', ');
+const dos = (n: number) => String(n).padStart(2, '0');
 ---
 
 {
   lista.length > 0 && (
     <section class="seccion fondo-oscuro capturas" id="capturas" aria-labelledby="capturas-titulo">
-      <div class="contenedor entrada revelar">
-        <h2 id="capturas-titulo">Así se ve trabajando</h2>
-        <p class="texto-grande tenue">Capturas reales del programa. Desliza para ver más.</p>
+      <div class="contenedor capturas-cabecera">
+        <p class="capturas-etiqueta" data-animar="aparecer">
+          {`Capturas reales · ${dos(lista.length)} ${lista.length === 1 ? 'pantalla' : 'pantallas'}`}
+        </p>
+        <h2 id="capturas-titulo" data-animar="titulo">
+          Así se ve trabajando
+        </h2>
+        <p class="texto-grande tenue" data-animar="subir" data-retraso="2">
+          Capturas reales del programa.{lista.length > 1 && ' Desliza para ver más.'}
+        </p>
       </div>
-      <ul class="carril">
-        {lista.map((c, i) => (
-          <li class="captura">
-            <figure>
-              <div class="marco">
-                <span class="marco-barra" aria-hidden="true">
-                  <i />
-                  <i />
-                  <i />
-                </span>
-                <picture>
-                  <source type="image/avif" srcset={srcset(c, 'avif')} sizes="(min-width: 1100px) 900px, 88vw" />
-                  <source type="image/webp" srcset={srcset(c, 'webp')} sizes="(min-width: 1100px) 900px, 88vw" />
-                  <img
-                    src={`/capturas/${c.id}-${c.anchos.at(-1)}.webp`}
-                    width={c.ancho}
-                    height={c.alto}
-                    alt={`${c.titulo}. ${c.descripcion}`}
-                    loading={i === 0 ? 'eager' : 'lazy'}
-                    decoding="async"
-                  />
-                </picture>
-              </div>
-              <figcaption>
-                <strong>{c.titulo}</strong>
-                {c.descripcion && <span class="tenue">{c.descripcion}</span>}
-              </figcaption>
-            </figure>
-          </li>
-        ))}
-      </ul>
+
+      <div class="galeria" data-galeria data-progreso-scroll>
+        <ul class="carril" tabindex="0" aria-label="Capturas del programa" data-carril data-lenis-prevent-horizontal>
+          {lista.map((c, i) => (
+            <li class="captura" data-captura>
+              <figure>
+                <div class="marco">
+                  <div class="marco-pantalla">
+                    <picture>
+                      <source type="image/avif" srcset={srcset(c, 'avif')} sizes="(min-width: 1100px) 900px, 88vw" />
+                      <source type="image/webp" srcset={srcset(c, 'webp')} sizes="(min-width: 1100px) 900px, 88vw" />
+                      <img
+                        src={`/capturas/${c.id}-${c.anchos.at(-1)}.webp`}
+                        width={c.ancho}
+                        height={c.alto}
+                        alt={`${c.titulo}. ${c.descripcion}`}
+                        loading={i === 0 ? 'eager' : 'lazy'}
+                        decoding="async"
+                        draggable="false"
+                      />
+                    </picture>
+                    <span class="marco-reflejo" aria-hidden="true" />
+                  </div>
+                </div>
+                <figcaption>
+                  <span class="captura-num" aria-hidden="true">
+                    {dos(i + 1)} / {dos(lista.length)}
+                  </span>
+                  <strong>{c.titulo}</strong>
+                  {c.descripcion && <span class="tenue">{c.descripcion}</span>}
+                </figcaption>
+              </figure>
+            </li>
+          ))}
+        </ul>
+
+        {lista.length > 1 && (
+          <div class="contenedor carril-controles" data-carril-controles hidden>
+            <button type="button" class="carril-boton" data-carril-ir="-1" aria-label="Captura anterior">
+              <Icono nombre="arriba" class="flecha-izquierda" />
+            </button>
+            <span class="carril-puntos" aria-hidden="true">
+              {lista.map(() => (
+                <i data-carril-punto />
+              ))}
+            </span>
+            <button type="button" class="carril-boton" data-carril-ir="1" aria-label="Captura siguiente">
+              <Icono nombre="arriba" class="flecha-derecha" />
+            </button>
+          </div>
+        )}
+      </div>
     </section>
   )
 }
 
 <style>
+  .capturas {
+    overflow-x: clip;
+  }
+
+  .capturas-cabecera {
+    display: grid;
+    gap: 1.1rem;
+    justify-items: center;
+    text-align: center;
+  }
+
+  .capturas-cabecera > * {
+    margin: 0;
+    max-width: 44rem;
+  }
+
+  .capturas-etiqueta {
+    color: var(--azul-vivo);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.8125rem;
+    letter-spacing: 0.04em;
+  }
+
+  /* ── Carril: scroll horizontal propio con snap; los bordes se desvanecen ── */
+  .galeria {
+    /* Entrada ligada al scroll (0 al asomar, 0.5 centrada): de 0.04 a 0.34. */
+    --t: clamp(0, (var(--p, 1) - 0.04) / 0.3, 1);
+    margin-top: clamp(32px, 5vw, 56px);
+  }
+
   .carril {
+    position: relative;
     display: flex;
-    gap: 24px;
-    margin: clamp(32px, 5vw, 48px) 0 0;
-    padding: 8px max(var(--margen), calc((100vw - var(--ancho)) / 2)) 24px;
+    gap: clamp(16px, 2.4vw, 32px);
+    margin: 0;
+    padding: 12px max(var(--margen), calc((100% - var(--ancho)) / 2)) 28px;
     list-style: none;
     overflow-x: auto;
+    overscroll-behavior-x: contain;
     scroll-snap-type: x mandatory;
-    scrollbar-width: thin;
+    scroll-padding-inline: max(var(--margen), calc((100% - var(--ancho)) / 2));
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .carril::-webkit-scrollbar {
+    display: none;
+  }
+
+  .carril:focus-visible {
+    outline: 2px solid var(--azul-vivo);
+    outline-offset: -2px;
   }
 
   .captura {
     flex: none;
-    width: min(900px, 88vw);
+    width: min(900px, 86%);
     scroll-snap-align: center;
   }
 
@@ -79,35 +162,180 @@ const srcset = (c: Captura, ext: string) => c.anchos.map((w) => `/capturas/${c.i
     margin: 0;
   }
 
+  /* ── El marco: una pantalla de bisel fino con su cámara, y el vidrio con un reflejo quieto ── */
   .marco {
+    position: relative;
+    padding: clamp(6px, 1vw, 12px);
+    padding-top: clamp(10px, 1.4vw, 16px);
     border: 1px solid var(--linea-oscura-fuerte);
-    border-radius: 14px;
-    background: #0b1220;
-    overflow: hidden;
-    box-shadow: 0 40px 80px -30px rgb(0 0 0 / 0.8);
+    border-radius: clamp(14px, 1.8vw, 22px);
+    background: linear-gradient(180deg, #151e2e, #0a101b);
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.08),
+      0 0 0 1px rgb(0 0 0 / 0.5),
+      0 40px 80px -30px rgb(0 0 0 / 0.85),
+      0 0 110px -40px rgb(46 159 224 / 0.45);
   }
 
-  .marco-barra {
-    display: flex;
-    gap: 6px;
-    padding: 10px 12px;
-    border-bottom: 1px solid var(--linea-oscura);
-  }
-
-  .marco-barra i {
-    width: 10px;
-    height: 10px;
+  .marco::before {
+    content: '';
+    position: absolute;
+    top: clamp(4px, 0.6vw, 7px);
+    left: 50%;
+    width: 4px;
+    height: 4px;
+    margin-left: -2px;
     border-radius: 50%;
-    background: rgb(255 255 255 / 0.18);
+    background: #22324a;
+    box-shadow: 0 0 0 1px rgb(255 255 255 / 0.06);
+  }
+
+  .marco-pantalla {
+    position: relative;
+    overflow: hidden;
+    border-radius: clamp(6px, 0.8vw, 10px);
+    background: #0b1220;
   }
 
   .marco img {
+    display: block;
     width: 100%;
+    height: auto;
+    user-select: none;
+  }
+
+  .marco-reflejo {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(120deg, rgb(255 255 255 / 0.07), transparent 32%);
+    pointer-events: none;
   }
 
   figcaption {
     display: grid;
     gap: 2px;
-    margin-top: 14px;
+    margin-top: 16px;
+    padding-inline: 2px;
+  }
+
+  .captura-num {
+    color: var(--azul-vivo);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.75rem;
+    letter-spacing: 0.04em;
+    font-variant-numeric: tabular-nums;
+  }
+
+  figcaption strong {
+    font-family: var(--fuente-titulo);
+    font-size: var(--h3);
+    font-weight: 600;
+  }
+
+  /* ── Controles (con JS) ── */
+  .carril-controles {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 18px;
+    margin-top: 4px;
+  }
+
+  .carril-controles[hidden] {
+    display: none;
+  }
+
+  .carril-boton {
+    display: grid;
+    place-items: center;
+    width: 48px;
+    height: 48px;
+    border: 1px solid var(--linea-oscura-fuerte);
+    border-radius: 50%;
+    background: rgb(255 255 255 / 0.03);
+    color: var(--texto);
+    cursor: pointer;
+    transition:
+      border-color 0.25s var(--ease),
+      opacity 0.25s var(--ease);
+  }
+
+  .carril-boton:hover:not(:disabled) {
+    border-color: var(--azul-vivo);
+  }
+
+  .carril-boton:disabled {
+    opacity: 0.35;
+    cursor: default;
+  }
+
+  .carril-boton :global(.icono) {
+    width: 20px;
+    height: 20px;
+  }
+
+  .carril-boton :global(.flecha-izquierda) {
+    transform: rotate(-90deg);
+  }
+
+  .carril-boton :global(.flecha-derecha) {
+    transform: rotate(90deg);
+  }
+
+  .carril-puntos {
+    display: inline-flex;
+    gap: 8px;
+  }
+
+  .carril-puntos i {
+    width: 6px;
+    height: 6px;
+    border-radius: 3px;
+    background: var(--linea-oscura-fuerte);
+    transition:
+      background-color 0.3s var(--ease),
+      transform 0.3s var(--ease);
+  }
+
+  .carril-puntos i.es-actual {
+    background: var(--azul-vivo);
+    transform: scaleX(2.4);
+  }
+
+  /* ── Movimiento ── */
+  :global(.movimiento) .captura {
+    opacity: calc(0.2 + var(--t) * 0.8);
+    transform: translate3d(calc((1 - var(--t)) * 14vw), 0, 0) scale(calc(0.9 + var(--t) * 0.1));
+    transform-origin: 0 50%;
+  }
+
+  @supports (animation-timeline: view()) {
+    :global(.movimiento) .captura figure {
+      animation: foco linear both;
+      animation-timeline: view(inline);
+    }
+
+    @keyframes foco {
+      0% {
+        opacity: 0.4;
+        transform: scale(0.92);
+      }
+      38%,
+      62% {
+        opacity: 1;
+        transform: scale(1);
+      }
+      100% {
+        opacity: 0.4;
+        transform: scale(0.92);
+      }
+    }
+  }
+
+  @media (max-width: 759px) {
+    /* En celular se desliza con el dedo: quedan solo los puntos de posición. */
+    .carril-boton {
+      display: none;
+    }
   }
 </style>

@@ -1,179 +1,767 @@
 ---
-// Escenario de la historia de integridad. El hilo visual del sitio: la MISMA llave del hero baja y sella la nota.
-// Estados por clases acumulativas `alcanzo-N` (1–5) + `data-paso` exacto:
-//   1 escribir · 2 la llave sella · 3 cadena con las notas anteriores · 4 alteración externa detectada · 5 addendum
-// `paso={0}` + `dinamica` = el escenario pegajoso que escenas.ts va moviendo; con un número fijo = copia estática
-// (sin JS o con movimiento reducido).
+// La ilustración de la escena central (decorativa: el texto real de cada paso vive en Integridad.astro). Hilo visual
+// del sitio: la MISMA llave del hero baja, gira como en una cerradura y sella la nota.
+//
+// Todo se deriva de --p (0 → 1), que el motor de scroll pone en la escena fijada de Integridad.astro, y de --e
+// (entrada). Sin JS o con movimiento reducido, var(--p, 1) deja el estado final: nota sellada, encadenada y con su
+// addendum. Guion (tramos de --p; las marcas de Integridad.astro caen en los cortes):
+//   1 Escribir    0.00–0.18  cabecera con --e; filas S/O/A/P una por una (clip-path + cursor); signos vitales
+//   2 Semáforo    0.18–0.38  la hoja sube; 7 requisitos se encienden; rojo → ámbar → verde; la hoja baja
+//   3 Firmar      0.38–0.62  la nota baja a su lugar; la llave baja (de plano a sólida), gira, el anillo se dibuja,
+//                            la huella se calcula (escáner) y la nota se encadena con las anteriores
+//   4 Alteración  0.62–0.80  un cursor cambia el medicamento por fuera de la app: la huella ya no coincide → rojo
+//   5 Addendum    0.80–1.00  la nota original (intacta) sube y se agrega el addendum enlazado a su huella
+// La huella que "se decodifica" (data-huella) la anima escenas.ts al llegar a su paso; el HTML ya trae la final.
+//
+// Geometría: una maqueta de 28 × 24 em. Su font-size sale del tamaño del visor (container queries), así que la
+// escena se escala completa, como una ilustración vectorial, del celular de 360 px al escritorio.
+import { requisitos, type DatosNota } from '../../lib/semaforo';
 import Icono from '../Icono.astro';
 import Isotipo3D from '../Isotipo3D.astro';
 
-interface Props {
-  paso: 0 | 1 | 2 | 3 | 4 | 5;
-  dinamica?: boolean;
+// Las etiquetas del semáforo salen de la misma lógica que la app (src/lib/semaforo.ts), en el build.
+const NOTA_VACIA: DatosNota = {
+  motivo: '',
+  evolucion: '',
+  taSistolica: '',
+  taDiastolica: '',
+  fc: '',
+  fr: '',
+  temperatura: '',
+  peso: '',
+  talla: '',
+  omisionSignos: '',
+  exploracion: '',
+  diagnostico: '',
+  cie10: '',
+  pronostico: '',
+  plan: '',
+};
+const REQUISITOS = requisitos(NOTA_VACIA).map((r) => r.etiqueta);
+
+// Huellas de ejemplo (SHA-256 reales de textos de prueba), abreviadas como en la app.
+const HUELLA = { anterior: '35d2e1…2f0bd3', actual: 'b31c88b0…25eae6', alterada: '002f7968…21b31c' };
+
+interface Fila {
+  letra: string;
+  etiqueta: string;
+  valor?: string;
+  signos?: readonly string[];
+  alterado?: string;
 }
 
-const { paso, dinamica = false } = Astro.props;
-const clases = Array.from({ length: paso }, (_, i) => `alcanzo-${i + 1}`);
+const FILAS: readonly Fila[] = [
+  { letra: 'S', etiqueta: 'Motivo', valor: 'Dolor de garganta y fiebre' },
+  { letra: '', etiqueta: 'Evolución', valor: '2 días, sin mejoría' },
+  { letra: 'O', etiqueta: 'Signos', signos: ['TA 120/80', 'FC 88', 'T 38.2 °C'] },
+  { letra: '', etiqueta: 'Exploración', valor: 'Faringe hiperémica' },
+  { letra: 'A', etiqueta: 'Diagnóstico', valor: 'J02.9 Faringitis aguda' },
+  { letra: '', etiqueta: 'Pronóstico', valor: 'Favorable' },
+  { letra: 'P', etiqueta: 'Plan', valor: 'Paracetamol 500 mg c/8 h', alterado: 'Ibuprofeno 400 mg c/8 h' },
+];
 ---
 
-<div
-  class:list={['escena', ...clases]}
-  data-paso={paso}
-  data-escena-dinamica={dinamica ? '' : undefined}
-  aria-hidden="true"
->
-  <div class="escena-panel">
-    <div class="previa previa-1">
-      <span class="previa-titulo">Nota 1</span>
-      <span class="previa-fecha">3 de marzo</span>
-      <span class="previa-sello"><Icono nombre="check" /> Sellada</span>
-      <span class="previa-huella">huella 4a7e…</span>
+<div class="maqueta">
+  <span class="mq-halo"></span>
+  <div class="mq-mover">
+    {/* Notas anteriores del mismo paciente: la cadena */}
+    <div class="mq-mazo">
+      <div class="tira tira-a">
+        <span class="tira-nodo"></span>
+        <span class="tira-titulo">Nota 10 · 12 sep</span>
+        <span class="tira-huella"><Icono nombre="check" />bd12c0…d6790b</span>
+      </div>
+      <div class="tira tira-b">
+        <span class="tira-nodo"></span>
+        <span class="tira-titulo">Nota 11 · 3 oct</span>
+        <span class="tira-huella"><Icono nombre="check" />{HUELLA.anterior}</span>
+      </div>
     </div>
-    <div class="previa previa-2">
-      <span class="previa-titulo">Nota 2</span>
-      <span class="previa-fecha">17 de abril</span>
-      <span class="previa-sello"><Icono nombre="check" /> Sellada</span>
-      <span class="previa-huella">huella c19b…</span>
-    </div>
+    {/* Eslabones: nota 10 → 11 → la de hoy (hash previo → hash actual). Por encima de la tarjeta. */}
+    <span class="eslabon eslabon-1"></span>
+    <span class="eslabon eslabon-2"></span>
+    <span class="eslabon eslabon-roto"></span>
 
-    <svg class="eslabones" viewBox="0 0 100 100" preserveAspectRatio="none">
-      <path class="eslabon eslabon-1" d="M20 25 V 33" pathLength="1"></path>
-      <path class="eslabon eslabon-2" d="M37 42 C 40 42, 40 30, 44 30" pathLength="1"></path>
-    </svg>
-
-    <article class="nota">
+    <article class="mq-nota">
       <header class="nota-cabecera">
-        <strong>Nota de evolución</strong>
-        <span>Paciente de ejemplo · Hoy 14:32</span>
+        <span class="nota-nodo"></span>
+        <strong class="nota-titulo">Nota de evolución</strong>
+        <span class="nota-paciente">Paciente de ejemplo · Exp. 0042</span>
+        <span class="nota-estado">
+          <span class="estado-borrador"><i></i>Borrador</span>
+          <span class="estado-sellada">Sellada 10:14</span>
+          <span class="estado-alterada">Alterada</span>
+        </span>
       </header>
-      <dl class="nota-campos">
-        <div class="campo">
-          <dt>Motivo</dt>
-          <dd>Dolor de garganta y fiebre de 2 días</dd>
+
+      <div class="nota-filas">
+        {
+          FILAS.map((f) => (
+            <div class:list={['fila', { 'fila-grupo': f.letra !== '', 'fila-alterable': f.alterado }]}>
+              <span class="fila-letra">{f.letra}</span>
+              <span class="fila-etiqueta">{f.etiqueta}</span>
+              {f.signos ? (
+                <span class="fila-signos">
+                  {f.signos.map((s) => (
+                    <span class="chip">{s}</span>
+                  ))}
+                </span>
+              ) : (
+                <span class="fila-caja">
+                  <span class="fila-valor">{f.valor}</span>
+                  {f.alterado && (
+                    <>
+                      <span class="fila-seleccion" />
+                      <span class="fila-alterado">{f.alterado}</span>
+                    </>
+                  )}
+                  <span class="fila-cursor" />
+                </span>
+              )}
+            </div>
+          ))
+        }
+      </div>
+
+      <footer class="nota-pie">
+        <p class="pie-borrador"><i></i>Borrador guardado hace 2 s</p>
+        <div class="pie-sello">
+          <span class="pie-etiqueta">Anterior</span>
+          <span class="pie-hash">{HUELLA.anterior}</span>
+          <span class="pie-etiqueta">Huella</span>
+          <span class="pie-hash pie-actual">
+            <span class="hash-bien" data-huella={HUELLA.actual} data-huella-paso="3">{HUELLA.actual}</span>
+            <span class="hash-mal">≠ <span data-huella={HUELLA.alterada} data-huella-paso="4">{HUELLA.alterada}</span></span>
+          </span>
+          <span class="pie-firma"><Icono nombre="check" />Ed25519</span>
         </div>
-        <div class="campo">
-          <dt>Signos</dt>
-          <dd>TA 120/80 · FC 88 · T 38.2 °C</dd>
+      </footer>
+
+      <div class="nota-escaner"></div>
+      <div class="nota-borde-rojo"></div>
+
+      {/* Semáforo NOM-004: la hoja que sube sobre la nota antes de firmar */}
+      <div class="semaforo">
+        <div class="semaforo-cabecera">
+          <span class="luces">
+            <i class="luz luz-roja"></i>
+            <i class="luz luz-ambar"></i>
+            <i class="luz luz-verde"></i>
+          </span>
+          <strong>Semáforo NOM-004</strong>
+          <span class="semaforo-estado">
+            <span class="se-rojo">Incompleta</span>
+            <span class="se-ambar">Casi lista</span>
+            <span class="se-verde">Lista para firmar</span>
+          </span>
         </div>
-        <div class="campo campo-dx">
-          <dt>Diagnóstico</dt>
-          <dd>
-            <span class="dx-original">J02.9 Faringitis aguda</span>
-            <span class="dx-alterado">J03.9 Amigdalitis aguda</span>
-          </dd>
-        </div>
-        <div class="campo">
-          <dt>Plan</dt>
-          <dd>Paracetamol 500 mg cada 8 h por 3 días</dd>
-        </div>
-      </dl>
-      <p class="nota-borrador"><Icono nombre="reloj" /> Borrador guardado hace 2 s</p>
-      <p class="nota-sello"><span class="nota-sello-aro"><Icono nombre="check" /></span> Sellada · huella 9f2c…</p>
-      <p class="nota-alerta"><Icono nombre="alerta" /> La huella ya no coincide: alterada por fuera</p>
+        <ul class="requisitos">
+          {
+            REQUISITOS.map((r) => (
+              <li class="req">
+                <span class="req-marca">
+                  <Icono nombre="check" />
+                </span>
+                {r}
+              </li>
+            ))
+          }
+        </ul>
+      </div>
     </article>
 
-    <article class="addendum">
-      <strong>Addendum 1 · Corrección de captura</strong>
-      <span>Temperatura correcta: 38.4 °C</span>
-      <span class="previa-sello"><Icono nombre="check" /> Sellado · la nota original no cambia</span>
-    </article>
-
-    <div class="escena-llave">
-      <Isotipo3D sizes="160px" />
+    {/* El sello (fuera de la tarjeta para que la llave no se recorte) y la llave que lo cierra */}
+    <div class="mq-sello">
+      <svg class="sello-svg" viewBox="0 0 48 48">
+        <circle class="s-base" cx="24" cy="24" r="21"></circle>
+        <circle class="s-disco" cx="24" cy="24" r="17"></circle>
+        <path class="s-cerradura" d="M24 14.5a4.2 4.2 0 0 1 2.3 7.7L27.6 31h-7.2l1.3-8.8a4.2 4.2 0 0 1 2.3-7.7z"></path>
+        <path class="s-anillo" d="M24 3a21 21 0 1 1 0 42a21 21 0 1 1 0-42" pathLength="1"></path>
+        <path class="s-anillo s-anillo-rojo" d="M24 3a21 21 0 1 1 0 42a21 21 0 1 1 0-42" pathLength="1"></path>
+        <path class="s-palomita" d="M15.5 24.5l6 6L33 18.5" pathLength="1"></path>
+        <path class="s-cruz" d="M18 18l12 12M30 18L18 30"></path>
+      </svg>
+      <span class="sello-onda"></span>
+      <div class="mq-llave">
+        <div class="mq-llave-giro">
+          <Isotipo3D sizes="64px" plano brillo />
+        </div>
+      </div>
     </div>
-    <span class="onda"></span>
+
+    {/* Paso 4: alguien edita el archivo por fuera de InmutalKey */}
+    <div class="mq-cursor">
+      <svg viewBox="0 0 24 24"><path d="M5 2.5v17.2l4.6-4.4 3 6.6 3-1.4-3-6.4h6.3z"></path></svg>
+      <span>fuera de la app</span>
+    </div>
+    <p class="mq-alerta"><Icono nombre="alerta" />Alteración detectada · auditoría de integridad</p>
   </div>
+
+  <span class="mq-enlace"></span>
+  <article class="mq-addendum">
+    <header>
+      <strong>Addendum 1 · Corrección de captura</strong>
+      <span class="addendum-sello"><Icono nombre="check" />Sellado</span>
+    </header>
+    <p>
+      <span>Temperatura: 38.4 °C</span>
+      <span class="addendum-enlace">↳ {HUELLA.actual}</span>
+    </p>
+  </article>
 </div>
 
 <style>
-  .escena {
-    container-type: inline-size;
-    width: 100%;
-    max-width: 580px;
-    margin-inline: auto;
-    --verde: var(--esmeralda-vivo);
-    --rojo: #ff6b6b;
-    --t: 0.9s;
-  }
+  /* ── Línea de tiempo: avance local (0 → 1) de cada tramo de --p ── */
+  .maqueta {
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    --verde: var(--esmeralda);
+    --verde-vivo: var(--esmeralda-vivo);
+    --rojo: var(--error-claro);
+    --rojo-vivo: var(--error);
+    --papel: #f8fafc;
+    --papel-tinta: #0f172a;
+    --papel-tenue: #64748b;
+    --papel-linea: #e2e8f0;
 
-  .escena-panel {
+    --t-entra: clamp(0, (var(--e, 1) - 0.15) / 0.6, 1);
+    --t-cabecera: clamp(0, (var(--e, 1) - 0.45) / 0.5, 1);
+    /* 1 · Escribir */
+    --t-borrador: clamp(0, (var(--p, 1) - 0.1) / 0.03, 1);
+    /* 2 · Semáforo */
+    --t-hoja: min(clamp(0, (var(--p, 1) - 0.18) / 0.035, 1), 1 - clamp(0, (var(--p, 1) - 0.355) / 0.035, 1));
+    /* 3 · Firmar */
+    --t-baja: clamp(0, (var(--p, 1) - 0.37) / 0.05, 1);
+    --t-llave: clamp(0, (var(--p, 1) - 0.4) / 0.07, 1);
+    --t-giro: clamp(0, (var(--p, 1) - 0.47) / 0.035, 1);
+    --t-anillo: clamp(0, (var(--p, 1) - 0.495) / 0.05, 1);
+    --t-escaner: clamp(0, (var(--p, 1) - 0.5) / 0.05, 1);
+    --t-palomita: clamp(0, (var(--p, 1) - 0.54) / 0.02, 1);
+    --t-onda: clamp(0, (var(--p, 1) - 0.545) / 0.05, 1);
+    --t-retiro: clamp(0, (var(--p, 1) - 0.56) / 0.045, 1);
+    --t-mazo: clamp(0, (var(--p, 1) - 0.57) / 0.035, 1);
+    --t-eslabon: clamp(0, (var(--p, 1) - 0.59) / 0.03, 1);
+    /* 4 · Alteración (todo vuelve en 0.79–0.82: la original nunca cambió dentro de la app) */
+    --t-vuelta: clamp(0, (var(--p, 1) - 0.79) / 0.03, 1);
+    --t-cursor: min(clamp(0, (var(--p, 1) - 0.63) / 0.04, 1), 1 - var(--t-vuelta));
+    --t-seleccion: min(clamp(0, (var(--p, 1) - 0.67) / 0.02, 1), 1 - clamp(0, (var(--p, 1) - 0.71) / 0.015, 1));
+    --t-cambio: min(clamp(0, (var(--p, 1) - 0.69) / 0.02, 1), 1 - var(--t-vuelta));
+    --t-rojo: min(clamp(0, (var(--p, 1) - 0.71) / 0.03, 1), 1 - var(--t-vuelta));
+    /* 5 · Addendum */
+    --t-sube: clamp(0, (var(--p, 1) - 0.82) / 0.05, 1);
+    --t-addendum: clamp(0, (var(--p, 1) - 0.86) / 0.06, 1);
+    --t-enlace: clamp(0, (var(--p, 1) - 0.9) / 0.04, 1);
+    --t-sello-add: clamp(0, (var(--p, 1) - 0.93) / 0.03, 1);
+
     position: relative;
-    aspect-ratio: 1 / 0.92;
-    border: 1px solid var(--linea-oscura-fuerte);
-    border-radius: 22px;
-    background:
-      radial-gradient(80% 60% at 70% 20%, rgb(46 159 224 / 0.12), transparent 70%),
-      linear-gradient(var(--linea-oscura) 1px, transparent 1px) 0 0 / 8.33% 8.33%,
-      linear-gradient(90deg, var(--linea-oscura) 1px, transparent 1px) 0 0 / 8.33% 8.33%,
-      var(--medianoche-2);
-    overflow: hidden;
-    font-size: clamp(9px, 2.55cqi, 14.5px);
+    width: 28em;
+    height: 24em;
+    /* Respaldo para navegadores sin container queries; el resto toma el tamaño del visor. */
+    font-size: 12px;
+    font-size: min(100cqw / 28.6, 100cqh / 24.4, 19px);
     line-height: 1.35;
+    color: var(--papel-tinta);
+    transform: scale(calc(0.94 + var(--t-entra) * 0.06));
+    opacity: calc(0.25 + var(--t-entra) * 0.75);
   }
 
-  /* ── Notas anteriores (cadena) ── */
-  .previa {
+  /* Destello esmeralda detrás de la nota en el instante del sello. */
+  .mq-halo {
     position: absolute;
-    left: 5%;
-    width: 31%;
+    left: 50%;
+    top: 50%;
+    width: 30em;
+    height: 26em;
+    margin: -13em 0 0 -15em;
+    border-radius: 50%;
+    background: radial-gradient(closest-side, rgb(47 209 154 / 0.32), rgb(47 209 154 / 0.08) 55%, transparent 75%);
+    transform: scale(calc(0.7 + var(--t-onda) * 0.5));
+    opacity: calc(min(var(--t-onda) * 6, 1) * (1 - var(--t-onda)));
+    pointer-events: none;
+  }
+
+  /* ── La nota y lo que se mueve con ella ── */
+  /* Pasos 1–2 arriba; en el 3 baja para dejar sitio a la llave; en el 5 sube para el addendum. */
+  .mq-mover {
+    position: absolute;
+    left: 1em;
+    top: 5.6em;
+    width: 26em;
+    height: 16.8em;
+    transform: translate3d(0, calc((1 - var(--t-baja)) * -2em - var(--t-sube) * 4.6em - var(--t-rojo) * 1.1em), 0);
+  }
+
+  .mq-nota {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    overflow: hidden;
+    overflow: clip;
+    border: 1px solid rgb(255 255 255 / 0.5);
+    border-radius: 1em;
+    background: var(--papel);
+    box-shadow:
+      0 0 0 1px rgb(13 27 53 / 0.06),
+      0 2.4em 4em -1.6em rgb(0 0 0 / 0.85),
+      0 0 5em -1em rgb(46 159 224 / 0.25);
+  }
+
+  .nota-cabecera {
+    position: relative;
     display: grid;
-    gap: 0.25em;
-    padding: 0.8em 0.9em;
-    border: 1px solid var(--linea-oscura-fuerte);
-    border-radius: 0.9em;
-    background: rgb(255 255 255 / 0.04);
-    color: var(--texto-tenue);
-    opacity: 0.35;
-    transform: translateX(-8%);
-    transition:
-      opacity var(--t) var(--ease),
-      transform var(--t) var(--ease),
-      border-color var(--t) var(--ease);
+    grid-template-columns: 1fr auto;
+    align-content: center;
+    height: 2.9em;
+    padding: 0 5.6em 0 2.4em;
+    border-bottom: 1px solid var(--papel-linea);
+    clip-path: inset(0 calc((1 - var(--t-cabecera)) * 100%) 0 0);
   }
 
-  .previa-1 {
-    top: 9%;
+  .nota-nodo,
+  .tira-nodo {
+    position: absolute;
+    width: 0.56em;
+    height: 0.56em;
+    border: 1.5px solid var(--verde);
+    border-radius: 50%;
+    background: var(--papel);
   }
 
-  .previa-2 {
-    top: 36%;
+  .nota-nodo {
+    left: 1.22em;
+    top: 0.63em;
+    border-color: #94a3b8;
   }
 
-  .previa-titulo {
-    color: var(--texto);
+  .nota-titulo {
+    font-family: var(--fuente-titulo);
+    font-size: 1.08em;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+
+  .nota-paciente {
+    grid-column: 1 / -1;
+    color: var(--papel-tenue);
+    font-size: 0.8em;
+  }
+
+  .nota-estado {
+    display: grid;
+    grid-row: 1;
+    grid-column: 2;
+    justify-items: end;
+    font-size: 0.78em;
     font-weight: 600;
   }
 
-  .previa-sello {
+  .nota-estado > span {
+    grid-area: 1 / 1;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35em;
+    white-space: nowrap;
+  }
+
+  .estado-borrador {
+    color: var(--azul);
+    opacity: calc(1 - var(--t-anillo) * 3);
+  }
+
+  .estado-borrador i,
+  .pie-borrador i {
+    width: 0.5em;
+    height: 0.5em;
+    border-radius: 50%;
+    background: currentColor;
+  }
+
+  .estado-sellada {
+    color: var(--verde);
+    opacity: calc((var(--t-anillo) - 0.6) * 2.5 - var(--t-rojo));
+  }
+
+  .estado-alterada {
+    color: var(--rojo);
+    opacity: var(--t-rojo);
+  }
+
+  /* ── Filas S/O/A/P: se escriben una por una ── */
+  .nota-filas {
+    display: grid;
+    grid-auto-rows: 1.5em;
+    padding: 0.45em 1.2em 0;
+  }
+
+  .fila {
+    --t: clamp(0, (var(--p, 1) - var(--a, 0)) / 0.02, 1);
+    display: grid;
+    grid-template-columns: 1.3em 5.9em minmax(0, 1fr);
+    align-items: center;
+  }
+
+  .fila:nth-child(1) { --a: 0.012; }
+  .fila:nth-child(2) { --a: 0.033; }
+  .fila:nth-child(3) { --a: 0.054; }
+  .fila:nth-child(4) { --a: 0.078; }
+  .fila:nth-child(5) { --a: 0.099; }
+  .fila:nth-child(6) { --a: 0.12; }
+  .fila:nth-child(7) { --a: 0.141; }
+
+  .fila-grupo:not(:first-child) {
+    border-top: 1px dashed var(--papel-linea);
+  }
+
+  .fila-letra {
+    font-family: var(--fuente-titulo);
+    font-weight: 700;
+    color: var(--azul);
+    opacity: var(--t);
+  }
+
+  .fila-etiqueta {
+    color: var(--papel-tenue);
+    font-size: 0.8em;
+    font-weight: 600;
+    opacity: calc(0.3 + var(--t) * 0.7);
+  }
+
+  .fila-caja {
+    position: relative;
+    justify-self: start;
+    max-width: 100%;
+    white-space: nowrap;
+  }
+
+  .fila-valor {
+    display: block;
+    line-height: 1.5;
+    clip-path: inset(0 calc((1 - var(--t)) * 100%) 0 0);
+  }
+
+  .fila-alterable .fila-valor {
+    opacity: calc(1 - var(--t-cambio));
+  }
+
+  /* Cursor de escritura: recorre el ancho del texto (transform, no `left`) y solo se ve a medio escribir. */
+  .fila-cursor {
+    position: absolute;
+    inset: 0;
+    transform: translate3d(calc(var(--t) * 100%), 0, 0);
+    opacity: calc(min(var(--t), 1 - var(--t)) * 30);
+    pointer-events: none;
+  }
+
+  :global(html:not(.movimiento)) .fila-cursor {
+    display: none;
+  }
+
+  .fila-cursor::before {
+    content: '';
+    position: absolute;
+    left: 0.06em;
+    top: 12%;
+    bottom: 12%;
+    width: 0.11em;
+    border-radius: 1px;
+    background: var(--azul);
+  }
+
+  .fila-signos {
+    display: flex;
+    gap: 0.35em;
+  }
+
+  .chip {
+    --tc: clamp(0, (var(--p, 1) - var(--a, 0) - var(--j, 0) * 0.006) / 0.008, 1);
+    padding: 0.08em 0.5em;
+    border: 1px solid #bfdbfe;
+    border-radius: 999px;
+    background: #eff6ff;
+    color: #1d4ed8;
+    font-size: 0.82em;
+    font-weight: 600;
+    white-space: nowrap;
+    transform: scale(calc(0.7 + var(--tc) * 0.3));
+    opacity: var(--tc);
+  }
+
+  .chip:nth-child(2) { --j: 1; }
+  .chip:nth-child(3) { --j: 2; }
+
+  /* Paso 4: el medicamento cambia por fuera de la app. */
+  .fila-seleccion {
+    position: absolute;
+    inset: 0.05em -0.15em;
+    border-radius: 0.2em;
+    background: rgb(1 120 176 / 0.22);
+    transform-origin: 0 50%;
+    transform: scaleX(var(--t-seleccion));
+    opacity: var(--t-seleccion);
+  }
+
+  .fila-alterado {
+    position: absolute;
+    left: 0;
+    top: 0;
+    line-height: 1.5;
+    color: var(--rojo);
+    font-weight: 600;
+    clip-path: inset(0 calc((1 - var(--t-cambio)) * 100%) 0 0);
+  }
+
+  /* ── Pie: borrador → huella encadenada y firma ── */
+  .nota-pie {
+    position: absolute;
+    inset: auto 0 0;
+    height: 2.9em;
+    padding: 0 1.2em;
+    border-top: 1px solid var(--papel-linea);
+    background: #f1f5f9;
+  }
+
+  .pie-borrador {
+    position: absolute;
+    inset: 0 1.2em;
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+    margin: 0;
+    color: var(--azul);
+    font-size: 0.8em;
+    font-weight: 600;
+    opacity: calc(var(--t-borrador) - var(--t-anillo) * 3);
+  }
+
+  .pie-sello {
+    position: absolute;
+    inset: 0 1.2em;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-rows: 1fr 1fr;
+    align-items: center;
+    column-gap: 0.7em;
+    padding-block: 0.3em;
+    opacity: var(--t-palomita);
+  }
+
+  .pie-etiqueta {
+    color: var(--papel-tenue);
+    font-size: 0.72em;
+    font-weight: 600;
+  }
+
+  .pie-hash {
+    font-family: var(--mono);
+    font-size: 0.76em;
+    color: #475569;
+    white-space: nowrap;
+  }
+
+  .pie-actual {
+    display: grid;
+    color: var(--verde);
+    font-weight: 700;
+  }
+
+  .pie-actual > span {
+    grid-area: 1 / 1;
+  }
+
+  .hash-bien {
+    opacity: calc(1 - var(--t-rojo));
+  }
+
+  .hash-mal {
+    color: var(--rojo);
+    opacity: var(--t-rojo);
+  }
+
+  .pie-firma {
+    grid-row: 1 / -1;
+    grid-column: 3;
     display: inline-flex;
     align-items: center;
     gap: 0.3em;
+    padding: 0.2em 0.6em;
+    border: 1px solid rgb(10 139 105 / 0.3);
+    border-radius: 999px;
+    background: rgb(10 139 105 / 0.08);
     color: var(--verde);
+    font-family: var(--mono);
+    font-size: 0.72em;
+    font-weight: 700;
+  }
+
+  .pie-firma :global(.icono),
+  .tira-huella :global(.icono),
+  .addendum-sello :global(.icono) {
+    width: 1.1em;
+    height: 1.1em;
+    stroke-width: 2.5;
+  }
+
+  /* Escáner: la huella se calcula sobre TODO lo escrito. */
+  .nota-escaner {
+    position: absolute;
+    inset: 0 0 auto;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--azul-vivo) 20%, #dff2ff 50%, var(--azul-vivo) 80%, transparent);
+    box-shadow: 0 0 1em 0.2em rgb(46 159 224 / 0.45);
+    transform: translate3d(0, calc(var(--t-escaner) * 16.6em), 0);
+    opacity: calc(min(var(--t-escaner), 1 - var(--t-escaner)) * 12);
+    pointer-events: none;
+  }
+
+  .nota-borde-rojo {
+    position: absolute;
+    inset: 0;
+    border: 2px solid var(--rojo-vivo);
+    border-radius: inherit;
+    box-shadow: inset 0 0 2.4em rgb(255 107 107 / 0.18);
+    opacity: var(--t-rojo);
+    pointer-events: none;
+  }
+
+  /* ── Semáforo ── */
+  .semaforo {
+    --t3: clamp(0, (var(--p, 1) - 0.262) / 0.008, 1);
+    --t7: clamp(0, (var(--p, 1) - 0.33) / 0.008, 1);
+    position: absolute;
+    inset: 2.9em 0 0;
+    padding: 0.6em 1.2em 0.8em;
+    border-top: 1px solid rgb(46 159 224 / 0.45);
+    border-radius: 0.9em 0.9em 0 0;
+    background:
+      linear-gradient(rgb(46 159 224 / 0.08), transparent 40%),
+      #0b1830;
+    color: var(--texto);
+    box-shadow: 0 -1.2em 2.4em -1em rgb(0 0 0 / 0.5);
+    transform: translate3d(0, calc((1 - var(--t-hoja)) * 104%), 0);
+  }
+
+  .semaforo-cabecera {
+    display: flex;
+    align-items: center;
+    gap: 0.7em;
+    padding-bottom: 0.6em;
+    margin-bottom: 0.4em;
+    border-bottom: 1px solid var(--linea-oscura);
+    font-size: 0.92em;
+  }
+
+  .luces {
+    display: inline-flex;
+    gap: 0.3em;
+    padding: 0.25em 0.4em;
+    border-radius: 999px;
+    background: rgb(0 0 0 / 0.35);
+  }
+
+  .luz {
+    position: relative;
+    width: 0.62em;
+    height: 0.62em;
+    border-radius: 50%;
+    background: rgb(255 255 255 / 0.12);
+  }
+
+  .luz::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: var(--c);
+    box-shadow: 0 0 0.6em var(--c);
+    opacity: var(--o);
+  }
+
+  .luz-roja { --c: var(--rojo-vivo); --o: calc(1 - var(--t3)); }
+  .luz-ambar { --c: #f3c969; --o: min(var(--t3), 1 - var(--t7)); }
+  .luz-verde { --c: var(--verde-vivo); --o: var(--t7); }
+
+  .semaforo-estado {
+    display: grid;
+    margin-left: auto;
+    font-size: 0.86em;
     font-weight: 600;
   }
 
-  .previa-sello :global(.icono) {
-    width: 1.1em;
-    height: 1.1em;
+  .semaforo-estado > span {
+    grid-area: 1 / 1;
+    justify-self: end;
+    white-space: nowrap;
   }
 
-  .previa-huella {
-    font-size: 0.85em;
-    opacity: 0.8;
+  .se-rojo { color: var(--rojo-vivo); opacity: calc(1 - var(--t3)); }
+  .se-ambar { color: #f3c969; opacity: min(var(--t3), 1 - var(--t7)); }
+  .se-verde { color: var(--verde-vivo); opacity: var(--t7); }
+
+  .requisitos {
+    display: grid;
+    margin: 0;
+    padding: 0;
+    list-style: none;
   }
 
-  .alcanzo-3 .previa {
-    opacity: 1;
-    transform: none;
-    border-color: rgb(47 209 154 / 0.35);
+  .req {
+    --t: clamp(0, (var(--p, 1) - var(--a, 0)) / 0.012, 1);
+    display: flex;
+    align-items: center;
+    gap: 0.6em;
+    min-height: 1.5em;
+    font-size: 0.9em;
+    color: rgb(238 243 249 / calc(0.4 + var(--t) * 0.6));
   }
 
-  .alcanzo-3 .previa-2 {
-    transition-delay: 0.15s;
+  .req:nth-child(1) { --a: 0.222; }
+  .req:nth-child(2) { --a: 0.239; }
+  .req:nth-child(3) { --a: 0.256; }
+  .req:nth-child(4) { --a: 0.273; }
+  .req:nth-child(5) { --a: 0.29; }
+  .req:nth-child(6) { --a: 0.307; }
+  .req:nth-child(7) { --a: 0.324; }
+
+  .req-marca {
+    position: relative;
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 1.15em;
+    height: 1.15em;
+    border: 1px solid var(--linea-oscura-fuerte);
+    border-radius: 50%;
   }
 
-  /* ── Eslabones ── */
-  .eslabones {
+  .req-marca::before {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    border-radius: 50%;
+    background: var(--verde-vivo);
+    transform: scale(calc(0.4 + var(--t) * 0.6));
+    opacity: var(--t);
+  }
+
+  .req-marca :global(.icono) {
+    position: relative;
+    width: 0.8em;
+    height: 0.8em;
+    color: var(--medianoche);
+    stroke-width: 3;
+    opacity: var(--t);
+  }
+
+  /* ── Sello y llave ── */
+  .mq-sello {
+    position: absolute;
+    z-index: 3;
+    right: 0.85em;
+    top: -0.3em;
+    width: 3.4em;
+    height: 3.4em;
+  }
+
+  .sello-svg {
     position: absolute;
     inset: 0;
     width: 100%;
@@ -181,353 +769,333 @@ const clases = Array.from({ length: paso }, (_, i) => `alcanzo-${i + 1}`);
     overflow: visible;
   }
 
-  .eslabon {
+  .s-base {
+    fill: var(--papel);
+    stroke: #94a3b8;
+    stroke-width: 1.2;
+    stroke-dasharray: 2.2 2.6;
+  }
+
+  .s-disco {
+    fill: rgb(10 139 105 / 0.1);
+    opacity: var(--t-anillo);
+  }
+
+  .s-cerradura {
+    fill: #94a3b8;
+    opacity: calc(1 - var(--t-palomita));
+  }
+
+  /* Trazos que se dibujan: con pathLength="1", 1px = el trazo completo (en px y no sin unidad, que no todos los
+     navegadores aceptan dentro de calc()). */
+  .s-anillo {
     fill: none;
     stroke: var(--verde);
-    stroke-width: 0.7;
+    stroke-width: 2.6;
     stroke-linecap: round;
-    stroke-dasharray: 1;
-    stroke-dashoffset: 1;
-    vector-effect: non-scaling-stroke;
-    transition: stroke-dashoffset 0.8s var(--ease);
+    stroke-dasharray: 1px;
+    stroke-dashoffset: calc((1 - var(--t-anillo)) * 1px);
   }
 
-  .eslabon {
-    stroke-width: 2.5px;
-  }
-
-  .alcanzo-3 .eslabon-1 {
-    stroke-dashoffset: 0;
-    transition-delay: 0.35s;
-  }
-
-  .alcanzo-3 .eslabon-2 {
-    stroke-dashoffset: 0;
-    transition-delay: 0.75s;
-  }
-
-  .escena[data-paso='4'] .eslabon-2 {
+  .s-anillo-rojo {
     stroke: var(--rojo);
-    stroke-dasharray: 0.08 0.06;
+    stroke-dasharray: 0.05px 0.035px;
     stroke-dashoffset: 0;
+    opacity: var(--t-rojo);
   }
 
-  /* ── La nota de hoy ── */
-  .nota {
+  .s-palomita {
+    fill: none;
+    stroke: var(--verde);
+    stroke-width: 3.2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-dasharray: 1px;
+    stroke-dashoffset: calc((1 - var(--t-palomita)) * 1px);
+    opacity: calc(1 - var(--t-rojo));
+  }
+
+  .s-cruz {
+    fill: none;
+    stroke: var(--rojo);
+    stroke-width: 3.2;
+    stroke-linecap: round;
+    opacity: var(--t-rojo);
+  }
+
+  .sello-onda {
     position: absolute;
-    top: 8%;
-    right: 5%;
-    width: 53%;
-    padding: 1em 1.1em 1.2em;
-    border: 1px solid var(--linea-oscura-fuerte);
-    border-radius: 1em;
-    background: #f8fafc;
-    color: #0f172a;
-    box-shadow: 0 2em 4em -1.5em rgb(0 0 0 / 0.7);
-    transition:
-      border-color var(--t) var(--ease),
-      box-shadow var(--t) var(--ease),
-      transform var(--t) var(--ease);
-  }
-
-  .nota-cabecera {
-    display: grid;
-    gap: 0.1em;
-    padding-bottom: 0.6em;
-    margin-bottom: 0.6em;
-    border-bottom: 1px solid #e2e8f0;
-  }
-
-  .nota-cabecera strong {
-    font-size: 1.1em;
-  }
-
-  .nota-cabecera span {
-    color: #475569;
-    font-size: 0.85em;
-  }
-
-  .nota-campos {
-    display: grid;
-    gap: 0.55em;
-    margin: 0;
-  }
-
-  .campo dt {
-    color: #64748b;
-    font-size: 0.78em;
-    font-weight: 600;
-  }
-
-  .campo dd {
-    position: relative;
-    margin: 0.1em 0 0;
-    min-height: 1.35em;
-    clip-path: inset(0 100% 0 0);
-    transition: clip-path 0.7s steps(18, end);
-  }
-
-  .alcanzo-1 .campo dd {
-    clip-path: inset(0 0 0 0);
-  }
-
-  .alcanzo-1 .campo:nth-child(2) dd {
-    transition-delay: 0.45s;
-  }
-
-  .alcanzo-1 .campo:nth-child(3) dd {
-    transition-delay: 0.9s;
-  }
-
-  .alcanzo-1 .campo:nth-child(4) dd {
-    transition-delay: 1.35s;
-  }
-
-  .dx-alterado {
-    position: absolute;
-    left: 0;
-    top: 0;
-    color: var(--error-claro);
-    font-weight: 600;
-    opacity: 0;
-    transform: translateY(-0.4em);
-    transition:
-      opacity 0.4s var(--ease),
-      transform 0.4s var(--ease);
-  }
-
-  .dx-original {
-    transition: opacity 0.3s;
-  }
-
-  .escena[data-paso='4'] .dx-original {
-    opacity: 0;
-  }
-
-  .escena[data-paso='4'] .dx-alterado {
-    opacity: 1;
-    transform: none;
-  }
-
-  .nota-borrador,
-  .nota-sello,
-  .nota-alerta {
-    position: absolute;
-    left: 1.1em;
-    right: 1.1em;
-    bottom: -1.1em;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.45em;
-    width: max-content;
-    max-width: calc(100% - 2.2em);
-    padding: 0.35em 0.75em;
-    border-radius: 999px;
-    font-size: 0.85em;
-    font-weight: 600;
-    transition:
-      opacity 0.5s var(--ease),
-      transform 0.5s var(--ease);
-  }
-
-  .nota-borrador :global(.icono),
-  .nota-alerta :global(.icono) {
-    width: 1.2em;
-    height: 1.2em;
-  }
-
-  .nota-borrador {
-    background: #eff6ff;
-    color: #1d4ed8;
-    border: 1px solid #bfdbfe;
-    opacity: 0;
-  }
-
-  .alcanzo-1 .nota-borrador {
-    opacity: 1;
-    transition-delay: 1.8s;
-  }
-
-  .alcanzo-2 .nota-borrador {
-    opacity: 0;
-    transform: translateY(0.5em);
-    transition-delay: 0s;
-  }
-
-  .nota-sello {
-    background: #ecfdf5;
-    color: #047857;
-    border: 1px solid #a7f3d0;
-    opacity: 0;
-    transform: scale(0.85);
-  }
-
-  .nota-sello-aro {
-    display: grid;
-    place-items: center;
-    width: 1.5em;
-    height: 1.5em;
+    inset: 0;
+    border: 2px solid var(--verde-vivo);
     border-radius: 50%;
-    background: #047857;
-    color: #fff;
-  }
-
-  .nota-sello-aro :global(.icono) {
-    width: 1em;
-    height: 1em;
-    stroke-width: 2.5;
-  }
-
-  .alcanzo-2 .nota-sello {
-    opacity: 1;
-    transform: none;
-    transition-delay: 0.75s;
-  }
-
-  .alcanzo-2 .nota {
-    border-color: rgb(47 209 154 / 0.65);
-    box-shadow:
-      0 0 0 4px rgb(47 209 154 / 0.14),
-      0 2em 4em -1.5em rgb(0 0 0 / 0.7);
-    transition-delay: 0.6s;
-  }
-
-  .nota-alerta {
-    background: #fef2f2;
-    color: var(--error-claro);
-    border: 1px solid #fecaca;
-    opacity: 0;
-  }
-
-  .escena[data-paso='4'] .nota-alerta {
-    opacity: 1;
-  }
-
-  .escena[data-paso='4'] .nota-sello {
-    opacity: 0;
-  }
-
-  .escena[data-paso='4'] .nota {
-    border-color: var(--rojo);
-    box-shadow:
-      0 0 0 4px rgb(255 107 107 / 0.18),
-      0 2em 4em -1.5em rgb(0 0 0 / 0.7);
-    animation: temblor 0.5s 0.2s;
-  }
-
-  @keyframes temblor {
-    20%,
-    60% {
-      transform: translateX(-0.4em);
-    }
-    40%,
-    80% {
-      transform: translateX(0.4em);
-    }
-  }
-
-  /* ── Addendum ── */
-  .addendum {
-    position: absolute;
-    right: 5%;
-    bottom: 6%;
-    width: 53%;
-    display: grid;
-    gap: 0.3em;
-    padding: 0.8em 1.1em;
-    border: 1px solid rgb(47 209 154 / 0.5);
-    border-left: 4px solid var(--verde);
-    border-radius: 0.9em;
-    background: rgb(10 139 105 / 0.12);
-    color: var(--texto);
-    opacity: 0;
-    transform: translateY(1.2em);
-    transition:
-      opacity var(--t) var(--ease),
-      transform var(--t) var(--ease);
-  }
-
-  .alcanzo-5 .addendum {
-    opacity: 1;
-    transform: none;
-  }
-
-  /* ── La llave ── */
-  /* En reposo abajo a la izquierda; viaja a la nota para sellarla y regresa. */
-  .escena-llave {
-    position: absolute;
-    z-index: 3;
-    left: 13cqi;
-    top: 52cqi;
-    height: 34cqi;
-    transform-origin: 50% 92%;
-    opacity: 0.95;
-    transform: rotate(-24deg);
-    transition:
-      transform 1.1s var(--ease),
-      opacity 0.6s var(--ease),
-      filter 0.6s var(--ease);
-    filter: drop-shadow(0 1.2em 1.6em rgb(0 0 0 / 0.6));
-  }
-
-  /* Baja sobre la nota y la sella (con un pequeño "golpe"). */
-  .alcanzo-2 .escena-llave {
-    transform: translate(27cqi, -29cqi) rotate(0deg) scale(0.78);
-    animation: sellar 0.5s 0.75s var(--ease);
-  }
-
-  @keyframes sellar {
-    40% {
-      scale: 0.9;
-    }
-    100% {
-      scale: 1;
-    }
-  }
-
-  /* Ya sellada, se retira a la esquina: queda a la vista, en reposo. */
-  .alcanzo-3 .escena-llave {
-    transform: translate(-2cqi, 3cqi) rotate(-24deg) scale(0.82);
-    opacity: 0.85;
-    animation: none;
-  }
-
-  .escena[data-paso='4'] .escena-llave {
-    filter: drop-shadow(0 0 1.4em rgb(255 107 107 / 0.55));
-  }
-
-  .onda {
-    position: absolute;
-    z-index: 2;
-    left: 40cqi;
-    top: 48cqi;
-    width: 18cqi;
-    aspect-ratio: 1;
-    border: 2px solid var(--verde);
-    border-radius: 50%;
-    opacity: 0;
+    transform: scale(calc(1 + var(--t-onda) * 1.5));
+    opacity: calc(min(var(--t-onda) * 8, 1) * (1 - var(--t-onda)));
     pointer-events: none;
   }
 
-  .alcanzo-2:not(.alcanzo-3) .onda {
-    animation: onda 1.1s 0.85s var(--ease);
+  /* La llave: la punta queda en el centro del sello. Baja desde fuera del visor como plano técnico y se vuelve
+     sólida al llegar (--materia); gira como en una cerradura (rotateY en un envoltorio propio: un transform por
+     elemento) y, ya sellada la nota, se retira hacia arriba. */
+  .mq-llave {
+    --materia: clamp(0, (var(--t-llave) - 0.1) / 0.8, 1);
+    --brillo: var(--t-giro);
+    position: absolute;
+    left: 50%;
+    bottom: 50%;
+    width: 3.95em;
+    height: 9.4em;
+    margin-left: -1.97em;
+    transform: translate3d(0, calc((1 - var(--t-llave)) * -12.5em - var(--t-retiro) * 11em), 0);
+    opacity: calc(min(var(--t-llave) * 4, 1) * (1 - var(--t-retiro) * 1.5));
+    pointer-events: none;
   }
 
-  @keyframes onda {
-    from {
-      opacity: 0.9;
-      transform: scale(0.4);
-    }
-    to {
-      opacity: 0;
-      transform: scale(2.4);
-    }
+  .mq-llave-giro {
+    height: 100%;
+    transform: perspective(22em) rotateY(calc((var(--t-giro) - var(--t-retiro)) * 48deg));
+    filter: drop-shadow(0 0.7em 0.8em rgb(0 0 0 / 0.55));
   }
 
-  @media (prefers-reduced-motion: reduce) {
-    .escena * {
-      transition: none !important;
-      animation: none !important;
-    }
+  /* ── La cadena: notas anteriores detrás de la de hoy ── */
+  .mq-mazo {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    opacity: calc(var(--t-mazo) - var(--t-sube));
+    transform: translate3d(0, calc((1 - var(--t-mazo)) * 1.8em), 0);
+  }
+
+  .tira {
+    position: absolute;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.6em;
+    height: 4.2em;
+    padding: 0.6em 1em 0;
+    border: 1px solid rgb(47 209 154 / 0.3);
+    border-radius: 0.9em;
+    background: #e9eef5;
+    color: #334155;
+  }
+
+  .tira-a {
+    left: 0.9em;
+    right: 0.9em;
+    top: -4.2em;
+    background: #dde5ef;
+  }
+
+  .tira-b {
+    left: 0.45em;
+    right: 0.45em;
+    top: -2.2em;
+  }
+
+  /* Los nodos de las tres notas quedan alineados en x = 1.5em para que los eslabones sean rectos. */
+  .tira-nodo {
+    position: relative;
+    flex: none;
+    margin-top: 0.22em;
+  }
+
+  .tira-a .tira-nodo {
+    margin-left: -0.68em;
+  }
+
+  .tira-b .tira-nodo {
+    margin-left: -0.23em;
+  }
+
+  .tira-titulo {
+    font-size: 0.8em;
+    font-weight: 600;
+  }
+
+  .tira-huella {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3em;
+    margin-left: auto;
+    color: var(--verde);
+    font-family: var(--mono);
+    font-size: 0.72em;
+    font-weight: 700;
+  }
+
+  /* Eslabones: de la nota 10 a la 11 y de la 11 a la de hoy (hash previo → hash actual). Se dibujan de arriba hacia
+     abajo; en el paso 5 se desvanecen con el mazo compactado. */
+  .eslabon {
+    position: absolute;
+    z-index: 4;
+    left: calc(1.5em - 0.75px);
+    width: 1.5px;
+    background: var(--verde);
+    transform-origin: 50% 0;
+    transform: scaleY(var(--t-eslabon));
+    opacity: calc(var(--t-mazo) - var(--t-sube));
+  }
+
+  .eslabon-1 {
+    top: -2.82em;
+    height: 1.44em;
+  }
+
+  .eslabon-2 {
+    top: -0.82em;
+    height: 1.45em;
+  }
+
+  /* El eslabón con la nota de hoy se rompe en rojo cuando la huella deja de coincidir. */
+  .eslabon-roto {
+    top: -0.82em;
+    height: 1.45em;
+    left: calc(1.5em - 1px);
+    width: 2px;
+    background: repeating-linear-gradient(var(--rojo-vivo) 0 0.28em, transparent 0.28em 0.5em);
+    transform: none;
+    opacity: var(--t-rojo);
+  }
+
+  /* El nodo de la nota de hoy se vuelve esmeralda cuando el eslabón llega a ella. */
+  .nota-nodo::after {
+    content: '';
+    position: absolute;
+    inset: -1.5px;
+    border: 1.5px solid var(--verde);
+    border-radius: 50%;
+    background: var(--verde);
+    opacity: var(--t-eslabon);
+  }
+
+  /* ── Paso 4: cursor y alerta ── */
+  .mq-cursor {
+    position: absolute;
+    z-index: 5;
+    left: 17.3em;
+    top: 12.85em;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.2em;
+    transform: translate3d(calc((1 - var(--t-cursor)) * 5em), calc((1 - var(--t-cursor)) * 4em), 0);
+    opacity: min(var(--t-cursor) * 3, 1);
+    pointer-events: none;
+  }
+
+  .mq-cursor svg {
+    width: 1.5em;
+    height: 1.5em;
+    fill: #fff;
+    stroke: var(--papel-tinta);
+    stroke-width: 1.4;
+    stroke-linejoin: round;
+    filter: drop-shadow(0 0.2em 0.3em rgb(0 0 0 / 0.4));
+  }
+
+  /* La etiqueta va arriba a la derecha del puntero, sobre el hueco de la fila de pronóstico. */
+  .mq-cursor span {
+    position: absolute;
+    left: 1.1em;
+    bottom: 1.95em;
+    padding: 0.2em 0.55em;
+    border-radius: 0.4em;
+    background: var(--papel-tinta);
+    color: #fff;
+    font-family: var(--mono);
+    font-size: 0.68em;
+    white-space: nowrap;
+  }
+
+  .mq-alerta {
+    position: absolute;
+    z-index: 5;
+    left: 50%;
+    top: calc(100% + 0.45em);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45em;
+    margin: 0;
+    padding: 0.4em 0.9em;
+    border: 1px solid #fecaca;
+    border-radius: 999px;
+    background: #fef2f2;
+    color: var(--rojo);
+    font-size: 0.8em;
+    font-weight: 700;
+    white-space: nowrap;
+    box-shadow: 0 0.8em 1.6em -0.6em rgb(198 40 40 / 0.5);
+    transform: translate3d(-50%, calc((1 - var(--t-rojo)) * 0.6em), 0) scale(calc(0.92 + var(--t-rojo) * 0.08));
+    opacity: var(--t-rojo);
+  }
+
+  .mq-alerta :global(.icono) {
+    width: 1.25em;
+    height: 1.25em;
+  }
+
+  /* ── Paso 5: addendum enlazado a la huella de la nota ── */
+  .mq-enlace {
+    position: absolute;
+    left: 3.5em;
+    top: 17.8em;
+    width: 1.5px;
+    height: 0.8em;
+    background: var(--verde-vivo);
+    transform-origin: 50% 0;
+    transform: scaleY(var(--t-enlace));
+  }
+
+  .mq-addendum {
+    position: absolute;
+    left: 2em;
+    right: 2em;
+    top: 18.6em;
+    display: grid;
+    gap: 0.25em;
+    padding: 0.6em 1em 0.65em;
+    border: 1px solid rgb(47 209 154 / 0.45);
+    border-left: 0.25em solid var(--verde-vivo);
+    border-radius: 0.8em;
+    background: #0d2a2a;
+    background: linear-gradient(100deg, rgb(10 139 105 / 0.28), rgb(10 139 105 / 0.12));
+    color: var(--texto);
+    transform: translate3d(0, calc((1 - var(--t-addendum)) * 1.8em), 0);
+    opacity: var(--t-addendum);
+  }
+
+  .mq-addendum header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.6em;
+  }
+
+  .mq-addendum strong {
+    font-size: 0.9em;
+  }
+
+  .mq-addendum p {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.6em;
+    margin: 0;
+  }
+
+  .addendum-sello {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3em;
+    color: var(--verde-vivo);
+    font-size: 0.78em;
+    font-weight: 700;
+    white-space: nowrap;
+    opacity: var(--t-sello-add);
+  }
+
+  .addendum-enlace {
+    color: var(--texto-tenue);
+    font-family: var(--mono);
+    font-size: 0.7em;
+    white-space: nowrap;
   }
 </style>

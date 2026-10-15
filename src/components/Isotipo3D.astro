@@ -6,6 +6,7 @@
 //   --materia   0 → 1  cuánto de la llave es sólido, de arriba hacia abajo. Debajo del escáner se ve el plano técnico.
 //                      Registrada con @property en global.css: se puede animar con @keyframes.
 //   --brillo    0 → 1  posición de la luz que recorre la llave (con `brillo`). Sin ella, la luz cruza una vez al cargar.
+//   --reflejo   0 → 1  intensidad del reflejo en el "piso" (con `reflejo`; por omisión 0.3).
 // La llave toma el ALTO de su contenedor (height) y calcula su ancho con la proporción del render.
 import contorno from '../data/llave-contorno.json';
 import marca from '../data/marca.json';
@@ -22,10 +23,20 @@ interface Props {
   brillo?: boolean;
   /** Plano técnico debajo del render + línea de escáner en el borde de `--materia`. */
   plano?: boolean;
+  /** Reflejo tenue debajo, como sobre un piso pulido (misma imagen: no hay segunda descarga). */
+  reflejo?: boolean;
   class?: string;
 }
 
-const { sizes = '200px', prioridad = false, alt = null, brillo = false, plano = false, class: clase } = Astro.props;
+const {
+  sizes = '200px',
+  prioridad = false,
+  alt = null,
+  brillo = false,
+  plano = false,
+  reflejo = false,
+  class: clase,
+} = Astro.props;
 const llave = marca.llave;
 const anchos = llave.disponible && 'anchos' in llave ? llave.anchos : [];
 const mayor = anchos.at(-1);
@@ -59,6 +70,25 @@ const alto = llave.disponible && 'alto' in llave ? llave.alto : 724;
         />
       </picture>
       {brillo && <span class="isotipo-brillo" aria-hidden="true" />}
+      {
+        reflejo && (
+          <span class="llave-reflejo" aria-hidden="true">
+            <picture>
+              <source type="image/avif" srcset={srcset('avif')} sizes={sizes} />
+              <source type="image/webp" srcset={srcset('webp')} sizes={sizes} />
+              <img
+                src={`/brand/llave-3d-${mayor}.webp`}
+                width={ancho}
+                height={alto}
+                alt=""
+                decoding="async"
+                loading={prioridad ? 'eager' : 'lazy'}
+                draggable="false"
+              />
+            </picture>
+          </span>
+        )
+      }
       {
         plano && (
           <span class="llave-escaner" aria-hidden="true">
@@ -144,6 +174,34 @@ const alto = llave.disponible && 'alto' in llave ? llave.alto : 724;
       0 0 14px 2px rgb(46 159 224 / 0.75),
       0 0 42px 8px rgb(46 159 224 / 0.28);
     border-radius: 2px;
+  }
+
+  /* ── Reflejo ──
+     Copia volteada bajo la llave. La máscara (en coordenadas sin voltear) deja ver solo el tercio cercano al "piso";
+     con `plano`, el reflejo se materializa igual que la llave (el recorte también se voltea: físicamente correcto). */
+  .llave-reflejo {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    margin-top: 1.5%;
+    transform: scaleY(-1);
+    -webkit-mask-image: linear-gradient(to top, rgb(0 0 0 / 0.55), rgb(0 0 0 / 0.12) 18%, transparent 34%);
+    mask-image: linear-gradient(to top, rgb(0 0 0 / 0.55), rgb(0 0 0 / 0.12) 18%, transparent 34%);
+    opacity: var(--reflejo, 0.3);
+    pointer-events: none;
+  }
+
+  .llave-reflejo picture,
+  .llave-reflejo img {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  .con-plano .llave-reflejo picture {
+    clip-path: inset(0 0 calc((1 - var(--materia, 1)) * 100%) 0);
   }
 
   /* ── Brillo ── */

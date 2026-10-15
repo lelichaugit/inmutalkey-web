@@ -1,87 +1,127 @@
 ---
 // Monitor de signos: peso, talla y SpO₂ editables; IMC en vivo con la clasificación OMS; SpO₂ fuera de rango en rojo.
 // Mismas reglas que la app (src/lib/imc.ts). Lógica en src/scripts/signos.ts.
+//
+// Movimiento (solo con .movimiento): los trazos de ECG y pletismografía se dibujan ligados al scroll (--p del
+// monitor, data-progreso-scroll) y después un hueco de barrido los recorre a 72 lpm; las cifras cuentan al verse
+// (data-contar) y el IMC se calcula a la vista (signos.ts). Sin JS o con movimiento reducido: monitor completo y quieto.
 import { calcularImc, clasificarImc, ETIQUETA_IMC } from '../../lib/imc';
+import { trazoEcg, trazoPleth } from '../../scripts/signos';
 import Icono from '../Icono.astro';
 
 const PESO = 70;
 const TALLA = 170;
 const imc = calcularImc(PESO, TALLA) ?? 0;
+
+// Trazos de referencia (franja de escritorio); signos.ts los rehace al tamaño real de cada pantalla.
+const ANCHO = 520;
+const ALTO = 76;
+const ecg = trazoEcg(ANCHO, ALTO);
+const pleth = trazoPleth(ANCHO, ALTO);
 ---
 
-<section class="seccion fondo-oscuro fondo-cuadricula signos-seccion" id="signos" data-signos aria-labelledby="signos-titulo">
+<section class="seccion fondo-oscuro fondo-cuadricula signos-seccion" id="signos" data-signos data-sin-flotante aria-labelledby="signos-titulo">
   <div class="contenedor signos-rejilla">
-    <div class="entrada revelar">
-      <h2 id="signos-titulo">Signos vitales sin calculadora</h2>
-      <p class="texto-grande tenue">
+    <div class="signos-texto">
+      <p class="signos-etiqueta" data-animar="aparecer">TA · FC · FR · Temp · SpO₂ · Glucemia · Peso · Talla</p>
+      <h2 id="signos-titulo" data-animar="titulo">Signos vitales sin calculadora</h2>
+      <p class="texto-grande tenue" data-animar="subir" data-retraso="2">
         Escribe el peso y la talla y el IMC aparece al instante con su clasificación. Si un valor es imposible, el
         programa te avisa antes de firmar.
       </p>
-      <p class="tenue">Pruébalo: cambia los números del monitor.</p>
+      <p class="signos-pista" data-animar="subir" data-retraso="3">
+        <Icono nombre="editar" /> Pruébalo: cambia los números del monitor.
+      </p>
     </div>
 
-    <div class="monitor revelar" role="group" aria-label="Monitor de signos de un paciente de ejemplo">
-      <header class="monitor-cabecera">
-        <span><Icono nombre="usuario" /> Paciente de ejemplo · 34 años</span>
-        <span class="monitor-vivo"><i></i> En consulta</span>
-      </header>
+    <div class="monitor-entrada" data-animar="subir">
+      <div class="monitor" role="group" aria-label="Monitor de signos de un paciente de ejemplo" data-monitor data-progreso-scroll>
+        <header class="monitor-cabecera">
+          <span class="monitor-paciente">
+            <Icono nombre="usuario" />
+            <span><strong>Paciente de ejemplo</strong><small>34 años</small></span>
+          </span>
+          <span class="monitor-vivo"><i></i> En consulta</span>
+        </header>
 
-      <div class="monitor-ecg" aria-hidden="true">
-        <svg viewBox="0 0 600 90" preserveAspectRatio="none">
-          <path
-            class="ecg-trazo"
-            pathLength="1"
-            d="M0 50 H70 l8 -6 l8 6 H120 l6 4 l6 -38 l7 52 l6 -18 H180 l10 -9 l12 9 H260 l8 -6 l8 6 H310 l6 4 l6 -38 l7 52 l6 -18 H370 l10 -9 l12 9 H450 l8 -6 l8 6 H500 l6 4 l6 -38 l7 52 l6 -18 H560 l10 -9 l12 9 H600"
-          ></path>
-        </svg>
-        <span class="ecg-lectura"><small>FC</small><strong>72</strong><small>lpm</small></span>
-      </div>
+        <div class="ondas">
+          <div class="onda onda-ecg">
+            <span class="onda-etiqueta" aria-hidden="true">II</span>
+            <svg viewBox={`0 0 ${ANCHO} ${ALTO}`} preserveAspectRatio="xMinYMid slice" aria-hidden="true" focusable="false" data-onda="ecg">
+              <path pathLength="1" d={ecg}></path>
+            </svg>
+          </div>
+          <div class="numerico numerico-fc">
+            <small>
+              FC
+              <svg class="latido" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="M12 20.5s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7.6a4.3 4.3 0 0 1 7.5 2.7c0 5.6-7.5 10.2-7.5 10.2z"></path>
+              </svg>
+            </small>
+            <strong data-contar="72">72</strong>
+            <small>lpm</small>
+          </div>
 
-      <div class="monitor-lecturas">
-        <div class="lectura">
-          <small>TA</small>
-          <strong>120/80</strong>
-          <small>mmHg</small>
+          <div class="onda onda-pleth">
+            <span class="onda-etiqueta" aria-hidden="true">Pleth</span>
+            <svg viewBox={`0 0 ${ANCHO} ${ALTO}`} preserveAspectRatio="xMinYMid slice" aria-hidden="true" focusable="false" data-onda="pleth">
+              <path pathLength="1" d={pleth}></path>
+            </svg>
+          </div>
+          <label class="numerico numerico-spo2" data-lectura-spo2>
+            <small>SpO₂</small>
+            <input name="spo2" value="97" inputmode="numeric" autocomplete="off" aria-describedby="signos-spo2-error" />
+            <small>%</small>
+          </label>
         </div>
-        <div class="lectura">
-          <small>Temp</small>
-          <strong>36.6</strong>
-          <small>°C</small>
-        </div>
-        <label class="lectura lectura-editable" data-lectura-spo2>
-          <small>SpO₂</small>
-          <input name="spo2" value="97" inputmode="numeric" aria-describedby="signos-spo2-error" />
-          <small>%</small>
-        </label>
         <p class="lectura-error" id="signos-spo2-error" data-error-spo2 hidden></p>
-      </div>
 
-      <div class="monitor-imc">
-        <label class="campo-monitor">
-          <small>Peso (kg)</small>
-          <input name="peso" value={PESO} inputmode="decimal" />
-        </label>
-        <label class="campo-monitor">
-          <small>Talla (cm)</small>
-          <input name="talla" value={TALLA} inputmode="decimal" />
-        </label>
-        <div class="imc-resultado" aria-live="polite">
-          <small>IMC</small>
-          <strong data-imc-valor>{imc.toFixed(1)}</strong>
-          <span data-imc-texto>{ETIQUETA_IMC[clasificarImc(imc)]}</span>
+        <div class="monitor-lecturas">
+          <div class="lectura">
+            <small>TA</small>
+            <strong><span data-contar="120">120</span>/<span data-contar="80">80</span></strong>
+            <small>mmHg</small>
+          </div>
+          <div class="lectura">
+            <small>FR</small>
+            <strong data-contar="16">16</strong>
+            <small>rpm</small>
+          </div>
+          <div class="lectura">
+            <small>Temp</small>
+            <strong data-contar="36.6">36.6</strong>
+            <small>°C</small>
+          </div>
         </div>
-      </div>
 
-      <div class="gauge" aria-hidden="true">
-        <div class="gauge-barra">
-          <span class="zona zona-bajo"></span>
-          <span class="zona zona-normal"></span>
-          <span class="zona zona-sobre"></span>
-          <span class="zona zona-obesidad"></span>
+        <div class="monitor-imc" data-imc-zona>
+          <label class="campo-monitor">
+            <small>Peso (kg)</small>
+            <input name="peso" value={PESO} inputmode="decimal" autocomplete="off" />
+          </label>
+          <label class="campo-monitor">
+            <small>Talla (cm)</small>
+            <input name="talla" value={TALLA} inputmode="decimal" autocomplete="off" />
+          </label>
+          <div class="imc-resultado" aria-live="polite" data-imc-resultado>
+            <small>IMC</small>
+            <strong data-imc-valor>{imc.toFixed(1)}</strong>
+            <span data-imc-texto>{ETIQUETA_IMC[clasificarImc(imc)]}</span>
+            <span class="imc-formula" data-imc-formula>{PESO} kg ÷ ({(TALLA / 100).toFixed(2)} m)²</span>
+          </div>
         </div>
-        <span class="gauge-marca" data-gauge-marca></span>
-        <div class="gauge-etiquetas">
-          <span>18.5</span><span>25</span><span>30</span>
+
+        <div class="gauge" aria-hidden="true">
+          <div class="gauge-barra">
+            <span class="zona zona-bajo"></span>
+            <span class="zona zona-normal"></span>
+            <span class="zona zona-sobre"></span>
+            <span class="zona zona-obesidad"></span>
+          </div>
+          <span class="gauge-pista" data-gauge-marca></span>
+          <div class="gauge-etiquetas">
+            <span>18.5</span><span>25</span><span>30</span>
+          </div>
         </div>
       </div>
     </div>
@@ -89,58 +129,159 @@ const imc = calcularImc(PESO, TALLA) ?? 0;
 </section>
 
 <style>
+  .signos-seccion {
+    overflow-x: clip;
+  }
+
   .signos-rejilla {
     display: grid;
-    gap: clamp(32px, 5vw, 64px);
+    gap: clamp(36px, 5vw, 72px);
     align-items: center;
   }
 
   @media (min-width: 960px) {
     .signos-rejilla {
-      grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+      grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
     }
   }
+
+  .signos-texto {
+    display: grid;
+    gap: 1.1rem;
+    max-width: 34rem;
+  }
+
+  .signos-texto > * {
+    margin: 0;
+  }
+
+  .signos-etiqueta {
+    color: var(--azul-vivo);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.8125rem;
+    letter-spacing: 0.04em;
+  }
+
+  .signos-pista {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6em;
+    color: var(--texto-tenue);
+  }
+
+  .signos-pista :global(.icono) {
+    width: 1.15em;
+    height: 1.15em;
+    color: var(--azul-vivo);
+  }
+
+  /* ═════════════ El monitor ═════════════ */
 
   .monitor {
     --verde-monitor: #34d399;
     --cian: #67e8f9;
-    padding: clamp(16px, 3vw, 24px);
+    --fondo-monitor: #030811;
+    /* Tramos del --p que pone scroll.ts (0 al asomar por abajo, 1 al salir por arriba): ECG y luego pletismografía. */
+    --d1: clamp(0, (var(--p, 1) - 0.06) / 0.34, 1);
+    --d2: clamp(0, (var(--p, 1) - 0.12) / 0.34, 1);
+    position: relative;
+    padding: clamp(14px, 2.6vw, 22px);
     border: 1px solid var(--linea-oscura-fuerte);
     border-radius: 22px;
     background:
-      radial-gradient(90% 70% at 20% 0%, rgb(46 159 224 / 0.12), transparent 70%),
-      #050a14;
+      radial-gradient(90% 60% at 15% 0%, rgb(46 159 224 / 0.1), transparent 70%),
+      var(--fondo-monitor);
     box-shadow:
       inset 0 1px 0 rgb(255 255 255 / 0.06),
-      0 40px 80px -30px rgb(0 0 0 / 0.8);
+      0 40px 80px -30px rgb(0 0 0 / 0.85),
+      0 0 0 6px rgb(255 255 255 / 0.015);
+  }
+
+  /* Esquinas de visor, como el resto de las piezas técnicas del sitio. */
+  .monitor::before,
+  .monitor::after {
+    content: '';
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    border: 0 solid rgb(46 159 224 / 0.6);
+    pointer-events: none;
+  }
+
+  .monitor::before {
+    top: -9px;
+    left: -9px;
+    border-width: 1px 0 0 1px;
+  }
+
+  .monitor::after {
+    right: -9px;
+    bottom: -9px;
+    border-width: 0 1px 1px 0;
   }
 
   .monitor-cabecera {
     display: flex;
+    align-items: center;
     justify-content: space-between;
     gap: 12px;
     margin-bottom: 14px;
-    color: var(--texto-tenue);
-    font-size: 0.95rem;
   }
 
-  .monitor-cabecera span {
+  .monitor-paciente {
     display: inline-flex;
     align-items: center;
-    gap: 0.45em;
+    gap: 10px;
+    min-width: 0;
   }
 
-  .monitor-cabecera :global(.icono) {
-    width: 1.1em;
-    height: 1.1em;
+  .monitor-paciente > span {
+    display: grid;
+    line-height: 1.25;
+  }
+
+  .monitor-paciente strong {
+    font-size: 1rem;
+    font-weight: 600;
+  }
+
+  .monitor-paciente small {
+    color: var(--texto-tenue);
+    font-size: 0.875rem;
+  }
+
+  .monitor-paciente :global(.icono) {
+    flex: none;
+    width: 34px;
+    height: 34px;
+    padding: 7px;
+    border: 1px solid var(--linea-oscura-fuerte);
+    border-radius: 50%;
+    color: var(--texto-tenue);
+  }
+
+  .monitor-vivo {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    flex: none;
+    padding: 4px 12px;
+    border: 1px solid rgb(52 211 153 / 0.3);
+    border-radius: 999px;
+    color: var(--verde-monitor);
+    font-size: 0.875rem;
+    font-weight: 500;
   }
 
   .monitor-vivo i {
-    width: 8px;
-    height: 8px;
+    width: 7px;
+    height: 7px;
     border-radius: 50%;
     background: var(--verde-monitor);
     box-shadow: 0 0 10px var(--verde-monitor);
+  }
+
+  :global(.movimiento) .monitor-vivo i {
     animation: vivo 1.2s ease-in-out infinite;
   }
 
@@ -150,130 +291,187 @@ const imc = calcularImc(PESO, TALLA) ?? 0;
     }
   }
 
-  .monitor-ecg {
-    position: relative;
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    padding: 10px 14px;
-    border: 1px solid rgb(52 211 153 / 0.18);
+  /* ── Ondas: franjas con cuadrícula fina y su cifra a la derecha, como un monitor de cabecera ── */
+  .ondas {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) clamp(84px, 18%, 128px);
+    border: 1px solid rgb(255 255 255 / 0.08);
     border-radius: 14px;
-    background: rgb(52 211 153 / 0.04);
+    overflow: hidden;
+    background:
+      linear-gradient(rgb(255 255 255 / 0.05) 1px, transparent 1px) 0 0 / 40px 40px,
+      linear-gradient(90deg, rgb(255 255 255 / 0.05) 1px, transparent 1px) 0 0 / 40px 40px,
+      linear-gradient(rgb(255 255 255 / 0.022) 1px, transparent 1px) 0 0 / 8px 8px,
+      linear-gradient(90deg, rgb(255 255 255 / 0.022) 1px, transparent 1px) 0 0 / 8px 8px,
+      #02060d;
   }
 
-  /* Se estira al ancho disponible (sin non-scaling-stroke: con él, pathLength se ignora y el trazo desaparece). */
-  .monitor-ecg svg {
-    flex: 1;
-    min-width: 0;
+  .onda {
+    position: relative;
+    overflow: hidden;
+    padding: 10px 0 6px;
+  }
+
+  .onda-ecg {
+    --color: var(--verde-monitor);
+    border-bottom: 1px solid rgb(255 255 255 / 0.06);
+  }
+
+  .onda-pleth {
+    --color: var(--cian);
+  }
+
+  .onda svg {
+    display: block;
     width: 100%;
-    height: 80px;
+    height: 76px;
     overflow: hidden;
   }
 
-  .ecg-lectura {
-    flex: none;
-  }
-
-  .ecg-trazo {
+  .onda path {
     fill: none;
-    stroke: var(--verde-monitor);
-    stroke-width: 2.4;
+    stroke: var(--color);
+    stroke-width: 2;
+    stroke-linecap: round;
     stroke-linejoin: round;
-    filter: drop-shadow(0 0 4px rgb(52 211 153 / 0.7));
-    stroke-dasharray: 0.32 0.68;
-    animation: ecg 2.6s linear infinite;
+    filter: drop-shadow(0 0 3px var(--color));
   }
 
-  @keyframes ecg {
+  .onda-etiqueta {
+    position: absolute;
+    top: 6px;
+    left: 10px;
+    color: var(--color);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.6875rem;
+    letter-spacing: 0.06em;
+    opacity: 0.85;
+  }
+
+  /* Se dibujan con el scroll (pathLength = 1: el guion mide toda la onda y el desfase lo descubre de izquierda a
+     derecha). Sin .movimiento, la onda está completa. */
+  :global(.movimiento) .onda-ecg path {
+    stroke-dasharray: 1 1;
+    stroke-dashoffset: calc(1 - var(--d1));
+  }
+
+  :global(.movimiento) .onda-pleth path {
+    stroke-dasharray: 1 1;
+    stroke-dashoffset: calc(1 - var(--d2));
+  }
+
+  /* Barrido: el hueco que avanza delante del trazo, como en un monitor de cabecera, a la velocidad de los latidos
+     (signos.ts pone --barrido). Es una máscara del trazo del doble de ancho (la cuadrícula sigue a la vista): el hueco
+     de 20 px termina a la mitad y recorre la franja de izquierda a derecha. Solo se abre cuando las dos ondas ya están
+     dibujadas (--hueco). */
+  :global(.movimiento) .onda svg {
+    --hueco: clamp(0, (var(--d2) - 0.96) * 30, 1);
+    --mascara: linear-gradient(
+      90deg,
+      #000 calc(50% - 26px),
+      rgb(0 0 0 / calc(1 - var(--hueco))) calc(50% - 20px) 50%,
+      #000 calc(50% + 2px)
+    );
+    -webkit-mask-image: var(--mascara);
+    mask-image: var(--mascara);
+    -webkit-mask-size: 200% 100%;
+    mask-size: 200% 100%;
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    animation: barrido var(--barrido, 3.3s) linear infinite;
+  }
+
+  @keyframes barrido {
     from {
-      stroke-dashoffset: 1;
+      -webkit-mask-position: 100% 0;
+      mask-position: 100% 0;
     }
     to {
-      stroke-dashoffset: 0;
+      -webkit-mask-position: 0 0;
+      mask-position: 0 0;
     }
   }
 
-  .ecg-lectura {
+  .numerico {
     display: grid;
+    align-content: center;
     justify-items: end;
-    color: var(--verde-monitor);
+    gap: 0;
+    padding: 8px 14px;
+    border-left: 1px solid rgb(255 255 255 / 0.06);
     line-height: 1;
   }
 
-  .ecg-lectura strong {
-    font-family: var(--fuente-titulo);
-    font-size: 2.6rem;
-    font-weight: 600;
-    font-variant-numeric: tabular-nums;
+  .numerico-fc {
+    color: var(--verde-monitor);
+    border-bottom: 1px solid rgb(255 255 255 / 0.06);
   }
 
-  .ecg-lectura small,
-  .lectura small,
-  .campo-monitor small,
-  .imc-resultado small {
-    color: var(--texto-tenue);
-    font-size: 0.8rem;
-    font-weight: 500;
-  }
-
-  .monitor-lecturas {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 10px;
-    margin-top: 10px;
-  }
-
-  .lectura {
-    display: grid;
-    gap: 2px;
-    padding: 12px 14px;
-    border: 1px solid var(--linea-oscura);
-    border-radius: 14px;
-    background: rgb(255 255 255 / 0.02);
-  }
-
-  .lectura strong,
-  .lectura input {
-    font-family: var(--fuente-titulo);
-    font-size: clamp(1.5rem, 1.2rem + 1vw, 2rem);
-    font-weight: 600;
-    line-height: 1.1;
+  .numerico-spo2 {
     color: var(--cian);
-    font-variant-numeric: tabular-nums;
+    cursor: text;
   }
 
-  .lectura input,
-  .campo-monitor input {
+  .numerico small {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    color: inherit;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    opacity: 0.85;
+  }
+
+  .numerico strong,
+  .numerico input {
+    font-family: var(--fuente-titulo);
+    font-size: clamp(2.1rem, 1.6rem + 1.6vw, 2.9rem);
+    font-weight: 600;
+    line-height: 1.05;
+    font-variant-numeric: tabular-nums;
+    color: inherit;
+  }
+
+  .numerico input {
     width: 100%;
     min-width: 0;
     padding: 0;
     border: 0;
-    border-bottom: 1px dashed rgb(255 255 255 / 0.25);
+    border-bottom: 1px dashed color-mix(in srgb, currentColor 45%, transparent);
     background: transparent;
+    text-align: right;
   }
 
-  .lectura input:focus,
-  .campo-monitor input:focus {
-    outline: none;
-    border-bottom-color: var(--azul-vivo);
+  .latido {
+    width: 13px;
+    height: 13px;
+    fill: currentColor;
   }
 
-  .lectura-editable {
-    cursor: text;
+  :global(.movimiento) .latido {
+    animation: latido 0.833s var(--ease) infinite;
   }
 
-  .lectura-editable.es-invalido {
-    border-color: rgb(255 107 107 / 0.6);
-    background: rgb(255 107 107 / 0.08);
+  @keyframes latido {
+    0%,
+    100% {
+      transform: scale(1);
+    }
+    14% {
+      transform: scale(1.32);
+    }
+    32% {
+      transform: scale(0.96);
+    }
   }
 
-  .lectura-editable.es-invalido input {
+  .numerico-spo2.es-invalido {
+    background: rgb(255 107 107 / 0.1);
     color: var(--error);
   }
 
   .lectura-error {
-    grid-column: 1 / -1;
-    margin: 0;
+    margin: 10px 0 0;
     padding: 8px 12px;
     border-radius: 10px;
     background: rgb(255 107 107 / 0.1);
@@ -282,48 +480,120 @@ const imc = calcularImc(PESO, TALLA) ?? 0;
     font-weight: 600;
   }
 
-  .monitor-imc {
+  .lectura-error[hidden] {
+    display: none;
+  }
+
+  /* ── Lecturas y campos ── */
+  .monitor-lecturas {
     display: grid;
-    grid-template-columns: 1fr 1fr 1.3fr;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 10px;
     margin-top: 10px;
   }
 
+  .lectura,
   .campo-monitor,
   .imc-resultado {
     display: grid;
+    align-content: start;
     gap: 2px;
+    min-width: 0;
     padding: 12px 14px;
     border: 1px solid var(--linea-oscura);
     border-radius: 14px;
+    background: rgb(255 255 255 / 0.02);
+  }
+
+  .lectura small,
+  .campo-monitor small,
+  .imc-resultado small {
+    color: var(--texto-tenue);
+    font-size: 0.8125rem;
+    font-weight: 500;
+  }
+
+  .lectura strong {
+    font-family: var(--fuente-titulo);
+    font-size: clamp(1.35rem, 1.1rem + 0.9vw, 1.9rem);
+    font-weight: 600;
+    line-height: 1.1;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  .monitor-imc {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1.35fr;
+    gap: 10px;
+    margin-top: 10px;
+  }
+
+  .campo-monitor {
+    cursor: text;
   }
 
   .campo-monitor input {
-    font-family: var(--fuente-titulo);
-    font-size: 1.5rem;
-    font-weight: 600;
+    width: 100%;
+    min-width: 0;
+    min-height: 44px;
+    padding: 0;
+    border: 0;
+    border-bottom: 1px dashed rgb(255 255 255 / 0.25);
+    background: transparent;
     color: var(--texto);
+    font-family: var(--fuente-titulo);
+    font-size: 1.6rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .numerico input:focus,
+  .campo-monitor input:focus {
+    outline: none;
+    border-bottom-color: var(--azul-vivo);
+    border-bottom-style: solid;
   }
 
   .imc-resultado {
     border-color: rgb(46 159 224 / 0.4);
     background: rgb(46 159 224 / 0.08);
+    transition:
+      box-shadow 0.8s var(--ease),
+      border-color 0.8s var(--ease);
+  }
+
+  .imc-resultado.es-calculado {
+    border-color: var(--azul-vivo);
+    box-shadow:
+      0 0 0 4px rgb(46 159 224 / 0.16),
+      0 0 40px -6px rgb(46 159 224 / 0.6);
   }
 
   .imc-resultado strong {
     font-family: var(--fuente-titulo);
-    font-size: 2rem;
+    font-size: 2.1rem;
     font-weight: 600;
     line-height: 1.05;
     font-variant-numeric: tabular-nums;
   }
 
-  .imc-resultado span {
+  .imc-resultado > span {
     color: var(--azul-vivo);
     font-weight: 600;
     font-size: 0.95rem;
   }
 
+  .imc-resultado .imc-formula {
+    margin-top: 4px;
+    color: var(--texto-tenue);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.75rem;
+    font-weight: 400;
+    white-space: nowrap;
+  }
+
+  /* ── Escala del IMC (OMS): la marca se mueve con transform, no con left ── */
   .gauge {
     position: relative;
     margin-top: 18px;
@@ -354,18 +624,34 @@ const imc = calcularImc(PESO, TALLA) ?? 0;
     background: linear-gradient(90deg, #fb923c, #ef4444);
   }
 
-  .gauge-marca {
+  /* Pista del ancho de la escala: translateX(--pos × 100 %) lleva su borde izquierdo (la marca) al IMC. Sin JS:
+     posición del IMC de ejemplo (24.2 → (24.2 − 15) / 30). */
+  .gauge-pista {
     position: absolute;
     top: 0;
-    /* Sin JS: posición del IMC de ejemplo (24.2 → (24.2 − 15) / 30). */
-    left: calc(var(--pos, 0.307) * 100%);
+    left: 0;
+    right: 0;
+    height: 20px;
+    transform: translate3d(calc(var(--pos, 0.307) * 100%), 0, 0);
+    transition: transform 0.6s var(--ease);
+    pointer-events: none;
+  }
+
+  .gauge-pista::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -2px;
     width: 4px;
     height: 20px;
-    margin-left: -2px;
     border-radius: 2px;
     background: #fff;
-    box-shadow: 0 0 0 3px rgb(6 11 22 / 0.8);
-    transition: left 0.6s var(--ease);
+    box-shadow: 0 0 0 3px rgb(3 8 17 / 0.85);
+  }
+
+  /* Mientras el peso "se captura", la marca sigue al IMC cuadro a cuadro. */
+  :global(.es-capturando) .gauge-pista {
+    transition: none;
   }
 
   .gauge-etiquetas {
@@ -373,7 +659,7 @@ const imc = calcularImc(PESO, TALLA) ?? 0;
     height: 1.4em;
     margin-top: 8px;
     color: var(--texto-tenue);
-    font-size: 0.8rem;
+    font-size: 0.8125rem;
   }
 
   .gauge-etiquetas span {
@@ -391,24 +677,58 @@ const imc = calcularImc(PESO, TALLA) ?? 0;
     left: 50%;
   }
 
+  /* ── Celular ── */
+  @media (max-width: 399px) {
+    .monitor-paciente :global(.icono) {
+      display: none;
+    }
+  }
+
   @media (max-width: 559px) {
+    .monitor-paciente strong {
+      font-size: 0.9375rem;
+    }
+
+    .monitor-vivo {
+      padding: 3px 10px;
+      font-size: 0.8125rem;
+    }
+
+    .ondas {
+      grid-template-columns: minmax(0, 1fr) 92px;
+    }
+
+    .onda svg {
+      height: 60px;
+    }
+
+    .numerico {
+      padding: 6px 10px;
+    }
+
+    .monitor-lecturas {
+      gap: 8px;
+    }
+
+    .lectura {
+      padding: 10px 10px;
+    }
+
     .monitor-imc {
       grid-template-columns: 1fr 1fr;
+      gap: 8px;
     }
 
     .imc-resultado {
       grid-column: 1 / -1;
+      grid-template-columns: auto 1fr;
+      align-items: baseline;
+      column-gap: 12px;
     }
 
-    .ecg-lectura strong {
-      font-size: 2rem;
-    }
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .ecg-trazo {
-      animation: none;
-      stroke-dasharray: none;
+    .imc-resultado small,
+    .imc-resultado .imc-formula {
+      grid-column: 1 / -1;
     }
   }
 </style>

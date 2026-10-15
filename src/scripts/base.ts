@@ -142,17 +142,24 @@ if (movimientoReducido.matches || !('IntersectionObserver' in window)) {
   porRevelar.forEach((el) => el.classList.add('es-visible'));
 } else {
   document.querySelectorAll<HTMLElement>('[data-animar="titulo"]').forEach(partirTitular);
+  // `cortina` oculta el elemento con clip-path y IntersectionObserver descuenta ese recorte (nunca lo vería entrar):
+  // se observa a su contenedor y se revela el elemento.
+  const porObjetivo = new Map<Element, HTMLElement[]>();
+  porRevelar.forEach((el) => {
+    const objetivo = el.dataset['animar'] === 'cortina' ? (el.parentElement ?? el) : el;
+    porObjetivo.set(objetivo, [...(porObjetivo.get(objetivo) ?? []), el]);
+  });
   const io = new IntersectionObserver(
     (entradas, obs) => {
       for (const e of entradas) {
         if (!e.isIntersecting) continue;
-        e.target.classList.add('es-visible');
+        for (const el of porObjetivo.get(e.target) ?? []) el.classList.add('es-visible');
         obs.unobserve(e.target);
       }
     },
     { rootMargin: '0px 0px -8% 0px', threshold: 0.06 },
   );
-  porRevelar.forEach((el) => io.observe(el));
+  porObjetivo.forEach((_, objetivo) => io.observe(objetivo));
 
   const ioContar = new IntersectionObserver(
     (entradas, obs) => {

@@ -1,4 +1,12 @@
 ---
+// El problema: un documento editable frente a una nota sellada. Escena fijada corta (motor de scroll, --p): el .docx
+// se modifica solo ante tus ojos —se selecciona, se tacha y se reescribe el tratamiento, "Modificado hoy 23:41 · sin
+// aviso"— mientras la nota sellada rechaza el mismo intento (rebota y muestra el candado). Sin JS o con movimiento
+// reducido, var(--p, 1) deja ambos documentos en su estado final y la escena no se fija.
+//
+// Tramos de --p:  selección 0.05–0.15 · tachado 0.15–0.23 · reescritura 0.24–0.39 · "modificado" 0.40–0.45
+//                 intento sobre la sellada 0.46–0.56 · marca 0.6 (.alcanzo-1): rechazo, rebote y candado
+// Lo visual es decorativo (aria-hidden); el mensaje vive en el titular, el párrafo que se ilumina y la lista.
 import Icono from '../Icono.astro';
 
 const PROBLEMAS = [
@@ -21,214 +29,684 @@ const PROBLEMAS = [
 ---
 
 <section class="seccion fondo-claro problema" aria-labelledby="problema-titulo">
-  <div class="contenedor problema-rejilla">
+  <div class="contenedor">
     <div class="entrada">
-      <h2 id="problema-titulo" data-animar="titulo">
-        Tus expedientes merecen algo más firme que un documento editable
-      </h2>
+      <h2 id="problema-titulo" data-animar="titulo">Tus expedientes merecen algo más firme que un documento editable</h2>
       <p class="texto-grande tenue" data-animar="subir" data-retraso="3">
-        La <span class="sin-corte">NOM-004</span> pide notas sin enmendaduras ni tachaduras. Con las herramientas de
-        siempre, cumplirlo depende de la buena fe.
+        Un archivo de Word se puede abrir y cambiar a cualquier hora, sin dejar rastro. Mira la diferencia.
       </p>
     </div>
+  </div>
 
-    {/* Profundidad: el aro de fondo se desplaza más que los documentos (dos velocidades de parallax). Los documentos
-        entran desde lados opuestos y el sello aparece cuando la nota sellada ya llegó. */}
-    <div class="comparacion" aria-hidden="true">
-      <div class="comparacion-fondo" data-parallax="medio"></div>
-      <div class="comparacion-docs" data-parallax="suave">
-        <div class="doc doc-editable" data-animar="izquierda">
-          <p class="doc-titulo"><Icono nombre="nota" /> nota_paciente_final_v3.docx</p>
-          <p class="doc-linea">Dx: Faringitis aguda</p>
-          <p class="doc-linea">
-            Tx: <span class="doc-cambio"><span>Paracetamol 500 mg</span><span>Ibuprofeno 400 mg</span></span>
-          </p>
-          <p class="doc-pie">Modificado hoy 23:41 · sin aviso</p>
-        </div>
-        <div class="doc doc-sellada" data-animar="derecha" data-retraso="2">
-          <p class="doc-titulo"><Icono nombre="sello" /> Nota de evolución n.º 12</p>
-          <p class="doc-linea">Dx: J02.9 Faringitis aguda</p>
-          <p class="doc-linea">Tx: Paracetamol 500 mg</p>
-          <p class="doc-pie doc-pie-sello" data-animar="escala" data-retraso="6">
-            <Icono nombre="check" /> Sellada 10:14 · no se puede modificar
-          </p>
-        </div>
+  <div class="duelo" data-escena data-escena-marcas="0.6">
+    <div class="duelo-escenario" data-escenario>
+      <div class="contenedor duelo-rejilla" aria-hidden="true">
+        <figure class="lado lado-editable">
+          <figcaption class="lado-titulo"><Icono nombre="editar" /> Archivo editable</figcaption>
+          <div class="doc doc-editable">
+            <div class="doc-barra">
+              <span class="doc-puntos"><i></i><i></i><i></i></span>
+              <span class="doc-archivo">nota_paciente_final_v3.docx</span>
+            </div>
+            <div class="doc-cuerpo">
+              <p class="doc-linea"><span class="doc-campo">Paciente</span>Ejemplo · 15/10/2026</p>
+              <p class="doc-linea"><span class="doc-campo">Dx</span>Faringitis aguda</p>
+              <p class="doc-linea">
+                <span class="doc-campo">Tx</span>
+                <span class="tx">
+                  <span class="tx-viejo">
+                    <span class="tx-seleccion"></span>
+                    <span class="tx-texto">Paracetamol 500 mg</span>
+                    <span class="tx-tacha"></span>
+                  </span>
+                  <span class="tx-nuevo">
+                    <span class="tx-nuevo-texto">Ibuprofeno 400 mg</span>
+                    <span class="tx-cursor"></span>
+                  </span>
+                </span>
+              </p>
+            </div>
+            <p class="doc-pie">
+              <span class="pie-antes">Guardado hoy 10:14</span>
+              <span class="pie-despues"><Icono nombre="alerta" /> Modificado hoy 23:41 · sin aviso</span>
+            </p>
+          </div>
+          <p class="lado-nota">Cualquiera que lo abra puede cambiarlo.</p>
+        </figure>
+
+        <figure class="lado lado-sellado">
+          <figcaption class="lado-titulo"><Icono nombre="sello" /> Nota sellada en InmutalKey</figcaption>
+          <div class="doc doc-sellada">
+            <div class="sellada-cabecera">
+              <strong>Nota de evolución n.º 12</strong>
+              <span class="sellada-chip"><Icono nombre="candado" /> Sellada 10:14</span>
+            </div>
+            <div class="doc-cuerpo">
+              <p class="doc-linea"><span class="doc-campo">Paciente</span>Ejemplo · Exp. 0042</p>
+              <p class="doc-linea"><span class="doc-campo">Dx</span>J02.9 Faringitis aguda</p>
+              <p class="doc-linea">
+                <span class="doc-campo">Tx</span>
+                <span class="intento">
+                  <span class="intento-seleccion"></span>
+                  <span class="intento-texto">Paracetamol 500 mg</span>
+                  <span class="intento-cursor"></span>
+                </span>
+              </p>
+              <p class="doc-linea rechazo-linea">
+                <span class="rechazo"><Icono nombre="candado" /> Firmada: no se puede modificar</span>
+              </p>
+            </div>
+            <p class="doc-pie doc-pie-sello">
+              <span class="pie-hash">SHA-256 b31c88b0…25eae6</span>
+              <span class="pie-coincide"><Icono nombre="check" /> Coincide</span>
+            </p>
+          </div>
+          <p class="lado-nota">Firmada, ya no se puede modificar.</p>
+        </figure>
       </div>
     </div>
   </div>
 
-  <ul class="contenedor problemas" data-escalonar>
-    {
-      PROBLEMAS.map((p) => (
-        <li data-animar="subir">
-          <Icono nombre={p.icono} />
-          <h3>{p.titulo}</h3>
-          <p class="tenue">{p.texto}</p>
-        </li>
-      ))
-    }
-  </ul>
+  <div class="contenedor">
+    <p class="problema-luz" data-texto-luz>
+      La <span class="sin-corte">NOM-004</span> pide notas sin enmendaduras ni tachaduras. Con un archivo editable,
+      cumplirlo depende de la buena fe. Con una nota sellada, no hay forma de cambiarla sin que se note.
+    </p>
+
+    <ul class="problemas" data-escalonar>
+      {
+        PROBLEMAS.map((p) => (
+          <li data-animar="subir">
+            <span class="problema-icono">
+              <Icono nombre={p.icono} />
+            </span>
+            <h3>{p.titulo}</h3>
+            <p class="tenue">{p.texto}</p>
+          </li>
+        ))
+      }
+    </ul>
+  </div>
 </section>
 
 <style>
-  /* Recorta lo que entra desde los lados (y el aro de fondo) sin crear desplazamiento horizontal. */
   .problema {
-    overflow-x: clip;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    --ambar: #b45309;
   }
 
-  .problema-rejilla {
-    display: grid;
-    gap: clamp(32px, 5vw, 56px);
-    align-items: center;
+  /* ── El duelo: estado final por omisión (var(--p, 1)); con movimiento, escena fijada corta ── */
+  .duelo {
+    --t-entra: clamp(0, (var(--e, 1) - 0.2) / 0.6, 1);
+    --t-sel: clamp(0, (var(--p, 1) - 0.05) / 0.1, 1);
+    --t-tacha: clamp(0, (var(--p, 1) - 0.15) / 0.08, 1);
+    --t-escribe: clamp(0, (var(--p, 1) - 0.24) / 0.15, 1);
+    --t-pie: clamp(0, (var(--p, 1) - 0.4) / 0.05, 1);
+    --t-intento: clamp(0, (var(--p, 1) - 0.46) / 0.1, 1);
+    margin-top: clamp(40px, 6vw, 64px);
   }
 
-  @media (min-width: 960px) {
-    .problema-rejilla {
-      grid-template-columns: 1.1fr 0.9fr;
+  :global(.movimiento) .duelo {
+    --largo: 1.9;
+    margin-top: 0;
+  }
+
+  @media (min-width: 860px) {
+    :global(.movimiento) .duelo {
+      --largo: 2.3;
     }
   }
 
-  .comparacion {
+  /* Fija: centrada entre la barra de navegación y la franja del botón flotante de WhatsApp (celular y tableta). */
+  :global(.movimiento) .duelo-escenario {
+    display: grid;
+    align-content: center;
+    padding-top: var(--altura-nav);
+    padding-bottom: calc(76px + env(safe-area-inset-bottom, 0px));
+  }
+
+  @media (min-width: 1080px) {
+    :global(.movimiento) .duelo-escenario {
+      padding-bottom: 16px;
+    }
+  }
+
+  /* Cuadrícula de instrumento detrás de los documentos; se desliza más lento que ellos (profundidad). */
+  .duelo-escenario {
     position: relative;
     isolation: isolate;
   }
 
-  .comparacion-docs {
-    display: grid;
-    gap: 14px;
-  }
-
-  /* Aro de luz detrás de los documentos (decorativo, azul: el esmeralda queda solo para lo sellado). */
-  .comparacion-fondo {
+  .duelo-escenario::before {
+    content: '';
     position: absolute;
-    top: 50%;
-    left: 50%;
+    inset: -60px 0;
     z-index: -1;
-    width: min(132%, 600px);
-    aspect-ratio: 1;
-    /* Centrado con `translate` (propiedad propia): el parallax usa `transform`. */
-    translate: -50% -50%;
-    border: 1px solid rgb(1 120 176 / 0.14);
-    border-radius: 50%;
-    background:
-      radial-gradient(closest-side, rgb(46 159 224 / 0.16), rgb(46 159 224 / 0.05) 60%, transparent 72%);
+    background-image:
+      linear-gradient(var(--linea-clara) 1px, transparent 1px),
+      linear-gradient(90deg, var(--linea-clara) 1px, transparent 1px);
+    background-size: 40px 40px;
+    background-position: center;
+    -webkit-mask-image: radial-gradient(ellipse 60% 55% at 50% 50%, #000 15%, transparent 75%);
+    mask-image: radial-gradient(ellipse 60% 55% at 50% 50%, #000 15%, transparent 75%);
+    opacity: 0.7;
+    transform: translate3d(0, calc((0.5 - var(--p, 0.5)) * 48px), 0);
     pointer-events: none;
   }
 
-  .comparacion-fondo::after {
-    content: '';
-    position: absolute;
-    inset: 16%;
-    border: 1px dashed rgb(1 120 176 / 0.14);
-    border-radius: 50%;
+  .duelo-rejilla {
+    display: grid;
+    gap: 20px;
+    max-width: 1160px;
   }
 
-  .doc {
-    padding: 18px 20px;
-    border: 1px solid var(--linea-clara);
-    border-radius: var(--radio);
-    background: #fff;
-    box-shadow: 0 20px 40px -24px rgb(13 27 53 / 0.35);
+  /* Tableta vertical: apilados, a un ancho cómodo de leer. */
+  @media (min-width: 600px) and (max-width: 859px) {
+    .duelo-rejilla {
+      max-width: 560px;
+    }
+
+    .doc {
+      font-size: 1.0625rem;
+    }
   }
 
-  .doc-titulo {
+  /* Escritorio: lado a lado, del mismo alto, con una línea fina entre los dos. */
+  @media (min-width: 860px) {
+    .duelo-rejilla {
+      position: relative;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: clamp(40px, 5vw, 72px);
+    }
+
+    .duelo-rejilla::before {
+      content: '';
+      position: absolute;
+      left: 50%;
+      top: 8%;
+      bottom: 8%;
+      width: 1px;
+      background: linear-gradient(transparent, rgb(13 27 53 / 0.18), transparent);
+    }
+  }
+
+  /* Celular acostado: no caben apilados en el alto de la pantalla; lado a lado y más compactos. */
+  @media (orientation: landscape) and (max-height: 560px) and (min-width: 600px) and (max-width: 859px) {
+    .duelo-rejilla {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 20px;
+      max-width: none;
+    }
+
+    .doc {
+      font-size: 0.875rem;
+    }
+
+    .lado-titulo {
+      margin-bottom: 6px;
+      font-size: 0.875rem;
+    }
+
+    :global(.movimiento) .duelo-escenario {
+      padding-top: 60px;
+      padding-bottom: 64px;
+    }
+  }
+
+  .lado {
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    margin: 0;
+    min-width: 0;
+  }
+
+  /* Entrada desde lados opuestos mientras la escena asoma (--e): llegan girados en perspectiva y se aplanan. */
+  .lado-editable {
+    transform: perspective(1400px) translate3d(calc((1 - var(--t-entra)) * -56px), 0, 0)
+      rotateY(calc((1 - var(--t-entra)) * 16deg));
+    opacity: calc(0.2 + var(--t-entra) * 0.8);
+  }
+
+  .lado-sellado {
+    transform: perspective(1400px) translate3d(calc((1 - var(--t-entra)) * 56px), 0, 0)
+      rotateY(calc((1 - var(--t-entra)) * -16deg));
+    opacity: calc(0.2 + var(--t-entra) * 0.8);
+  }
+
+  .lado-titulo {
     display: flex;
     align-items: center;
     gap: 0.5em;
     margin-bottom: 10px;
-    font-weight: 600;
-    font-size: 1rem;
-    overflow-wrap: anywhere;
-  }
-
-  .doc-titulo :global(.icono) {
-    width: 1.2em;
-    height: 1.2em;
-  }
-
-  .doc-linea {
-    margin: 4px 0 0;
-    font-size: 1rem;
-  }
-
-  .doc-pie {
-    display: flex;
-    align-items: center;
-    gap: 0.4em;
-    margin-top: 12px;
-    font-size: 0.875rem;
     color: var(--tinta-tenue);
+    font-size: 0.9375rem;
+    font-weight: 600;
   }
 
-  /* Inclinación con `rotate`/`translate` (propiedades propias): así se suma al `transform` del revelado. */
-  .doc-editable {
-    rotate: -1.5deg;
-    translate: -8px 0;
+  .lado-titulo :global(.icono) {
+    width: 1.15em;
+    height: 1.15em;
   }
 
-  .doc-editable .doc-pie {
-    color: #b45309;
-  }
-
-  .doc-sellada {
-    border-color: rgb(10 139 105 / 0.35);
-    box-shadow:
-      0 0 0 4px rgb(10 139 105 / 0.08),
-      0 20px 40px -24px rgb(13 27 53 / 0.35);
-    rotate: 1deg;
-    translate: 10px 0;
-  }
-
-  .doc-sellada .doc-titulo :global(.icono),
-  .doc-pie-sello {
+  .lado-sellado .lado-titulo {
     color: var(--esmeralda);
   }
 
-  .doc-pie-sello {
+  .lado-nota {
+    display: none;
+    margin-top: 12px;
+    color: var(--tinta-tenue);
+    font-size: 1rem;
+  }
+
+  @media (min-width: 860px) {
+    .lado-nota {
+      display: block;
+    }
+  }
+
+  /* ── Documentos ── */
+  .doc {
+    position: relative;
+    border: 1px solid var(--linea-clara);
+    border-radius: var(--radio);
+    background: #fff;
+    box-shadow:
+      0 1px 0 rgb(255 255 255 / 0.8) inset,
+      0 24px 48px -28px rgb(13 27 53 / 0.45);
+    font-size: 0.9375rem;
+    line-height: 1.5;
+  }
+
+  @media (min-width: 860px) {
+    .doc {
+      font-size: 1.125rem;
+    }
+  }
+
+  @media (min-width: 1280px) {
+    .doc {
+      font-size: 1.25rem;
+    }
+
+    .lado-titulo {
+      font-size: 1.0625rem;
+    }
+  }
+
+  .doc {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .doc-cuerpo {
+    flex: 1;
+    display: grid;
+    align-content: start;
+    gap: 4px;
+    padding: 12px 16px 10px;
+  }
+
+  @media (min-width: 860px) {
+    .doc-cuerpo {
+      padding: 16px 20px 14px;
+    }
+  }
+
+  /* Etiqueta y valor en columnas: si el valor no cabe, se parte dentro de su columna. */
+  .doc-linea {
+    display: grid;
+    grid-template-columns: 5.2em minmax(0, 1fr);
+    align-items: baseline;
+    margin: 0;
+  }
+
+  .doc-campo {
+    color: var(--tinta-tenue);
+    font-size: 0.85em;
     font-weight: 600;
+  }
+
+  .doc-pie {
+    display: grid;
+    margin: 0;
+    padding: 9px 16px;
+    border-top: 1px solid var(--linea-clara);
+    font-size: 0.85em;
+  }
+
+  /* Editable: barra de ventana con el nombre del archivo. */
+  .doc-barra {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 9px 14px;
+    border-bottom: 1px solid var(--linea-clara);
+    border-radius: var(--radio) var(--radio) 0 0;
+    background: #f3f6fa;
+  }
+
+  .doc-puntos {
+    display: inline-flex;
+    gap: 5px;
+  }
+
+  .doc-puntos i {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: rgb(13 27 53 / 0.16);
+  }
+
+  .doc-archivo {
+    overflow: hidden;
+    font-family: var(--mono);
+    font-size: 0.8em;
+    color: var(--tinta-tenue);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* La línea que se modifica: selección → tachado → reescritura (todo con transform, opacity y clip-path). */
+  .tx {
+    display: inline-flex;
+    flex-wrap: wrap;
+    column-gap: 0.5em;
+  }
+
+  .tx-viejo,
+  .tx-nuevo,
+  .intento {
+    position: relative;
+    display: inline-block;
+    white-space: nowrap;
+  }
+
+  /* En la celda de la rejilla, del ancho de su texto (el cursor recorre ese ancho). */
+  .tx,
+  .intento {
+    justify-self: start;
+  }
+
+  .tx-seleccion,
+  .intento-seleccion {
+    position: absolute;
+    inset: 0.05em -0.15em;
+    border-radius: 3px;
+    background: rgb(1 120 176 / 0.22);
+    transform-origin: 0 50%;
+  }
+
+  .tx-seleccion {
+    transform: scaleX(var(--t-sel));
+    opacity: calc(var(--t-sel) - var(--t-tacha));
+  }
+
+  .tx-texto {
+    position: relative;
+    opacity: calc(1 - var(--t-tacha) * 0.5);
+  }
+
+  .tx-tacha {
+    position: absolute;
+    left: -0.1em;
+    right: -0.1em;
+    top: 55%;
+    height: 2px;
+    border-radius: 1px;
+    background: var(--tinta);
+    transform-origin: 0 50%;
+    transform: scaleX(var(--t-tacha));
+  }
+
+  .tx-nuevo-texto {
+    display: block;
+    color: var(--ambar);
+    font-weight: 600;
+    clip-path: inset(0 calc((1 - var(--t-escribe)) * 100%) 0 0);
+  }
+
+  /* Cursor de escritura: recorre el ancho del texto con transform y solo se ve a media escritura. */
+  .tx-cursor,
+  .intento-cursor {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+
+  .tx-cursor {
+    transform: translate3d(calc(var(--t-escribe) * 100%), 0, 0);
+    opacity: calc(min(var(--t-escribe), 1 - var(--t-escribe)) * 30);
+  }
+
+  .tx-cursor::before,
+  .intento-cursor::before {
+    content: '';
+    position: absolute;
+    left: 1px;
+    top: 10%;
+    bottom: 10%;
+    width: 2px;
+    border-radius: 1px;
+    background: var(--tinta);
+  }
+
+  .doc-pie > span {
+    grid-area: 1 / 1;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4em;
+  }
+
+  .pie-antes {
+    color: var(--tinta-tenue);
+    opacity: calc(1 - var(--t-pie));
+  }
+
+  .pie-despues {
+    color: var(--ambar);
+    font-weight: 600;
+    opacity: var(--t-pie);
+    transform: translate3d(0, calc((1 - var(--t-pie)) * 6px), 0);
   }
 
   .doc-pie :global(.icono) {
-    width: 1.1em;
-    height: 1.1em;
+    width: 1.15em;
+    height: 1.15em;
   }
 
-  /* La línea que cambia sola en el documento editable. */
-  .doc-cambio {
-    display: inline-grid;
+  /* Sellada: cabecera con el candado, huella y el rechazo del intento de edición. */
+  .doc-sellada {
+    border-color: rgb(10 139 105 / 0.35);
+    box-shadow:
+      0 0 0 4px rgb(10 139 105 / 0.07),
+      0 24px 48px -28px rgb(13 27 53 / 0.45);
   }
 
-  .doc-cambio span {
-    grid-area: 1 / 1;
-    animation: cambio 6s infinite;
+  .sellada-cabecera {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px 12px;
+    padding: 9px 14px 9px 18px;
+    border-bottom: 1px solid rgb(10 139 105 / 0.18);
+    border-radius: var(--radio) var(--radio) 0 0;
+    background: rgb(10 139 105 / 0.06);
   }
 
-  .doc-cambio span:nth-child(2) {
-    animation-delay: -3s;
-    color: #b45309;
+  .sellada-cabecera strong {
+    font-family: var(--fuente-titulo);
+    font-size: 0.95em;
     font-weight: 600;
   }
 
-  @keyframes cambio {
-    0%,
-    42% {
-      opacity: 1;
+  .sellada-chip {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35em;
+    padding: 0.15em 0.65em;
+    border-radius: 999px;
+    background: var(--esmeralda);
+    color: #fff;
+    font-size: 0.8em;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .sellada-chip :global(.icono) {
+    width: 1.05em;
+    height: 1.05em;
+  }
+
+  /* Pulso del sello cuando rechaza el intento. */
+  .sellada-chip::after {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    border: 2px solid var(--esmeralda);
+    border-radius: inherit;
+    opacity: 0;
+  }
+
+  .intento-seleccion {
+    transform: scaleX(var(--t-intento));
+    opacity: var(--t-intento);
+    transition: opacity 0.25s var(--ease);
+  }
+
+  .intento-cursor {
+    transform: translate3d(100%, 0, 0);
+    opacity: calc(var(--t-intento) * 4);
+  }
+
+  .doc-pie-sello {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 4px 12px;
+  }
+
+  .doc-pie-sello > span {
+    grid-area: auto;
+  }
+
+  .pie-hash {
+    font-family: var(--mono);
+    font-size: 0.92em;
+    color: var(--tinta-tenue);
+  }
+
+  .pie-coincide {
+    color: var(--esmeralda);
+    font-weight: 600;
+  }
+
+  /* El aviso del rechazo: un mensaje del sistema bajo la línea del tratamiento (su lugar ya está reservado). */
+  .rechazo-linea {
+    margin-top: 2px;
+  }
+
+  .rechazo {
+    grid-column: 2;
+    justify-self: start;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45em;
+    padding: 0.3em 0.8em 0.3em 0.6em;
+    border-radius: 999px;
+    background: var(--navy);
+    color: #fff;
+    font-size: 0.8em;
+    font-weight: 600;
+    white-space: nowrap;
+    box-shadow: 0 10px 20px -12px rgb(13 27 53 / 0.6);
+  }
+
+  .rechazo :global(.icono) {
+    width: 1.15em;
+    height: 1.15em;
+    color: var(--esmeralda-vivo);
+  }
+
+  /* Con movimiento: el aviso y el pulso llegan con la marca (rechazo); el intento se deshace. */
+  :global(.movimiento) .duelo .rechazo {
+    opacity: 0;
+    transform: translate3d(0, 8px, 0) scale(0.92);
+    transition:
+      opacity 0.3s var(--ease),
+      transform 0.5s var(--ease);
+  }
+
+  :global(.movimiento) .duelo.alcanzo-1 .rechazo {
+    opacity: 1;
+    transform: none;
+    transition-delay: 0.15s;
+  }
+
+  :global(.movimiento) .duelo.alcanzo-1 .intento-seleccion,
+  :global(.movimiento) .duelo.alcanzo-1 .intento-cursor {
+    opacity: 0;
+  }
+
+  :global(.movimiento) .duelo.alcanzo-1 .doc-sellada {
+    animation: rebote 0.6s var(--ease);
+  }
+
+  :global(.movimiento) .duelo.alcanzo-1 .sellada-chip::after {
+    animation: pulso 0.9s 0.1s var(--ease);
+  }
+
+  /* Sin escena (sin JS o movimiento reducido) el intento nunca ocurrió y no hay cursores (fuera del escenario, que
+     recorta, su pista desplazada ensancharía la página). */
+  :global(html:not(.movimiento)) .intento-seleccion,
+  :global(html:not(.movimiento)) .intento-cursor,
+  :global(html:not(.movimiento)) .tx-cursor {
+    display: none;
+  }
+
+  @keyframes rebote {
+    20% {
+      transform: translate3d(-7px, 0, 0);
     }
-    50%,
-    92% {
-      opacity: 0;
+    45% {
+      transform: translate3d(5px, 0, 0);
     }
-    100% {
-      opacity: 1;
+    70% {
+      transform: translate3d(-2px, 0, 0);
     }
   }
 
+  @keyframes pulso {
+    from {
+      opacity: 0.9;
+      transform: scale(1);
+    }
+    to {
+      opacity: 0;
+      transform: scale(1.6, 2.2);
+    }
+  }
+
+  /* ── El párrafo que se ilumina al leerlo ── */
+  .problema-luz {
+    max-width: 30ch;
+    margin-top: clamp(56px, 9vw, 128px);
+    font-family: var(--fuente-titulo);
+    font-size: clamp(1.625rem, 1.05rem + 2.4vw, 2.875rem);
+    font-weight: 600;
+    line-height: 1.18;
+    letter-spacing: -0.02em;
+    color: var(--tinta);
+  }
+
+  /* ── Los tres problemas ── */
   .problemas {
     display: grid;
-    gap: 28px;
-    margin-top: clamp(48px, 6vw, 80px);
-    padding-top: clamp(32px, 4vw, 48px);
-    border-top: 1px solid var(--linea-clara);
+    gap: 32px;
+    margin: clamp(56px, 7vw, 96px) 0 0;
+    padding: 0;
     list-style: none;
   }
 
@@ -239,26 +717,48 @@ const PROBLEMAS = [
     }
   }
 
-  .problemas :global(.icono) {
-    width: 30px;
-    height: 30px;
+  .problemas li {
+    position: relative;
+    padding-top: 28px;
+  }
+
+  /* Línea fina que se dibuja al revelarse cada problema. */
+  .problemas li::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 auto;
+    height: 1px;
+    background: linear-gradient(90deg, var(--azul), rgb(1 120 176 / 0.15));
+    transform-origin: 0 50%;
+    transition: transform 1.1s var(--ease);
+    transition-delay: calc(var(--i, 0) * 85ms + 150ms);
+  }
+
+  :global(.js) .problemas li:not(.es-visible)::before {
+    transform: scaleX(0);
+  }
+
+  .problema-icono {
+    display: grid;
+    place-items: center;
+    width: 48px;
+    height: 48px;
+    border: 1px solid rgb(1 120 176 / 0.25);
+    border-radius: 12px;
+    background: rgb(255 255 255 / 0.7);
     color: var(--azul);
   }
 
+  .problema-icono :global(.icono) {
+    width: 26px;
+    height: 26px;
+  }
+
   .problemas h3 {
-    margin-top: 14px;
+    margin-top: 18px;
   }
 
   .problemas p {
     margin-top: 8px;
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .doc-cambio span {
-      animation: none;
-    }
-    .doc-cambio span:nth-child(2) {
-      display: none;
-    }
   }
 </style>

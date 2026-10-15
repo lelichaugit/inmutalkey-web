@@ -95,6 +95,7 @@ su plano técnico vectorial alineado al píxel + una línea de escáner. Toma el
 | `prioridad` | Solo la del hero (carga inmediata) |
 | `brillo` | Luz que recorre la llave, recortada a su silueta (`--brillo` 0 → 1 la mueve; sin ella cruza una vez al cargar) |
 | `plano` | Plano técnico debajo + escáner |
+| `reflejo` | Reflejo en un "piso" pulido debajo de la llave (misma imagen, sin otra descarga); `--reflejo` 0 → 1 (0.3 por omisión) |
 | `--materia` (0 → 1) | Cuánto de la llave es sólido, de arriba hacia abajo; debajo del escáner se ve el plano. Registrada con `@property`: se anima con `@keyframes` |
 
 ## Otros
@@ -102,6 +103,7 @@ su plano técnico vectorial alineado al píxel + una línea de escáner. Toma el
 | Atributo | Efecto |
 |---|---|
 | `data-contar="7"` | El número cuenta de 0 a 7 al verse (el HTML ya trae el 7; admite decimales: `"38.2"`) |
+| `data-sin-flotante` | Zona donde se retira el botón flotante de WhatsApp (ya hay contacto a la vista o es interactiva: simulador, signos, cierre; el pie también) |
 | `a[data-compartir]` | Abre la hoja nativa de compartir del teléfono; sin ella, sigue el enlace de WhatsApp (`Compartir.astro`) |
 | `a[data-seccion][data-etiqueta]` | Enlace que participa en la sección activa: barra, riel lateral y título de sección en la barra del celular |
 

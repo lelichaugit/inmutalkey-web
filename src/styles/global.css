@@ -805,6 +805,13 @@ html.menu-abierto {
   height: 22px;
 }
 
+/* Celular acostado: la pantalla es baja y el botón taparía las escenas; la barra ya trae "Escríbenos". */
+@media (max-height: 500px) and (orientation: landscape) {
+  .flotante-cta {
+    display: none;
+  }
+}
+
 @media (min-width: 1080px) {
   .flotante-cta {
     display: none;

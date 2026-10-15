@@ -1,18 +1,27 @@
 ---
+// 404: la misma llave del hero, chica y ligera. Se materializa una vez al cargar (plano → escáner, solo CSS) dentro del
+// visor; sin JS o con movimiento reducido se ve sólida y quieta.
 import Icono from '../components/Icono.astro';
 import Isotipo3D from '../components/Isotipo3D.astro';
 import Base from '../layouts/Base.astro';
 ---
 
 <Base titulo="Página no encontrada" descripcion="Esta página no existe. Vuelve al inicio de InmutalKey." indexar={false}>
-  <section class="seccion fondo-luz fondo-cuadricula no-encontrada">
+  <section class="no-encontrada">
+    <div class="no-encontrada-fondo" aria-hidden="true"></div>
     <div class="contenedor no-encontrada-caja">
-      <div class="no-encontrada-llave" aria-hidden="true"><Isotipo3D sizes="100px" brillo /></div>
+      <div class="nf-llave" aria-hidden="true">
+        <span class="nf-foco"></span>
+        <div class="nf-llave-giro"><Isotipo3D sizes="90px" brillo plano /></div>
+        <span class="nf-visor">
+          <span class="nf-etiqueta">Error 404</span>
+        </span>
+      </div>
       <h1>Esta llave no abre ninguna puerta</h1>
       <p class="texto-grande tenue">La página que buscas no existe o cambió de lugar.</p>
       <div class="no-encontrada-acciones">
         <a class="boton boton-primario" href="/">Ir al inicio</a>
-        <a class="boton boton-secundario" href="/#demo"><Icono nombre="play" /> Ver la simulación</a>
+        <a class="boton boton-secundario" href="/#demo"><Icono nombre="play" /> Pruébalo aquí mismo</a>
       </div>
     </div>
   </section>
@@ -20,12 +29,39 @@ import Base from '../layouts/Base.astro';
 
 <style>
   .no-encontrada {
-    min-height: calc(100svh - var(--altura-nav));
+    position: relative;
+    isolation: isolate;
     display: grid;
     align-items: center;
+    min-height: 100vh;
+    min-height: 100svh;
     margin-top: calc(-1 * var(--altura-nav));
-    padding-top: calc(var(--altura-nav) + 48px);
+    padding: calc(var(--altura-nav) + 48px) 0 64px;
+    overflow-x: clip;
     text-align: center;
+  }
+
+  .no-encontrada-fondo {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background:
+      radial-gradient(40% 34% at 50% 30%, rgb(1 120 176 / 0.2), transparent 72%),
+      linear-gradient(180deg, #02050b, var(--medianoche));
+    pointer-events: none;
+  }
+
+  .no-encontrada-fondo::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgb(255 255 255 / 0.045) 1px, transparent 1px),
+      linear-gradient(90deg, rgb(255 255 255 / 0.045) 1px, transparent 1px);
+    background-size: 48px 48px;
+    background-position: center top;
+    -webkit-mask-image: radial-gradient(ellipse 50% 42% at 50% 32%, #000 10%, transparent 72%);
+    mask-image: radial-gradient(ellipse 50% 42% at 50% 32%, #000 10%, transparent 72%);
   }
 
   .no-encontrada-caja {
@@ -34,9 +70,56 @@ import Base from '../layouts/Base.astro';
     gap: 18px;
   }
 
-  .no-encontrada-llave {
-    height: 140px;
-    transform: rotate(-24deg);
+  .nf-llave {
+    position: relative;
+    width: calc(150px * 304 / 724);
+    height: 150px;
+    margin-bottom: 18px;
+  }
+
+  .nf-llave-giro {
+    position: absolute;
+    inset: 0;
+  }
+
+  .nf-foco {
+    position: absolute;
+    inset: -40% -150%;
+    border-radius: 50%;
+    background: radial-gradient(closest-side, rgb(46 159 224 / 0.28), rgb(1 120 176 / 0.08) 60%, transparent);
+  }
+
+  .nf-visor {
+    --c: rgb(255 255 255 / 0.45);
+    --l: 12px;
+    --g: 1.5px;
+    position: absolute;
+    inset: -10% -40%;
+    background:
+      linear-gradient(var(--c) 0 0) top left / var(--l) var(--g),
+      linear-gradient(var(--c) 0 0) top left / var(--g) var(--l),
+      linear-gradient(var(--c) 0 0) top right / var(--l) var(--g),
+      linear-gradient(var(--c) 0 0) top right / var(--g) var(--l),
+      linear-gradient(var(--c) 0 0) bottom left / var(--l) var(--g),
+      linear-gradient(var(--c) 0 0) bottom left / var(--g) var(--l),
+      linear-gradient(var(--c) 0 0) bottom right / var(--l) var(--g),
+      linear-gradient(var(--c) 0 0) bottom right / var(--g) var(--l);
+    background-repeat: no-repeat;
+  }
+
+  .nf-etiqueta {
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    margin-top: 10px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.6875rem;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    white-space: nowrap;
+    color: var(--azul-vivo);
+    text-transform: uppercase;
+    transform: translateX(-50%);
   }
 
   .no-encontrada h1 {
@@ -48,5 +131,45 @@ import Base from '../layouts/Base.astro';
     flex-wrap: wrap;
     justify-content: center;
     gap: 12px;
+    margin-top: 6px;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .nf-llave-giro {
+      animation:
+        nf-aparece 0.4s ease-out backwards,
+        nf-materia 1s cubic-bezier(0.65, 0, 0.35, 1) 0.3s backwards;
+    }
+
+    .nf-llave :global(.isotipo-brillo) {
+      animation-delay: 1.2s;
+      animation-duration: 0.9s;
+    }
+
+    .nf-visor {
+      animation: nf-enfoca 0.8s var(--ease) 0.1s backwards;
+    }
+  }
+
+  @keyframes nf-aparece {
+    from {
+      opacity: 0;
+    }
+  }
+
+  @keyframes nf-materia {
+    from {
+      --materia: 0;
+    }
+    to {
+      --materia: 1;
+    }
+  }
+
+  @keyframes nf-enfoca {
+    from {
+      opacity: 0;
+      transform: scale(1.18);
+    }
   }
 </style>
