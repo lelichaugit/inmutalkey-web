@@ -5,14 +5,15 @@
 // Salida en public/:
 //   favicon.svg · favicon.ico (PNG dentro de ICO, 16 y 32) · apple-touch-icon.png (180)
 //   icon-192.png · icon-512.png · icon-maskable-512.png · og.png (1200×630, texto convertido a trazos)
-//   brand/isotipo-3d-{480,800,1200}.{avif,webp}  ← solo si existe public/brand/originales/isotipo-3d.{png,jpg,jpeg,webp}
-// y src/data/isotipo.json (dimensiones del render para el hero; `disponible: false` si aún no se sube).
+//   brand/isotipo-3d-{480,800,1200}.{avif,webp}  ← render 3D: public/brand/originales/isotipo-3d.* o capturas/logomainscroll*
+//   brand/avatar-chat-{96,192}.webp              ← avatar del chat simulado: capturas/*logowsp*
+// y src/data/marca.json (qué piezas existen y sus dimensiones; el sitio usa respaldos planos si faltan).
 //
 // El render 3D es blanco sobre negro: se "aplasta" el negro a 0 para que con `mix-blend-mode: screen`
 // se funda sin borde con cualquier fondo oscuro del sitio (y con la luz azul de la tarjeta).
 
 import { existsSync } from 'node:fs';
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { mkdir, readdir, readFile, writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 
 import opentype from 'opentype.js';
@@ -100,12 +101,22 @@ function texto(f, cadena, x, y, tam, color, espaciado = 0) {
   return `<path fill="${color}" d="${partes.join('')}"/>`;
 }
 
-function buscarRender() {
+const IMAGEN = /\.(png|jpe?g|webp)$/i;
+
+/** Primer archivo de `capturas/` cuyo nombre cumpla `patron`. */
+async function enCapturas(patron) {
+  const dir = raiz('capturas');
+  if (!existsSync(dir)) return null;
+  const nombre = (await readdir(dir)).filter((n) => IMAGEN.test(n) && patron.test(n)).sort()[0];
+  return nombre ? `${dir}/${nombre}` : null;
+}
+
+async function buscarRender() {
   for (const ext of ['png', 'jpg', 'jpeg', 'webp']) {
     const ruta = raiz(`public/brand/originales/isotipo-3d.${ext}`);
     if (existsSync(ruta)) return ruta;
   }
-  return null;
+  return enCapturas(/logomainscroll/i);
 }
 
 /** Negro del fondo del render: mediana de luminancia en las cuatro esquinas. */
@@ -149,7 +160,7 @@ async function main() {
   await png(iconoCuadrado({ lado: 512, proporcion: 0.6 }), 512, 'public/icon-maskable-512.png');
 
   // ── Render 3D (logo principal del hero) ──
-  const render = buscarRender();
+  const render = await buscarRender();
   let datosIsotipo = { disponible: false };
   if (render) {
     const meta = await sharp(render).metadata();
@@ -162,12 +173,29 @@ async function main() {
       await base.clone().avif({ quality: 58, effort: 7 }).toFile(raiz(`public/brand/isotipo-3d-${w}.avif`));
       await base.clone().webp({ quality: 82, effort: 6 }).toFile(raiz(`public/brand/isotipo-3d-${w}.webp`));
     }
+    // Máscara alfa (blanco + alfa = luminancia) para recortar el brillo del hero a la silueta del render.
+    const gris = await (await renderLimpio(render)).resize({ width: 600 }).greyscale().raw().toBuffer({ resolveWithObject: true });
+    await sharp({ create: { width: gris.info.width, height: gris.info.height, channels: 3, background: '#ffffff' } })
+      .joinChannel(gris.data, { raw: { width: gris.info.width, height: gris.info.height, channels: 1 } })
+      .webp({ quality: 80, alphaQuality: 80 })
+      .toFile(raiz('public/brand/isotipo-3d-mascara.webp'));
     datosIsotipo = { disponible: true, ancho: anchoOriginal, alto: altoOriginal, anchos };
     console.log(`isotipo 3D: ${anchos.join(', ')} px (AVIF + WebP)`);
   } else {
-    console.warn('isotipo 3D: falta public/brand/originales/isotipo-3d.(png|jpg|webp) — el hero usará el isotipo plano.');
+    console.warn('isotipo 3D: falta capturas/logomainscroll.* (o public/brand/originales/isotipo-3d.*) — el hero usará el isotipo plano.');
   }
-  await writeFile(raiz('src/data/isotipo.json'), JSON.stringify(datosIsotipo, null, 1) + '\n');
+
+  // ── Avatar del chat simulado ──
+  const avatar = await enCapturas(/logowsp/i);
+  let datosAvatar = { disponible: false };
+  if (avatar) {
+    for (const lado of [96, 192]) {
+      await sharp(avatar).resize(lado, lado, { fit: 'cover' }).webp({ quality: 86 }).toFile(raiz(`public/brand/avatar-chat-${lado}.webp`));
+    }
+    datosAvatar = { disponible: true };
+    console.log('avatar del chat: 96 y 192 px');
+  }
+  await writeFile(raiz('src/data/marca.json'), JSON.stringify({ isotipo: datosIsotipo, avatar: datosAvatar }, null, 1) + '\n');
 
   // ── Imagen para redes (OG) ──
   const outfit = await fuente('scripts/assets/outfit-latin-600-normal.woff');

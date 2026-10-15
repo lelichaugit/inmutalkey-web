@@ -1,0 +1,224 @@
+---
+import Icono from '../Icono.astro';
+
+const PROBLEMAS = [
+  {
+    icono: 'editar',
+    titulo: 'Un archivo de Word se puede cambiar después.',
+    texto: 'Y nadie se entera. Una nota que cualquiera puede editar pierde valor como registro.',
+  },
+  {
+    icono: 'nota',
+    titulo: 'El papel se pierde, se moja y no aparece.',
+    texto: 'Buscar el expediente correcto quita tiempo de consulta. La letra a mano, además, no siempre se entiende.',
+  },
+  {
+    icono: 'nube',
+    titulo: 'Los sistemas en la nube dependen de internet.',
+    texto: 'Si se cae la conexión, no consultas. Y tus expedientes viven en servidores que no controlas.',
+  },
+] as const;
+---
+
+<section class="seccion fondo-claro problema" aria-labelledby="problema-titulo">
+  <div class="contenedor problema-rejilla">
+    <div class="entrada revelar">
+      <h2 id="problema-titulo">Tus expedientes merecen algo más firme que un documento editable</h2>
+      <p class="texto-grande tenue">
+        La NOM-004 pide notas sin enmendaduras ni tachaduras. Con las herramientas de siempre, cumplirlo depende de la buena fe.
+      </p>
+    </div>
+
+    <div class="comparacion revelar" aria-hidden="true">
+      <div class="doc doc-editable">
+        <p class="doc-titulo"><Icono nombre="nota" /> nota_paciente_final_v3.docx</p>
+        <p class="doc-linea">Dx: Faringitis aguda</p>
+        <p class="doc-linea">
+          Tx: <span class="doc-cambio"><span>Paracetamol 500 mg</span><span>Ibuprofeno 400 mg</span></span>
+        </p>
+        <p class="doc-pie">Modificado hoy 23:41 · sin aviso</p>
+      </div>
+      <div class="doc doc-sellada">
+        <p class="doc-titulo"><Icono nombre="sello" /> Nota de evolución n.º 12</p>
+        <p class="doc-linea">Dx: J02.9 Faringitis aguda</p>
+        <p class="doc-linea">Tx: Paracetamol 500 mg</p>
+        <p class="doc-pie doc-pie-sello"><Icono nombre="check" /> Sellada 10:14 · no se puede modificar</p>
+      </div>
+    </div>
+  </div>
+
+  <ul class="contenedor problemas">
+    {
+      PROBLEMAS.map((p) => (
+        <li class="revelar">
+          <Icono nombre={p.icono} />
+          <h3>{p.titulo}</h3>
+          <p class="tenue">{p.texto}</p>
+        </li>
+      ))
+    }
+  </ul>
+</section>
+
+<style>
+  .problema-rejilla {
+    display: grid;
+    gap: clamp(32px, 5vw, 56px);
+    align-items: center;
+  }
+
+  @media (min-width: 960px) {
+    .problema-rejilla {
+      grid-template-columns: 1.1fr 0.9fr;
+    }
+  }
+
+  .comparacion {
+    position: relative;
+    display: grid;
+    gap: 14px;
+  }
+
+  .doc {
+    padding: 18px 20px;
+    border: 1px solid var(--linea-clara);
+    border-radius: var(--radio);
+    background: #fff;
+    box-shadow: 0 20px 40px -24px rgb(13 27 53 / 0.35);
+  }
+
+  .doc-titulo {
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+    margin-bottom: 10px;
+    font-weight: 600;
+    font-size: 0.975rem;
+  }
+
+  .doc-titulo :global(.icono) {
+    width: 1.2em;
+    height: 1.2em;
+  }
+
+  .doc-linea {
+    margin: 4px 0 0;
+    font-size: 0.975rem;
+  }
+
+  .doc-pie {
+    display: flex;
+    align-items: center;
+    gap: 0.4em;
+    margin-top: 12px;
+    font-size: 0.875rem;
+    color: var(--tinta-tenue);
+  }
+
+  .doc-editable {
+    transform: rotate(-1.5deg) translateX(-8px);
+  }
+
+  .doc-editable .doc-pie {
+    color: #b45309;
+  }
+
+  .doc-sellada {
+    border-color: rgb(10 139 105 / 0.35);
+    box-shadow:
+      0 0 0 4px rgb(10 139 105 / 0.08),
+      0 20px 40px -24px rgb(13 27 53 / 0.35);
+    transform: rotate(1deg) translateX(10px);
+  }
+
+  .doc-sellada .doc-titulo :global(.icono),
+  .doc-pie-sello {
+    color: var(--esmeralda);
+  }
+
+  .doc-pie-sello {
+    font-weight: 600;
+  }
+
+  .doc-pie :global(.icono) {
+    width: 1.1em;
+    height: 1.1em;
+  }
+
+  /* La línea que cambia sola en el documento editable. */
+  .doc-cambio {
+    display: inline-grid;
+  }
+
+  .doc-cambio span {
+    grid-area: 1 / 1;
+    animation: cambio 6s infinite;
+  }
+
+  .doc-cambio span:nth-child(2) {
+    animation-delay: -3s;
+    color: #b45309;
+    font-weight: 600;
+  }
+
+  @keyframes cambio {
+    0%,
+    42% {
+      opacity: 1;
+    }
+    50%,
+    92% {
+      opacity: 0;
+    }
+    100% {
+      opacity: 1;
+    }
+  }
+
+  .problemas {
+    display: grid;
+    gap: 28px;
+    margin-top: clamp(48px, 6vw, 80px);
+    padding-top: clamp(32px, 4vw, 48px);
+    border-top: 1px solid var(--linea-clara);
+    list-style: none;
+  }
+
+  @media (min-width: 760px) {
+    .problemas {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 40px;
+    }
+  }
+
+  .problemas :global(.icono) {
+    width: 30px;
+    height: 30px;
+    color: var(--azul);
+  }
+
+  .problemas h3 {
+    margin-top: 14px;
+  }
+
+  .problemas p {
+    margin-top: 8px;
+  }
+
+  .problemas li:nth-child(2) {
+    transition-delay: 0.1s;
+  }
+
+  .problemas li:nth-child(3) {
+    transition-delay: 0.2s;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .doc-cambio span {
+      animation: none;
+    }
+    .doc-cambio span:nth-child(2) {
+      display: none;
+    }
+  }
+</style>

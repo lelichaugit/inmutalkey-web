@@ -74,6 +74,8 @@ export default defineConfig({
   trailingSlash: 'never',
   compressHTML: true,
   devToolbar: { enabled: false },
+  // Las páginas internas se descargan al pasar el cursor o tocar el enlace: la navegación se siente instantánea.
+  prefetch: { prefetchAll: true, defaultStrategy: 'hover' },
   build: {
     format: 'file',
     inlineStylesheets: 'never',

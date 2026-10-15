@@ -1,0 +1,320 @@
+---
+// Chat de WhatsApp simulado en un teléfono. Sin JS se ve completo; con JS (src/scripts/chat.ts) los mensajes llegan
+// uno a uno, con "escribiendo…", cuando el teléfono entra en vista. No se usa el logo de WhatsApp.
+import marca from '../data/marca.json';
+import Icono from './Icono.astro';
+import Logo from './Logo.astro';
+
+export interface Mensaje {
+  readonly de: 'medico' | 'inmutalkey';
+  readonly texto: string;
+  readonly hora: string;
+  /** Burbuja de archivo adjunto (nombre del archivo). */
+  readonly archivo?: string;
+}
+
+interface Props {
+  mensajes: readonly Mensaje[];
+  etiqueta: string;
+  class?: string;
+}
+
+const { mensajes, etiqueta, class: clase } = Astro.props;
+const avatar = marca.avatar.disponible;
+---
+
+<figure class:list={['telefono', clase]} data-chat>
+  <div class="telefono-pantalla" role="img" aria-label={etiqueta}>
+    <div class="chat-cabecera">
+      <span class="chat-avatar">
+        {avatar ? <img src="/brand/avatar-chat-96.webp" width="96" height="96" alt="" loading="lazy" /> : <Logo titulo={null} />}
+      </span>
+      <span class="chat-contacto">
+        <strong>InmutalKey</strong>
+        <small data-chat-estado>en línea</small>
+      </span>
+    </div>
+
+    <ol class="chat-mensajes" data-chat-mensajes aria-hidden="true">
+      {
+        mensajes.map((m) => (
+          <li class:list={['burbuja', `de-${m.de}`]} data-mensaje>
+            {m.archivo && (
+              <span class="burbuja-archivo">
+                <Icono nombre="descarga" />
+                <span>{m.archivo}</span>
+              </span>
+            )}
+            <span class="burbuja-texto">{m.texto}</span>
+            <span class="burbuja-meta">
+              {m.hora}
+              {m.de === 'medico' && <Icono nombre="doble-check" class="leido" />}
+            </span>
+          </li>
+        ))
+      }
+      <li class="burbuja de-inmutalkey escribiendo" data-escribiendo hidden>
+        <i></i><i></i><i></i>
+      </li>
+    </ol>
+
+    <div class="chat-entrada" aria-hidden="true">
+      <span class="chat-campo"><Icono nombre="adjunto" /> Mensaje</span>
+      <span class="chat-mic"><Icono nombre="microfono" /></span>
+    </div>
+  </div>
+  <figcaption>Conversación de ejemplo</figcaption>
+</figure>
+
+<style>
+  .telefono {
+    margin: 0;
+    width: min(360px, 100%);
+    margin-inline: auto;
+  }
+
+  .telefono-pantalla {
+    display: flex;
+    flex-direction: column;
+    height: 600px;
+    border: 10px solid #0b0f17;
+    border-radius: 44px;
+    background-color: #efe7dd;
+    background-image:
+      radial-gradient(rgb(0 0 0 / 0.035) 1px, transparent 1px),
+      radial-gradient(rgb(0 0 0 / 0.025) 1px, transparent 1px);
+    background-size: 22px 22px, 22px 22px;
+    background-position: 0 0, 11px 11px;
+    overflow: hidden;
+    box-shadow:
+      0 0 0 1px rgb(255 255 255 / 0.12),
+      0 40px 80px -24px rgb(0 0 0 / 0.75);
+    font-family: var(--fuente-texto);
+    color: #111b21;
+  }
+
+  .chat-cabecera {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 18px 14px 10px;
+    background: #075e54;
+    color: #fff;
+  }
+
+  .chat-avatar {
+    display: grid;
+    place-items: center;
+    width: 38px;
+    height: 38px;
+    flex: none;
+    border-radius: 50%;
+    background: var(--navy);
+    color: #fff;
+    overflow: hidden;
+  }
+
+  .chat-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .chat-avatar :global(.logo) {
+    height: 26px;
+  }
+
+  .chat-contacto {
+    display: grid;
+    line-height: 1.2;
+  }
+
+  .chat-contacto strong {
+    font-size: 1rem;
+  }
+
+  .chat-contacto small {
+    font-size: 0.8rem;
+    opacity: 0.85;
+  }
+
+  .chat-mensajes {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 6px;
+    margin: 0;
+    padding: 14px 12px;
+    list-style: none;
+    overflow: hidden;
+    justify-content: flex-end;
+  }
+
+  .burbuja {
+    position: relative;
+    max-width: 82%;
+    padding: 7px 9px 5px;
+    border-radius: 10px;
+    font-size: 0.9rem;
+    line-height: 1.35;
+    box-shadow: 0 1px 0.5px rgb(11 20 26 / 0.13);
+  }
+
+  .de-medico {
+    align-self: flex-end;
+    background: #d9fdd3;
+    border-top-right-radius: 3px;
+  }
+
+  .de-inmutalkey {
+    align-self: flex-start;
+    background: #fff;
+    border-top-left-radius: 3px;
+  }
+
+  .burbuja-texto {
+    display: block;
+  }
+
+  .burbuja-archivo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    background: #f0f2f5;
+    font-size: 0.85rem;
+    font-weight: 600;
+  }
+
+  .burbuja-archivo :global(.icono) {
+    width: 20px;
+    height: 20px;
+    color: #075e54;
+  }
+
+  .burbuja-meta {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 3px;
+    margin-top: 2px;
+    color: #667781;
+    font-size: 0.7rem;
+  }
+
+  .burbuja-meta :global(.leido) {
+    width: 15px;
+    height: 15px;
+    color: #53bdeb;
+  }
+
+  .escribiendo {
+    display: inline-flex;
+    gap: 4px;
+    padding: 12px 14px;
+  }
+
+  .escribiendo[hidden] {
+    display: none;
+  }
+
+  .escribiendo i {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #8696a0;
+    animation: punto 1.2s infinite;
+  }
+
+  .escribiendo i:nth-child(2) {
+    animation-delay: 0.15s;
+  }
+
+  .escribiendo i:nth-child(3) {
+    animation-delay: 0.3s;
+  }
+
+  @keyframes punto {
+    0%,
+    60%,
+    100% {
+      transform: none;
+      opacity: 0.5;
+    }
+    30% {
+      transform: translateY(-4px);
+      opacity: 1;
+    }
+  }
+
+  /* Con JS: los mensajes esperan su turno. */
+  :global(.js) .burbuja[data-mensaje] {
+    display: none;
+  }
+
+  :global(.js) .burbuja[data-mensaje].es-visible {
+    display: block;
+    animation: llega 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  :global(.js) .burbuja[data-mensaje]:not(.es-leido) :global(.leido) {
+    color: #8696a0;
+  }
+
+  @keyframes llega {
+    from {
+      opacity: 0;
+      transform: translateY(8px) scale(0.98);
+    }
+  }
+
+  .chat-entrada {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px 16px;
+  }
+
+  .chat-campo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+    padding: 10px 14px;
+    border-radius: 999px;
+    background: #fff;
+    color: #8696a0;
+    font-size: 0.9rem;
+  }
+
+  .chat-campo :global(.icono),
+  .chat-mic :global(.icono) {
+    width: 20px;
+    height: 20px;
+  }
+
+  .chat-mic {
+    display: grid;
+    place-items: center;
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: #00a884;
+    color: #fff;
+  }
+
+  figcaption {
+    margin-top: 12px;
+    color: var(--texto-tenue);
+    font-size: 0.875rem;
+    text-align: center;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    :global(.js) .burbuja[data-mensaje] {
+      display: block;
+    }
+  }
+</style>

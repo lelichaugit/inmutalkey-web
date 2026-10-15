@@ -1,0 +1,158 @@
+---
+import { PREGUNTAS } from '../../data/faq';
+
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: PREGUNTAS.map((p) => ({
+    '@type': 'Question',
+    name: p.pregunta,
+    acceptedAnswer: { '@type': 'Answer', text: p.respuesta.join(' ') },
+  })),
+};
+---
+
+<section class="seccion fondo-oscuro faq" id="preguntas" aria-labelledby="faq-titulo">
+  <div class="contenedor faq-rejilla">
+    <div class="entrada revelar faq-cabecera">
+      <h2 id="faq-titulo">Preguntas frecuentes</h2>
+      <p class="tenue">¿No está tu duda? Escríbenos por WhatsApp y te responde una persona.</p>
+    </div>
+    <div class="faq-lista">
+      {
+        PREGUNTAS.map((p) => (
+          <details class="pregunta" id={`faq-${p.id}`}>
+            <summary>
+              <span>{p.pregunta}</span>
+              <span class="pregunta-signo" aria-hidden="true" />
+            </summary>
+            <div class="respuesta">
+              {p.respuesta.map((r) => <p>{r}</p>)}
+              {p.enlace && (
+                <p>
+                  <a href={p.enlace.href}>{p.enlace.texto}</a>
+                </p>
+              )}
+            </div>
+          </details>
+        ))
+      }
+    </div>
+  </div>
+  <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+</section>
+
+<style>
+  .faq-rejilla {
+    display: grid;
+    gap: 32px;
+  }
+
+  @media (min-width: 960px) {
+    .faq-rejilla {
+      grid-template-columns: 0.75fr 1.25fr;
+      gap: 64px;
+      align-items: start;
+    }
+
+    .faq-cabecera {
+      position: sticky;
+      top: calc(var(--altura-nav) + 32px);
+    }
+  }
+
+  .faq-cabecera p {
+    margin-top: 1rem;
+  }
+
+  .faq-lista {
+    border-top: 1px solid var(--linea-oscura);
+  }
+
+  .pregunta {
+    border-bottom: 1px solid var(--linea-oscura);
+    interpolate-size: allow-keywords;
+  }
+
+  .pregunta summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    min-height: 64px;
+    padding: 16px 4px;
+    font-size: 1.125rem;
+    font-weight: 600;
+    cursor: pointer;
+    list-style: none;
+  }
+
+  .pregunta summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .pregunta summary:hover {
+    color: #fff;
+  }
+
+  .pregunta-signo {
+    position: relative;
+    flex: none;
+    width: 28px;
+    height: 28px;
+    border: 1px solid var(--linea-oscura-fuerte);
+    border-radius: 50%;
+    transition:
+      transform 0.35s var(--ease),
+      background-color 0.35s var(--ease);
+  }
+
+  .pregunta-signo::before,
+  .pregunta-signo::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 10px;
+    height: 1.5px;
+    background: currentColor;
+    transform: translate(-50%, -50%);
+  }
+
+  .pregunta-signo::after {
+    transform: translate(-50%, -50%) rotate(90deg);
+    transition: transform 0.35s var(--ease);
+  }
+
+  .pregunta[open] .pregunta-signo {
+    background: rgb(46 159 224 / 0.15);
+    border-color: rgb(46 159 224 / 0.5);
+  }
+
+  .pregunta[open] .pregunta-signo::after {
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+
+  /* Apertura suave en navegadores que lo soportan (el resto abre al instante). */
+  .pregunta::details-content {
+    block-size: 0;
+    overflow: clip;
+    transition:
+      block-size 0.4s var(--ease),
+      content-visibility 0.4s allow-discrete;
+  }
+
+  .pregunta[open]::details-content {
+    block-size: auto;
+  }
+
+  .respuesta {
+    padding: 0 4px 22px;
+    color: var(--texto-tenue);
+    max-width: 62ch;
+  }
+
+  .respuesta a {
+    color: var(--azul-vivo);
+  }
+</style>

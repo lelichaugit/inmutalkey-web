@@ -1,0 +1,138 @@
+---
+import { enlaceWhatsApp } from '../../lib/whatsapp';
+import { sitio } from '../../site.config';
+import ChatSimulado, { type Mensaje } from '../ChatSimulado.astro';
+import Icono from '../Icono.astro';
+
+const dias = sitio.licencia.diasPrueba;
+const prueba = enlaceWhatsApp(sitio.contacto.whatsapp, sitio.contacto.mensajes.prueba);
+
+const PASOS = [
+  { titulo: 'Escríbenos por WhatsApp', texto: 'Te responde una persona del equipo y te envía el instalador.' },
+  { titulo: 'Instálalo en tu computadora', texto: 'Verificas que el archivo es el original, creas tu contraseña y capturas los datos de tu consultorio.' },
+  { titulo: `Úsalo ${dias} días completos`, texto: 'Todas las funciones, con tus pacientes reales o en modo demostración.' },
+  { titulo: 'Activa tu licencia vitalicia', texto: 'Si te convence, la activas y sigues trabajando sin perder nada de lo capturado.' },
+] as const;
+
+const CHAT: readonly Mensaje[] = [
+  { de: 'medico', hora: '10:02', texto: sitio.contacto.mensajes.prueba },
+  { de: 'inmutalkey', hora: '10:03', texto: '¡Hola, doctora! Con gusto. ¿Su computadora tiene Windows 10 u 11?' },
+  { de: 'medico', hora: '10:04', texto: 'Windows 11.' },
+  {
+    de: 'inmutalkey',
+    hora: '10:05',
+    texto: `Perfecto. Le envío el instalador y su huella para que verifique que es el original. La prueba dura ${dias} días, con todas las funciones.`,
+    archivo: 'Instalador de InmutalKey · Windows',
+  },
+  { de: 'medico', hora: '10:21', texto: 'Ya quedó instalado. ¿Puedo practicar sin pacientes reales?' },
+  { de: 'inmutalkey', hora: '10:22', texto: 'Sí: active el modo demostración. Usa una base aparte que puede borrar cuando quiera.' },
+];
+---
+
+<section class="seccion fondo-oscuro pasos" id="pasos" aria-labelledby="pasos-titulo">
+  <div class="contenedor pasos-rejilla">
+    <div>
+      <div class="entrada revelar">
+        <h2 id="pasos-titulo">Empezar toma una conversación</h2>
+        <p class="texto-grande tenue">Sin formularios largos ni tarjeta de crédito. Así es de principio a fin:</p>
+      </div>
+      <ol class="pasos-lista">
+        {
+          PASOS.map((p, i) => (
+            <li class="revelar">
+              <span class="paso-numero" aria-hidden="true">{i + 1}</span>
+              <span>
+                <strong>{p.titulo}</strong>
+                <span class="tenue">{p.texto}</span>
+              </span>
+            </li>
+          ))
+        }
+      </ol>
+      {
+        prueba && (
+          <a class="boton boton-primario" href={prueba} target="_blank" rel="noopener noreferrer">
+            <Icono nombre="chat" /> Empezar por WhatsApp
+          </a>
+        )
+      }
+    </div>
+    <ChatSimulado mensajes={CHAT} etiqueta="Conversación de ejemplo: una doctora pide la prueba por WhatsApp y recibe el instalador." />
+  </div>
+</section>
+
+<style>
+  .pasos-rejilla {
+    display: grid;
+    gap: clamp(40px, 6vw, 72px);
+    align-items: center;
+  }
+
+  @media (min-width: 960px) {
+    .pasos-rejilla {
+      grid-template-columns: 1.15fr 0.85fr;
+    }
+  }
+
+  .pasos-lista {
+    position: relative;
+    display: grid;
+    gap: 22px;
+    margin: 32px 0 32px;
+    padding: 0;
+    list-style: none;
+  }
+
+  .pasos-lista::before {
+    content: '';
+    position: absolute;
+    left: 21px;
+    top: 22px;
+    bottom: 22px;
+    width: 1px;
+    background: linear-gradient(var(--azul-vivo), transparent);
+    opacity: 0.5;
+  }
+
+  .pasos-lista li {
+    position: relative;
+    display: grid;
+    grid-template-columns: 44px 1fr;
+    gap: 16px;
+    align-items: start;
+  }
+
+  .pasos-lista li:nth-child(2) {
+    transition-delay: 0.08s;
+  }
+  .pasos-lista li:nth-child(3) {
+    transition-delay: 0.16s;
+  }
+  .pasos-lista li:nth-child(4) {
+    transition-delay: 0.24s;
+  }
+
+  .paso-numero {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border: 1px solid rgb(46 159 224 / 0.5);
+    border-radius: 50%;
+    background: var(--medianoche);
+    color: var(--azul-vivo);
+    font-family: var(--fuente-titulo);
+    font-size: 1.125rem;
+    font-weight: 600;
+  }
+
+  .pasos-lista li > span:last-child {
+    display: grid;
+    gap: 4px;
+    padding-top: 8px;
+  }
+
+  .pasos-lista strong {
+    font-size: 1.1875rem;
+  }
+</style>

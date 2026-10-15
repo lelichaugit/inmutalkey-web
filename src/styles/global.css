@@ -292,11 +292,12 @@ textarea {
   color-scheme: light;
 }
 
-/* La tarjeta: medianoche con luz azul que entra abajo a la derecha */
+/* La tarjeta: medianoche con luz azul que entra abajo a la derecha (se desvanece al final de la sección). */
 .fondo-luz {
   background:
-    radial-gradient(70% 60% at 92% 108%, rgb(1 120 176 / 0.42), transparent 70%),
-    radial-gradient(40% 35% at 100% 100%, rgb(46 159 224 / 0.22), transparent 70%),
+    linear-gradient(transparent 82%, var(--medianoche)),
+    radial-gradient(70% 55% at 90% 92%, rgb(1 120 176 / 0.4), transparent 70%),
+    radial-gradient(40% 35% at 100% 96%, rgb(46 159 224 / 0.2), transparent 70%),
     var(--medianoche);
   color: var(--texto);
 }
@@ -375,6 +376,27 @@ textarea {
   background: #0a87c4;
 }
 
+/* Destello que cruza el botón principal al pasar el cursor. */
+.boton-primario {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.boton-primario::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(110deg, transparent 30%, rgb(255 255 255 / 0.28) 50%, transparent 70%);
+  transform: translateX(-120%);
+  transition: transform 0.8s var(--ease);
+}
+
+.boton-primario:hover::after {
+  transform: translateX(120%);
+}
+
 .boton-secundario {
   background: transparent;
   border-color: var(--linea-oscura-fuerte);
@@ -449,6 +471,40 @@ textarea {
   border-style: dashed;
 }
 
+/* ───────────── Transiciones entre páginas (sin JS: View Transitions entre documentos) ───────────── */
+
+@view-transition {
+  navigation: auto;
+}
+
+::view-transition-old(root) {
+  animation: 0.28s var(--ease) both vt-salida;
+}
+
+::view-transition-new(root) {
+  animation: 0.5s var(--ease) both vt-entrada;
+}
+
+@keyframes vt-salida {
+  to {
+    opacity: 0;
+    transform: translateY(-12px);
+  }
+}
+
+@keyframes vt-entrada {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  @view-transition {
+    navigation: none;
+  }
+}
+
 /* ───────────── Movimiento ───────────── */
 
 /* Solo con JS (base.ts pone .js) y solo bajo el pliegue: el contenido nunca depende del script. */
@@ -509,4 +565,77 @@ textarea {
 
 main:focus {
   outline: none;
+}
+
+/* Menú móvil abierto: el fondo no se desplaza. */
+html.menu-abierto {
+  overflow: hidden;
+}
+
+/* ── Accesos flotantes: WhatsApp (móvil) y volver arriba (escritorio) ── */
+.flotante {
+  display: none;
+}
+
+.js .flotante {
+  position: fixed;
+  right: 16px;
+  bottom: calc(16px + env(safe-area-inset-bottom));
+  z-index: 40;
+  display: flex;
+  gap: 10px;
+  opacity: 0;
+  transform: translateY(14px);
+  pointer-events: none;
+  transition:
+    opacity 0.4s var(--ease),
+    transform 0.4s var(--ease);
+}
+
+.js .flotante[data-visible='si'] {
+  opacity: 1;
+  transform: none;
+  pointer-events: auto;
+}
+
+.js.menu-abierto .flotante {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.flotante-cta {
+  box-shadow: 0 14px 30px -10px rgb(0 0 0 / 0.7);
+}
+
+.flotante-arriba {
+  display: none;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border: 1px solid var(--linea-oscura-fuerte);
+  border-radius: 50%;
+  background: rgb(11 20 36 / 0.85);
+  color: var(--texto);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  transition: border-color 0.25s var(--ease);
+}
+
+.flotante-arriba:hover {
+  border-color: var(--azul-vivo);
+}
+
+.flotante-arriba .icono {
+  width: 22px;
+  height: 22px;
+}
+
+@media (min-width: 1080px) {
+  .flotante-cta {
+    display: none;
+  }
+
+  .flotante-arriba {
+    display: grid;
+  }
 }

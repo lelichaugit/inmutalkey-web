@@ -1,0 +1,148 @@
+---
+// Reseñas. Producción: solo verificadas (en build) — la Fase C añade las aprobadas en D1 desde /api/resenas.
+// Desarrollo y preview con SHOW_EXAMPLE_REVIEWS=true: las 10 de ejemplo, con la cinta "Ejemplo ilustrativo"
+// y `data-resena-ejemplo` (el guardian detiene un build de producción que las contenga).
+import ejemplos from '../../data/resenas.json';
+import { detectarEntorno, quiereEjemplos } from '../../lib/entorno';
+import { resenasPublicables, type Resena } from '../../lib/resenas';
+import Icono from '../Icono.astro';
+
+const entorno = detectarEntorno(process.env, { servidorDev: import.meta.env.DEV });
+const resenas = resenasPublicables(ejemplos, { incluirEjemplos: quiereEjemplos(entorno, process.env) });
+const mitad = Math.ceil(resenas.length / 2);
+const filas: Resena[][] = resenas.length > 4 ? [resenas.slice(0, mitad), resenas.slice(mitad)] : [resenas];
+---
+
+{
+  resenas.length > 0 && (
+    <section class="seccion fondo-oscuro resenas" aria-labelledby="resenas-titulo">
+      <div class="contenedor entrada revelar">
+        <h2 id="resenas-titulo">Lo que dicen los médicos fundadores</h2>
+      </div>
+      <div class="resenas-filas">
+        {filas.map((fila, f) => (
+          <div class:list={['resenas-fila', { 'es-inversa': f === 1 }]}>
+            <ul class="resenas-pista">
+              {[...fila, ...fila].map((r, i) => (
+                <li
+                  class="resena"
+                  data-resena-ejemplo={r.esEjemplo ? '' : undefined}
+                  aria-hidden={i >= fila.length ? 'true' : undefined}
+                >
+                  {r.esEjemplo ? (
+                    <span class="pildora pildora-ejemplo">Ejemplo ilustrativo</span>
+                  ) : (
+                    <span class="pildora pildora-verificado">
+                      <Icono nombre="check" /> Reseña verificada
+                    </span>
+                  )}
+                  <span class="estrellas" role="img" aria-label={`${r.estrellas} de 5 estrellas`}>
+                    {'★'.repeat(r.estrellas)}
+                    <span class="estrellas-vacias">{'★'.repeat(5 - r.estrellas)}</span>
+                  </span>
+                  <blockquote>{r.texto}</blockquote>
+                  <p class="resena-autor">
+                    <strong>{r.nombre}</strong> · {r.especialidad}
+                  </p>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </div>
+    </section>
+  )
+}
+
+<style>
+  .resenas {
+    padding-block: clamp(64px, 7vw, 104px);
+    overflow: hidden;
+  }
+
+  .resenas-filas {
+    display: grid;
+    gap: 16px;
+    margin-top: clamp(28px, 4vw, 44px);
+    -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+    mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+  }
+
+  .resenas-pista {
+    display: flex;
+    gap: 16px;
+    width: max-content;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    animation: carrusel 70s linear infinite;
+  }
+
+  .es-inversa .resenas-pista {
+    animation-direction: reverse;
+    animation-duration: 80s;
+  }
+
+  .resenas-filas:hover .resenas-pista {
+    animation-play-state: paused;
+  }
+
+  @keyframes carrusel {
+    to {
+      transform: translateX(calc(-50% - 8px));
+    }
+  }
+
+  .resena {
+    display: grid;
+    align-content: start;
+    gap: 10px;
+    width: min(380px, 80vw);
+    padding: 20px 22px;
+    border: 1px solid var(--linea-oscura);
+    border-radius: var(--radio);
+    background: rgb(255 255 255 / 0.03);
+  }
+
+  .resena .pildora {
+    justify-self: start;
+    font-size: 0.8125rem;
+  }
+
+  .estrellas {
+    color: #f3c969;
+    letter-spacing: 0.15em;
+  }
+
+  .estrellas-vacias {
+    color: rgb(255 255 255 / 0.18);
+  }
+
+  blockquote {
+    margin: 0;
+    font-size: 1.0625rem;
+    line-height: 1.55;
+  }
+
+  .resena-autor {
+    color: var(--texto-tenue);
+    font-size: 0.95rem;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .resenas-filas {
+      overflow-x: auto;
+      -webkit-mask-image: none;
+      mask-image: none;
+    }
+
+    .resenas-pista {
+      animation: none;
+      padding-inline: var(--margen);
+    }
+
+    .resena[aria-hidden='true'] {
+      display: none;
+    }
+  }
+</style>

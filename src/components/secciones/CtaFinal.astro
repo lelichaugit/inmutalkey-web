@@ -1,0 +1,54 @@
+---
+import { enlaceWhatsApp } from '../../lib/whatsapp';
+import { sitio } from '../../site.config';
+import Icono from '../Icono.astro';
+import Isotipo3D from '../Isotipo3D.astro';
+
+const prueba = enlaceWhatsApp(sitio.contacto.whatsapp, sitio.contacto.mensajes.prueba);
+---
+
+<section class="seccion fondo-luz cta" aria-labelledby="cta-titulo">
+  <div class="contenedor cta-caja revelar">
+    <div class="cta-llave" aria-hidden="true">
+      <Isotipo3D sizes="120px" brillo />
+    </div>
+    <h2 id="cta-titulo">Tu próxima nota puede quedar sellada hoy</h2>
+    <p class="texto-grande tenue">{sitio.licencia.diasPrueba} días completos para probarlo en tu consultorio. Te acompañamos desde el primer mensaje.</p>
+    <div class="cta-acciones">
+      {
+        prueba && (
+          <a class="boton boton-primario" href={prueba} target="_blank" rel="noopener noreferrer">
+            <Icono nombre="chat" /> Pide tu prueba por WhatsApp
+          </a>
+        )
+      }
+      <a class="boton boton-secundario" href="#demo"><Icono nombre="play" /> Ver la simulación</a>
+    </div>
+  </div>
+</section>
+
+<style>
+  .cta {
+    text-align: center;
+  }
+
+  .cta-caja {
+    display: grid;
+    justify-items: center;
+    gap: 20px;
+    max-width: 760px;
+  }
+
+  .cta-llave {
+    height: 150px;
+    filter: drop-shadow(0 0 30px rgb(46 159 224 / 0.45));
+  }
+
+  .cta-acciones {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 8px;
+  }
+</style>

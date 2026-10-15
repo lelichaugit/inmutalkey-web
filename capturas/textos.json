@@ -1,0 +1,12 @@
+{
+  "iKcontraseñauserfoto.png": {
+    "titulo": "Inicio de sesión",
+    "descripcion": "Tu base de datos se abre solo con tu contraseña.",
+    "orden": 1
+  },
+  "IK3mainfoto7.png": {
+    "titulo": "Panel principal",
+    "descripcion": "Pacientes, agenda del día y herramientas a un clic.",
+    "orden": 2
+  }
+}

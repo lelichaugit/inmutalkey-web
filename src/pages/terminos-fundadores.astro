@@ -1,0 +1,62 @@
+---
+// BORRADOR. Montos, cupos y fechas salen de site.config.ts; los puntos entre corchetes los define Alan con su abogado.
+import PaginaTexto from '../layouts/PaginaTexto.astro';
+import { estaDefinido, sitio } from '../site.config';
+
+const { precios, cupos, licencia, legal } = sitio;
+const dinero = (v: number | 'TODO_DEFINIR'): string =>
+  estaDefinido(v) ? `$${v.toLocaleString('es-MX')} ${precios.moneda}` : '[por definir]';
+const fin = estaDefinido(precios.finPrecioFundador)
+  ? new Date(`${precios.finPrecioFundador}T12:00:00`).toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' })
+  : '[fecha por definir]';
+const lugares = estaDefinido(cupos.totales) ? String(cupos.totales) : '[número por definir]';
+const actualizaciones = estaDefinido(licencia.actualizacionesIncluidas) ? licencia.actualizacionesIncluidas : '[alcance de actualizaciones por definir]';
+---
+
+<PaginaTexto
+  titulo="Términos del programa Fundadores"
+  descripcion="Las condiciones del precio de fundador y de la licencia digital de InmutalKey."
+  antetitulo="Legal"
+  borrador={!legal.revisadoPorAbogado}
+  actualizado="15 de octubre de 2026"
+>
+  <h2>1. Qué es el programa</h2>
+  <p>
+    El programa Fundadores ofrece condiciones especiales a los primeros médicos que adquieren InmutalKey. Está limitado
+    a {lugares} lugares y el precio de fundador aplica hasta el {fin} o hasta agotar lugares, lo que ocurra primero.
+  </p>
+
+  <h2>2. Precio</h2>
+  <p>Licencia digital de fundador: <strong>{dinero(precios.fundadores)}</strong>.</p>
+  <p>{estaDefinido(precios.notaPrecios) ? precios.notaPrecios : '[Indicar si los precios incluyen IVA y los medios de pago.]'}</p>
+
+  <h2>3. La licencia</h2>
+  <ul>
+    <li>Es vitalicia y queda ligada a una instalación del programa.</li>
+    <li>Incluye las funciones disponibles al momento de la compra. Actualizaciones: {actualizaciones}.</li>
+    <li>Antes de comprar puedes usar el programa {licencia.diasPrueba} días completos sin costo.</li>
+    <li>
+      Si no activas la licencia al terminar la prueba, tus datos se conservan: puedes consultarlos, buscarlos,
+      imprimirlos, respaldarlos y registrar pacientes; no podrás firmar notas nuevas ni agendar citas.
+    </li>
+  </ul>
+
+  <h2>4. Reseñas de fundadores</h2>
+  <p>
+    Con tu código de fundador puedes dejar una reseña en el sitio. La publicamos solo después de revisarla, no la
+    editamos y puedes pedir que se retire en cualquier momento.
+  </p>
+
+  <h2>5. Lo que InmutalKey es y no es</h2>
+  <p>
+    InmutalKey es una herramienta para llevar tu expediente clínico y está diseñada alrededor de la NOM-004-SSA3-2012.
+    No sustituye la asesoría legal ni garantiza un resultado en un procedimiento legal. El uso clínico y el cumplimiento
+    normativo de tu práctica siguen siendo tu responsabilidad.
+  </p>
+
+  <h2>6. Cancelaciones y reembolsos</h2>
+  <p>[Por definir con el abogado: plazos, condiciones y forma de reembolso.]</p>
+
+  <h2>7. Contacto y jurisdicción</h2>
+  <p>[Por definir: datos del proveedor, correo de contacto y tribunales competentes.]</p>
+</PaginaTexto>

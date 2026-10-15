@@ -1,0 +1,123 @@
+---
+// El logo principal: render 3D del isotipo (blanco en relieve sobre negro, con el negro llevado a 0 por
+// scripts/generar-marca.mjs). Se pinta con `mix-blend-mode: screen` para que flote sobre el fondo sin recuadro.
+// Mientras no exista el render, usa el isotipo plano con un brillo azul.
+import marca from '../data/marca.json';
+import Logo from './Logo.astro';
+
+interface Props {
+  /** Ancho con que se mostrará, para `sizes`. */
+  sizes?: string;
+  /** Solo el del hero: es el elemento más grande del primer pintado. */
+  prioridad?: boolean;
+  /** `null` = decorativo. */
+  alt?: string | null;
+  /** Luz que recorre la llave, recortada a su silueta. */
+  brillo?: boolean;
+  class?: string;
+}
+
+const { sizes = '420px', prioridad = false, alt = null, brillo = false, class: clase } = Astro.props;
+const render = marca.isotipo;
+const anchos = 'anchos' in render && Array.isArray(render.anchos) ? (render.anchos as number[]) : [];
+const mayor = anchos.at(-1);
+const srcset = (ext: string) => anchos.map((w) => `/brand/isotipo-3d-${w}.${ext} ${w}w`).join(', ');
+const ancho = 'ancho' in render ? Number(render.ancho) : undefined;
+const alto = 'alto' in render ? Number(render.alto) : undefined;
+---
+
+{
+  render.disponible && mayor !== undefined ? (
+    <picture class:list={['isotipo-3d', 'es-render', clase]}>
+      <source type="image/avif" srcset={srcset('avif')} sizes={sizes} />
+      <source type="image/webp" srcset={srcset('webp')} sizes={sizes} />
+      <img
+        src={`/brand/isotipo-3d-${mayor}.webp`}
+        width={ancho}
+        height={alto}
+        alt={alt ?? ''}
+        decoding="async"
+        loading={prioridad ? 'eager' : 'lazy'}
+        fetchpriority={prioridad ? 'high' : 'auto'}
+      />
+      {brillo && <span class="isotipo-brillo" aria-hidden="true" />}
+    </picture>
+  ) : (
+    <span class:list={['isotipo-3d', 'es-plano', clase]}>
+      <Logo variante="solido" titulo={alt} />
+      {brillo && <span class="isotipo-brillo" aria-hidden="true" />}
+    </span>
+  )
+}
+
+<style>
+  .isotipo-3d {
+    display: block;
+    position: relative;
+    width: fit-content;
+    height: 100%;
+    color: #fff;
+  }
+
+  .es-render img {
+    display: block;
+    height: 100%;
+    width: auto;
+    mix-blend-mode: screen;
+    user-select: none;
+    -webkit-user-drag: none;
+  }
+
+  .isotipo-brillo {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      100deg,
+      transparent 38%,
+      rgb(150 210 255 / 0.5) 47%,
+      rgb(255 255 255 / 0.95) 50%,
+      rgb(150 210 255 / 0.5) 53%,
+      transparent 62%
+    );
+    background-size: 260% 100%;
+    background-position: 130% 0;
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    -webkit-mask-position: center;
+    mask-position: center;
+    -webkit-mask-size: contain;
+    mask-size: contain;
+    mix-blend-mode: plus-lighter;
+    opacity: 0.8;
+    pointer-events: none;
+    animation: brillo-entrada 2.6s cubic-bezier(0.16, 1, 0.3, 1) 0.4s backwards;
+  }
+
+  /* Silueta exacta: el SVG plano o la máscara alfa que genera scripts/generar-marca.mjs para el render. */
+  .es-plano .isotipo-brillo {
+    -webkit-mask-image: url('/brand/logo-solido.svg');
+    mask-image: url('/brand/logo-solido.svg');
+  }
+
+  .es-render .isotipo-brillo {
+    -webkit-mask-image: url('/brand/isotipo-3d-mascara.webp');
+    mask-image: url('/brand/isotipo-3d-mascara.webp');
+  }
+
+  @keyframes brillo-entrada {
+    from {
+      background-position: 180% 0;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .isotipo-brillo {
+      display: none;
+    }
+  }
+
+  .es-plano :global(.logo) {
+    height: 100%;
+    filter: drop-shadow(0 0 28px rgb(46 159 224 / 0.35)) drop-shadow(0 18px 40px rgb(0 0 0 / 0.55));
+  }
+</style>

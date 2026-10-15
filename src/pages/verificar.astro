@@ -1,0 +1,94 @@
+---
+import Icono from '../components/Icono.astro';
+import PaginaTexto from '../layouts/PaginaTexto.astro';
+import { enlaceWhatsApp } from '../lib/whatsapp';
+import { estaDefinido, sitio } from '../site.config';
+
+const { instalador } = sitio;
+const archivo = estaDefinido(instalador.archivo) ? instalador.archivo : null;
+const version = estaDefinido(instalador.version) ? instalador.version : null;
+const huella = estaDefinido(instalador.sha256) ? instalador.sha256.toUpperCase() : null;
+const nombreArchivo = archivo ?? 'InmutalKey_Setup.exe';
+const pedir = enlaceWhatsApp(sitio.contacto.whatsapp, 'Hola, ¿me compartes la huella SHA-256 del instalador de InmutalKey?');
+---
+
+<PaginaTexto
+  titulo="Verifica tu instalador"
+  descripcion="Antes de instalar, comprueba en un minuto que el archivo es exactamente el que publicamos."
+  antetitulo="Seguridad"
+>
+  <h2>La huella oficial</h2>
+  {
+    huella ? (
+      <div class="aviso">
+        <p>
+          <strong>Archivo:</strong> {nombreArchivo}
+          {version && <> · <strong>Versión:</strong> {version}</>}
+        </p>
+        <p>
+          <strong>SHA-256:</strong> <code class="huella">{huella}</code>
+        </p>
+      </div>
+    ) : (
+      <div class="aviso">
+        <p>
+          La huella del instalador vigente te la enviamos junto con el archivo. Si no la tienes,
+          {pedir ? <a href={pedir} target="_blank" rel="noopener noreferrer"> pídenosla por WhatsApp</a> : ' pídenosla'}.
+        </p>
+      </div>
+    )
+  }
+
+  <h2>Cómo comprobarla en Windows</h2>
+  <ol>
+    <li>Guarda el instalador en tu carpeta de Descargas.</li>
+    <li>Abre el menú Inicio, escribe <strong>PowerShell</strong> y ábrelo.</li>
+    <li>Copia y pega este comando y presiona Enter:</li>
+  </ol>
+  <pre><code>Get-FileHash "$env:USERPROFILE\Downloads\{nombreArchivo}" -Algorithm SHA256</code></pre>
+  <p>
+    Compara el valor que aparece en <strong>Hash</strong> con la huella oficial. Si coinciden todos los caracteres,
+    el archivo es el original. Si no coinciden, no lo instales y escríbenos.
+  </p>
+
+  <h2>"Windows protegió su PC"</h2>
+  <p>
+    Es posible que Windows SmartScreen muestre este aviso. Aparece porque el instalador está firmado con un certificado
+    propio y todavía no con un certificado comercial de firma de código. No significa que el archivo tenga un problema.
+  </p>
+  <p>Si la huella coincide:</p>
+  <ol>
+    <li>Haz clic en <strong>Más información</strong>.</li>
+    <li>Elige <strong>Ejecutar de todas formas</strong>.</li>
+  </ol>
+
+  <h2>¿Dudas?</h2>
+  <p>
+    Te acompañamos en la instalación por WhatsApp.
+    {
+      pedir && (
+        <a class="enlace-boton" href={pedir} target="_blank" rel="noopener noreferrer">
+          <Icono nombre="chat" /> Escríbenos
+        </a>
+      )
+    }
+  </p>
+</PaginaTexto>
+
+<style>
+  .huella {
+    word-break: break-all;
+  }
+
+  .enlace-boton {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4em;
+    margin-left: 0.3em;
+  }
+
+  .enlace-boton :global(.icono) {
+    width: 1.1em;
+    height: 1.1em;
+  }
+</style>

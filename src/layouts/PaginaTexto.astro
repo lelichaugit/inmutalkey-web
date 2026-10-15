@@ -1,0 +1,117 @@
+---
+// Páginas de lectura (verificar, aviso de privacidad, términos): cabecera breve y columna de texto cómoda.
+import Base from './Base.astro';
+
+interface Props {
+  titulo: string;
+  descripcion: string;
+  /** Texto corto sobre el título. */
+  antetitulo?: string;
+  /** Muestra la cinta "Borrador: revisar con abogado". */
+  borrador?: boolean;
+  actualizado?: string;
+  indexar?: boolean;
+}
+
+const { titulo, descripcion, antetitulo, borrador = false, actualizado, indexar = true } = Astro.props;
+---
+
+<Base titulo={titulo} descripcion={descripcion} indexar={indexar}>
+  <header class="pagina-cabecera fondo-luz fondo-cuadricula">
+    <div class="contenedor entrada">
+      {antetitulo && <p class="pildora">{antetitulo}</p>}
+      <h1>{titulo}</h1>
+      <p class="texto-grande tenue">{descripcion}</p>
+      {borrador && <p class="pildora pildora-ejemplo">Borrador: revisar con abogado antes de publicar</p>}
+      {actualizado && <p class="tenue pagina-fecha">Última actualización: {actualizado}</p>}
+    </div>
+  </header>
+  <article class="contenedor prosa">
+    <slot />
+  </article>
+</Base>
+
+<style>
+  .pagina-cabecera {
+    position: relative;
+    margin-top: calc(-1 * var(--altura-nav));
+    padding: calc(var(--altura-nav) + clamp(48px, 7vw, 96px)) 0 clamp(40px, 6vw, 72px);
+    isolation: isolate;
+  }
+
+  .pagina-cabecera h1 {
+    font-size: clamp(2.125rem, 1.5rem + 2.6vw, 3.5rem);
+  }
+
+  .pagina-fecha {
+    font-size: 0.95rem;
+  }
+
+  .prosa {
+    max-width: 760px;
+    padding-block: clamp(40px, 6vw, 80px) clamp(64px, 8vw, 120px);
+  }
+
+  .prosa :global(h2) {
+    margin: 2.4em 0 0.6em;
+    font-size: clamp(1.4rem, 1.2rem + 0.8vw, 1.75rem);
+  }
+
+  .prosa :global(h2:first-child) {
+    margin-top: 0;
+  }
+
+  .prosa :global(h3) {
+    margin: 1.8em 0 0.4em;
+  }
+
+  .prosa :global(p),
+  .prosa :global(li) {
+    color: var(--texto-tenue);
+  }
+
+  .prosa :global(p + p) {
+    margin-top: 0.9em;
+  }
+
+  .prosa :global(ul),
+  .prosa :global(ol) {
+    display: grid;
+    gap: 0.5em;
+    margin: 0.9em 0;
+    padding-left: 1.3em;
+  }
+
+  .prosa :global(strong) {
+    color: var(--texto);
+  }
+
+  .prosa :global(a) {
+    color: var(--azul-vivo);
+  }
+
+  .prosa :global(.aviso) {
+    margin: 1.4em 0;
+    padding: 16px 18px;
+    border: 1px solid var(--linea-oscura-fuerte);
+    border-left: 4px solid var(--azul-vivo);
+    border-radius: 12px;
+    background: rgb(255 255 255 / 0.03);
+  }
+
+  /* Comandos: la única excepción a "sin monoespaciada", por claridad. */
+  .prosa :global(pre) {
+    margin: 1em 0;
+    padding: 14px 16px;
+    border: 1px solid var(--linea-oscura-fuerte);
+    border-radius: 12px;
+    background: #03060c;
+    overflow-x: auto;
+  }
+
+  .prosa :global(code) {
+    font-family: ui-monospace, 'Cascadia Mono', Consolas, Menlo, monospace;
+    font-size: 0.925em;
+    color: var(--texto);
+  }
+</style>

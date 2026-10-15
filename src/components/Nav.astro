@@ -1,6 +1,6 @@
 ---
-import { sitio } from '../site.config';
 import { enlaceWhatsApp } from '../lib/whatsapp';
+import { sitio } from '../site.config';
 import Icono from './Icono.astro';
 import Logo from './Logo.astro';
 
@@ -13,13 +13,14 @@ interface Props {
 }
 
 const { logoDiferido = false } = Astro.props;
-const whatsapp = enlaceWhatsApp(sitio.contacto.whatsapp, sitio.contacto.mensajeWhatsApp);
+const prueba = enlaceWhatsApp(sitio.contacto.whatsapp, sitio.contacto.mensajes.prueba);
 
 const ENLACES = [
-  { href: '/#integridad', texto: 'Cómo protege tus notas' },
-  { href: '/#incluye', texto: 'Qué incluye' },
-  { href: '/#fundadores', texto: 'Fundadores' },
-  { href: '/#preguntas', texto: 'Preguntas' },
+  { id: 'integridad', texto: 'Cómo funciona' },
+  { id: 'demo', texto: 'Pruébalo' },
+  { id: 'incluye', texto: 'Qué incluye' },
+  { id: 'fundadores', texto: 'Fundadores' },
+  { id: 'preguntas', texto: 'Preguntas' },
 ] as const;
 ---
 
@@ -32,13 +33,14 @@ const ENLACES = [
 
     <nav class="nav-enlaces" aria-label="Principal">
       <ul>
-        {ENLACES.map((e) => <li><a href={e.href}>{e.texto}</a></li>)}
+        {ENLACES.map((e) => <li><a href={`/#${e.id}`} data-seccion={e.id}>{e.texto}</a></li>)}
       </ul>
+      <span class="nav-indicador" data-nav-indicador aria-hidden="true"></span>
     </nav>
 
     {
-      whatsapp && (
-        <a class="boton boton-primario boton-chico nav-cta" href={whatsapp} target="_blank" rel="noopener noreferrer">
+      prueba && (
+        <a class="boton boton-primario boton-chico nav-cta" href={prueba} target="_blank" rel="noopener noreferrer">
           <Icono nombre="chat" />
           <span>
             Escríbenos<span class="nav-cta-largo"> por WhatsApp</span>
@@ -53,11 +55,28 @@ const ENLACES = [
         <Icono nombre="cerrar" class="nav-menu-cerrar" />
         <span class="visualmente-oculto">Menú</span>
       </summary>
-      <nav aria-label="Menú">
-        <ul>
-          {ENLACES.map((e) => <li><a href={e.href}>{e.texto}</a></li>)}
-        </ul>
-      </nav>
+      <div class="nav-hoja">
+        <nav aria-label="Menú">
+          <ul>
+            {ENLACES.map((e, i) => (
+              <li>
+                <a href={`/#${e.id}`} data-seccion={e.id}>
+                  <span class="nav-hoja-num" aria-hidden="true">0{i + 1}</span>
+                  {e.texto}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </nav>
+        {
+          prueba && (
+            <a class="boton boton-primario nav-hoja-cta" href={prueba} target="_blank" rel="noopener noreferrer">
+              <Icono nombre="chat" /> Pide tus {sitio.licencia.diasPrueba} días de prueba
+            </a>
+          )
+        }
+        <p class="nav-hoja-pie">Sin internet · Diseñado para la NOM-004 · Windows 10 y 11</p>
+      </div>
     </details>
   </div>
 </header>
@@ -69,13 +88,14 @@ const ENLACES = [
     z-index: 50;
     height: var(--altura-nav);
     border-bottom: 1px solid transparent;
+    view-transition-name: barra;
     transition:
       background-color 0.35s var(--ease),
       border-color 0.35s var(--ease),
-      backdrop-filter 0.35s var(--ease);
+      transform 0.45s var(--ease);
   }
 
-  /* Sin JS, o ya con scroll: barra sólida translúcida. Arriba del todo (con JS): transparente sobre el hero. */
+  /* Sin JS o con scroll: barra sólida translúcida. Arriba del todo: transparente sobre el hero. */
   .nav,
   :global(.js) .nav[data-scroll='si'] {
     background: rgb(6 11 22 / 0.78);
@@ -84,11 +104,26 @@ const ENLACES = [
     backdrop-filter: blur(16px) saturate(150%);
   }
 
-  :global(.js) .nav:not([data-scroll='si']) {
+  /* Con el menú abierto, sin backdrop-filter ni transform: ambos harían de la barra el marco del panel fijo. */
+  .nav:has(.nav-menu[open]),
+  :global(.js) .nav:has(.nav-menu[open]) {
+    background: var(--medianoche);
+    border-bottom-color: var(--linea-oscura);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    transform: none;
+  }
+
+  :global(.js) .nav:not([data-scroll='si']):not(:has(.nav-menu[open])) {
     background: transparent;
     border-bottom-color: transparent;
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
+  }
+
+  /* Se esconde al bajar y regresa al subir: más espacio para leer. */
+  :global(.js) .nav[data-oculta='si'] {
+    transform: translateY(-100%);
   }
 
   .nav-fila {
@@ -105,7 +140,7 @@ const ENLACES = [
     margin-right: auto;
     color: #fff;
     text-decoration: none;
-    font-size: 2.25rem; /* alto del isotipo */
+    font-size: 2.25rem;
     border-radius: 8px;
   }
 
@@ -119,18 +154,21 @@ const ENLACES = [
   .nav-marca :global(.nav-isotipo) {
     transition:
       opacity 0.5s var(--ease),
-      transform 0.6s var(--ease),
-      width 0.6s var(--ease);
+      transform 0.6s var(--ease);
   }
 
-  /* El isotipo "se acomoda" en la barra cuando el logo 3D del hero sale de la vista. */
   :global(.js) .nav[data-logo='diferido'] .nav-marca :global(.nav-isotipo) {
     opacity: 0;
     transform: translateY(10px) scale(0.6);
   }
 
+  /* ── Enlaces con indicador de sección ── */
+  .nav-enlaces {
+    position: relative;
+  }
+
   .nav-enlaces ul,
-  .nav-menu ul {
+  .nav-hoja ul {
     margin: 0;
     padding: 0;
     list-style: none;
@@ -138,30 +176,59 @@ const ENLACES = [
 
   .nav-enlaces ul {
     display: flex;
-    gap: clamp(16px, 2vw, 28px);
+    gap: 4px;
   }
 
   .nav-enlaces a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 40px;
+    padding: 0 12px;
+    border-radius: 999px;
     color: var(--texto-tenue);
-    font-size: 1rem;
+    font-size: 0.975rem;
     font-weight: 500;
     text-decoration: none;
-    transition: color 0.2s;
+    transition:
+      color 0.25s var(--ease),
+      background-color 0.25s var(--ease);
   }
 
   .nav-enlaces a:hover {
     color: #fff;
+    background: rgb(255 255 255 / 0.05);
+  }
+
+  .nav-enlaces a[aria-current='true'] {
+    color: #fff;
+  }
+
+  .nav-indicador {
+    position: absolute;
+    left: 0;
+    bottom: -3px;
+    width: var(--w, 0);
+    height: 2px;
+    border-radius: 2px;
+    background: linear-gradient(90deg, var(--azul), var(--azul-vivo));
+    box-shadow: 0 0 12px rgb(46 159 224 / 0.8);
+    opacity: var(--o, 0);
+    transform: translateX(var(--x, 0));
+    transition:
+      transform 0.5s var(--ease),
+      width 0.5s var(--ease),
+      opacity 0.3s var(--ease);
+    pointer-events: none;
   }
 
   .nav-cta-largo {
     display: none;
   }
 
-  .nav-menu {
-    position: relative;
-  }
-
+  /* ── Menú móvil: hoja a pantalla completa ── */
   .nav-menu summary {
+    position: relative;
+    z-index: 2;
     display: grid;
     place-items: center;
     width: 48px;
@@ -190,32 +257,87 @@ const ENLACES = [
     display: block;
   }
 
-  .nav-menu nav {
-    position: absolute;
-    top: calc(100% + 12px);
-    right: 0;
-    width: min(320px, calc(100vw - 2 * var(--margen)));
-    padding: 8px;
-    border: 1px solid var(--linea-oscura-fuerte);
-    border-radius: var(--radio);
-    background: var(--medianoche-2);
-    box-shadow: 0 24px 60px -20px rgb(0 0 0 / 0.7);
+  .nav-hoja {
+    position: fixed;
+    inset: var(--altura-nav) 0 0;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+    padding: 28px var(--margen) calc(28px + env(safe-area-inset-bottom));
+    background:
+      radial-gradient(80% 50% at 100% 100%, rgb(1 120 176 / 0.35), transparent 70%),
+      var(--medianoche);
+    overflow-y: auto;
+    animation: hoja 0.45s var(--ease);
   }
 
-  .nav-menu nav a {
-    display: block;
-    padding: 14px 16px;
-    border-radius: var(--radio-chico);
-    font-size: 1.0625rem;
-    font-weight: 500;
+  @keyframes hoja {
+    from {
+      opacity: 0;
+      transform: translateY(-12px);
+    }
+  }
+
+  .nav-hoja li {
+    border-bottom: 1px solid var(--linea-oscura);
+    animation: hoja-enlace 0.5s var(--ease) backwards;
+  }
+
+  .nav-hoja li:nth-child(2) {
+    animation-delay: 0.04s;
+  }
+  .nav-hoja li:nth-child(3) {
+    animation-delay: 0.08s;
+  }
+  .nav-hoja li:nth-child(4) {
+    animation-delay: 0.12s;
+  }
+  .nav-hoja li:nth-child(5) {
+    animation-delay: 0.16s;
+  }
+
+  @keyframes hoja-enlace {
+    from {
+      opacity: 0;
+      transform: translateY(14px);
+    }
+  }
+
+  .nav-hoja a[data-seccion] {
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+    padding: 18px 0;
+    font-family: var(--fuente-titulo);
+    font-size: clamp(1.75rem, 7vw, 2.25rem);
+    font-weight: 600;
+    letter-spacing: -0.02em;
     text-decoration: none;
   }
 
-  .nav-menu nav a:hover {
-    background: rgb(255 255 255 / 0.06);
+  .nav-hoja a[aria-current='true'] {
+    color: var(--azul-vivo);
   }
 
-  @media (max-width: 959px) {
+  .nav-hoja-num {
+    font-family: var(--fuente-texto);
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--texto-tenue);
+  }
+
+  .nav-hoja-cta {
+    align-self: stretch;
+  }
+
+  .nav-hoja-pie {
+    margin-top: auto;
+    color: var(--texto-tenue);
+    font-size: 0.9375rem;
+  }
+
+  @media (max-width: 1079px) {
     .nav-enlaces {
       display: none;
     }
@@ -230,12 +352,22 @@ const ENLACES = [
     }
   }
 
-  @media (min-width: 960px) {
+  @media (min-width: 1080px) {
     .nav-menu {
       display: none;
     }
+  }
+
+  @media (min-width: 1280px) {
     .nav-cta-largo {
       display: inline;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .nav-hoja,
+    .nav-hoja li {
+      animation: none;
     }
   }
 </style>

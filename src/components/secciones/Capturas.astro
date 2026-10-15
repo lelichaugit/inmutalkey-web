@@ -1,0 +1,113 @@
+---
+// Galería de capturas reales (capturas/ → npm run capturas → src/data/capturas.json). Si no hay, no se muestra.
+import capturas from '../../data/capturas.json';
+
+interface Captura {
+  id: string;
+  titulo: string;
+  descripcion: string;
+  ancho: number;
+  alto: number;
+  anchos: number[];
+}
+
+const lista = capturas as Captura[];
+const srcset = (c: Captura, ext: string) => c.anchos.map((w) => `/capturas/${c.id}-${w}.${ext} ${w}w`).join(', ');
+---
+
+{
+  lista.length > 0 && (
+    <section class="seccion fondo-oscuro capturas" id="capturas" aria-labelledby="capturas-titulo">
+      <div class="contenedor entrada revelar">
+        <h2 id="capturas-titulo">Así se ve trabajando</h2>
+        <p class="texto-grande tenue">Capturas reales del programa. Desliza para ver más.</p>
+      </div>
+      <ul class="carril">
+        {lista.map((c, i) => (
+          <li class="captura">
+            <figure>
+              <div class="marco">
+                <span class="marco-barra" aria-hidden="true">
+                  <i />
+                  <i />
+                  <i />
+                </span>
+                <picture>
+                  <source type="image/avif" srcset={srcset(c, 'avif')} sizes="(min-width: 1100px) 900px, 88vw" />
+                  <source type="image/webp" srcset={srcset(c, 'webp')} sizes="(min-width: 1100px) 900px, 88vw" />
+                  <img
+                    src={`/capturas/${c.id}-${c.anchos.at(-1)}.webp`}
+                    width={c.ancho}
+                    height={c.alto}
+                    alt={`${c.titulo}. ${c.descripcion}`}
+                    loading={i === 0 ? 'eager' : 'lazy'}
+                    decoding="async"
+                  />
+                </picture>
+              </div>
+              <figcaption>
+                <strong>{c.titulo}</strong>
+                {c.descripcion && <span class="tenue">{c.descripcion}</span>}
+              </figcaption>
+            </figure>
+          </li>
+        ))}
+      </ul>
+    </section>
+  )
+}
+
+<style>
+  .carril {
+    display: flex;
+    gap: 24px;
+    margin: clamp(32px, 5vw, 48px) 0 0;
+    padding: 8px max(var(--margen), calc((100vw - var(--ancho)) / 2)) 24px;
+    list-style: none;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: thin;
+  }
+
+  .captura {
+    flex: none;
+    width: min(900px, 88vw);
+    scroll-snap-align: center;
+  }
+
+  .captura figure {
+    margin: 0;
+  }
+
+  .marco {
+    border: 1px solid var(--linea-oscura-fuerte);
+    border-radius: 14px;
+    background: #0b1220;
+    overflow: hidden;
+    box-shadow: 0 40px 80px -30px rgb(0 0 0 / 0.8);
+  }
+
+  .marco-barra {
+    display: flex;
+    gap: 6px;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--linea-oscura);
+  }
+
+  .marco-barra i {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: rgb(255 255 255 / 0.18);
+  }
+
+  .marco img {
+    width: 100%;
+  }
+
+  figcaption {
+    display: grid;
+    gap: 2px;
+    margin-top: 14px;
+  }
+</style>

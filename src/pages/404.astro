@@ -1,0 +1,52 @@
+---
+import Icono from '../components/Icono.astro';
+import Isotipo3D from '../components/Isotipo3D.astro';
+import Base from '../layouts/Base.astro';
+---
+
+<Base titulo="Página no encontrada" descripcion="Esta página no existe. Vuelve al inicio de InmutalKey." indexar={false}>
+  <section class="seccion fondo-luz fondo-cuadricula no-encontrada">
+    <div class="contenedor no-encontrada-caja">
+      <div class="no-encontrada-llave" aria-hidden="true"><Isotipo3D sizes="100px" brillo /></div>
+      <h1>Esta llave no abre ninguna puerta</h1>
+      <p class="texto-grande tenue">La página que buscas no existe o cambió de lugar.</p>
+      <div class="no-encontrada-acciones">
+        <a class="boton boton-primario" href="/">Ir al inicio</a>
+        <a class="boton boton-secundario" href="/#demo"><Icono nombre="play" /> Ver la simulación</a>
+      </div>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .no-encontrada {
+    min-height: calc(100svh - var(--altura-nav));
+    display: grid;
+    align-items: center;
+    margin-top: calc(-1 * var(--altura-nav));
+    padding-top: calc(var(--altura-nav) + 48px);
+    text-align: center;
+  }
+
+  .no-encontrada-caja {
+    display: grid;
+    justify-items: center;
+    gap: 18px;
+  }
+
+  .no-encontrada-llave {
+    height: 140px;
+    transform: rotate(-24deg);
+  }
+
+  .no-encontrada h1 {
+    max-width: 16ch;
+  }
+
+  .no-encontrada-acciones {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
+  }
+</style>

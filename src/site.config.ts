@@ -20,15 +20,21 @@ export interface ConfigSitio {
     readonly whatsapp: Valor<string>;
     /** Prellenado del chat. Distinto al de la tarjeta para saber que el contacto vino del sitio. Provisional. */
     readonly mensajeWhatsApp: string;
+    /** Prellenados por botón: permiten saber desde qué parte del sitio escribió el médico. */
+    readonly mensajes: {
+      readonly prueba: string;
+      readonly fundadores: string;
+    };
     readonly correo: Valor<string>;
   };
+  /** Licencia digital. `publico` = precio posterior, para mostrar el ahorro. Con o sin IVA: indícalo en `notaPrecios`. */
   readonly precios: {
-    readonly fundadores: Valor<number>;
-    readonly lanzamiento: Valor<number>;
-    readonly publico: Valor<number>;
     readonly moneda: 'MXN';
-    /** ISO `AAAA-MM-DD`. */
-    readonly finLanzamiento: Valor<string>;
+    readonly fundadores: Valor<number>;
+    readonly publico: Valor<number>;
+    readonly notaPrecios: Valor<string>;
+    /** ISO `AAAA-MM-DD`: hasta cuándo aplica el precio de fundador. */
+    readonly finPrecioFundador: Valor<string>;
   };
   readonly cupos: {
     readonly totales: Valor<number>;
@@ -44,9 +50,6 @@ export interface ConfigSitio {
     readonly archivo: Valor<string>;
     readonly version: Valor<string>;
     readonly sha256: Valor<string>;
-  };
-  readonly portaVault: {
-    readonly disponibilidad: Valor<string>;
   };
   readonly legal: {
     readonly razonSocial: Valor<string>;
@@ -66,14 +69,18 @@ export const sitio: ConfigSitio = {
   contacto: {
     whatsapp: '522291525847',
     mensajeWhatsApp: 'Hola, vi InmutalKey en inmutalkey.com y quiero información para mi consultorio.',
+    mensajes: {
+      prueba: 'Hola, vi InmutalKey en inmutalkey.com y quiero probarlo 30 días en mi consultorio.',
+      fundadores: 'Hola, vi InmutalKey en inmutalkey.com y me interesa el programa Fundadores.',
+    },
     correo: TODO_DEFINIR,
   },
   precios: {
-    fundadores: TODO_DEFINIR,
-    lanzamiento: TODO_DEFINIR,
-    publico: TODO_DEFINIR,
     moneda: 'MXN',
-    finLanzamiento: TODO_DEFINIR,
+    fundadores: TODO_DEFINIR,
+    publico: TODO_DEFINIR,
+    notaPrecios: TODO_DEFINIR,
+    finPrecioFundador: TODO_DEFINIR,
   },
   cupos: {
     totales: TODO_DEFINIR,
@@ -89,9 +96,6 @@ export const sitio: ConfigSitio = {
     archivo: TODO_DEFINIR,
     version: TODO_DEFINIR,
     sha256: TODO_DEFINIR,
-  },
-  portaVault: {
-    disponibilidad: TODO_DEFINIR,
   },
   legal: {
     razonSocial: TODO_DEFINIR,

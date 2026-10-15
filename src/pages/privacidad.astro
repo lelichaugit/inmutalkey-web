@@ -1,0 +1,92 @@
+---
+// BORRADOR. Base legal verificada el 15-oct-2026: Ley Federal de Protección de Datos Personales en Posesión de los
+// Particulares publicada en el DOF el 20-mar-2025 (vigente desde el 21-mar-2025); la autoridad garante es la
+// Secretaría Anticorrupción y Buen Gobierno. Debe revisarlo un abogado antes de publicarse como definitivo.
+import PaginaTexto from '../layouts/PaginaTexto.astro';
+import { estaDefinido, sitio } from '../site.config';
+
+const { legal, contacto } = sitio;
+const responsable = estaDefinido(legal.razonSocial) ? legal.razonSocial : '[Nombre o razón social del responsable]';
+const domicilio = estaDefinido(legal.domicilio) ? legal.domicilio : '[Domicilio para oír y recibir notificaciones]';
+const correo = estaDefinido(legal.correoPrivacidad)
+  ? legal.correoPrivacidad
+  : estaDefinido(contacto.correo)
+    ? contacto.correo
+    : '[Correo para solicitudes de privacidad]';
+---
+
+<PaginaTexto
+  titulo="Aviso de privacidad"
+  descripcion="Qué datos recaba el sitio inmutalkey.com, para qué los usamos y cómo ejercer tus derechos."
+  antetitulo="Legal"
+  borrador={!legal.revisadoPorAbogado}
+  actualizado="15 de octubre de 2026"
+>
+  <div class="aviso">
+    <p>
+      <strong>Importante:</strong> este aviso cubre únicamente el sitio web. El programa InmutalKey funciona en tu
+      computadora, sin internet, y <strong>no nos envía</strong> los expedientes ni los datos de tus pacientes: tú eres
+      responsable de ellos ante tus pacientes.
+    </p>
+  </div>
+
+  <h2>1. Responsable</h2>
+  <p>
+    {responsable}, con domicilio en {domicilio}, es responsable del tratamiento de los datos personales que se recaban
+    a través de este sitio, conforme a la Ley Federal de Protección de Datos Personales en Posesión de los Particulares.
+  </p>
+
+  <h2>2. Datos que recabamos</h2>
+  <ul>
+    <li><strong>Cuando nos escribes por WhatsApp:</strong> tu nombre, número de teléfono y lo que nos compartas en la conversación.</li>
+    <li><strong>Cuando llenas un formulario del sitio:</strong> nombre, especialidad, medio de contacto y el mensaje que escribas.</li>
+    <li><strong>Cuando dejas una reseña:</strong> el nombre con que deseas aparecer, tu especialidad, tu calificación, el texto y tu código de fundador.</li>
+    <li>
+      <strong>Datos técnicos mínimos:</strong> para frenar envíos automáticos guardamos de forma temporal una huella
+      irreversible de tu dirección IP (no la dirección en sí).
+    </li>
+  </ul>
+  <p>No recabamos datos de salud ni datos sensibles a través del sitio. Por favor, no los incluyas en tus mensajes.</p>
+
+  <h2>3. Para qué los usamos</h2>
+  <p>Finalidades necesarias:</p>
+  <ul>
+    <li>Responder tus mensajes y enviarte el instalador para la prueba.</li>
+    <li>Gestionar tu participación en el programa Fundadores, tu licencia y el soporte.</li>
+    <li>Verificar y publicar tu reseña, solo si tú la enviaste.</li>
+    <li>Proteger el sitio contra abusos y envíos automatizados.</li>
+  </ul>
+  <p>Finalidades adicionales (puedes negarte sin afectar lo anterior):</p>
+  <ul>
+    <li>Avisarte de novedades del programa, como nuevas versiones o funciones.</li>
+  </ul>
+  <p>Para negarte a las finalidades adicionales, escríbenos a {correo}.</p>
+
+  <h2>4. Con quién se comparten</h2>
+  <p>No vendemos ni rentamos tus datos. Para operar el sitio usamos proveedores que los tratan por nuestra cuenta:</p>
+  <ul>
+    <li><strong>Cloudflare</strong>: alojamiento del sitio, base de datos de formularios y verificación antibots (Turnstile).</li>
+    <li><strong>WhatsApp (Meta)</strong>: cuando decides escribirnos por ese medio, conforme a sus propias políticas.</li>
+  </ul>
+
+  <h2>5. Cookies y rastreo</h2>
+  <p>
+    El sitio no usa cookies de publicidad ni herramientas de analítica de terceros. La verificación antibots puede usar
+    tecnologías estrictamente necesarias para su funcionamiento.
+  </p>
+
+  <h2>6. Tus derechos</h2>
+  <p>
+    Puedes acceder a tus datos, rectificarlos, cancelarlos u oponerte a su uso, así como revocar tu consentimiento o
+    limitar su uso o divulgación. Envía tu solicitud a <strong>{correo}</strong> con tu nombre, un medio para responderte,
+    una descripción clara de lo que pides y, en su caso, un documento que acredite tu identidad. Te responderemos dentro
+    de los plazos que establece la ley.
+  </p>
+  <p>
+    Si consideras que tu derecho a la protección de datos ha sido vulnerado, puedes acudir ante la Secretaría
+    Anticorrupción y Buen Gobierno, autoridad competente en la materia.
+  </p>
+
+  <h2>7. Cambios a este aviso</h2>
+  <p>Cualquier cambio se publicará en esta misma página, con su fecha de actualización.</p>
+</PaginaTexto>

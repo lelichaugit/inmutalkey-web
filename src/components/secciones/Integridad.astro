@@ -1,0 +1,299 @@
+---
+import Icono from '../Icono.astro';
+import EscenaIntegridad from './EscenaIntegridad.astro';
+
+const PASOS = [
+  {
+    titulo: 'Escribes tu nota como siempre.',
+    texto: 'Motivo, signos, exploración, diagnóstico y plan. Mientras escribes, el borrador se guarda solo cada 3 segundos.',
+  },
+  {
+    titulo: 'Al firmar, la llave la sella.',
+    texto:
+      'InmutalKey calcula una huella única de todo lo que escribiste y la firma con una llave que solo existe en tu computadora. Desde ese momento, la nota queda cerrada.',
+  },
+  {
+    titulo: 'Cada nota se enlaza con la anterior.',
+    texto:
+      'Las notas de cada paciente forman una cadena: cada una guarda la huella de la anterior. No se puede quitar ni reordenar ninguna sin romperla.',
+  },
+  {
+    titulo: 'Si alguien la altera, se nota.',
+    texto:
+      'Si alguien modificara la base de datos por fuera del programa, la huella deja de coincidir y la auditoría de integridad lo señala.',
+  },
+  {
+    titulo: '¿Te equivocaste? Agrega un addendum.',
+    texto:
+      'La corrección se suma con su motivo, fecha, hora y firma. La nota original queda intacta y el expediente muestra las dos.',
+  },
+] as const;
+---
+
+<section class="seccion fondo-oscuro integridad" id="integridad" data-escena aria-labelledby="integridad-titulo">
+  <div class="contenedor entrada revelar">
+    <h2 id="integridad-titulo">Así protege InmutalKey cada nota que firmas</h2>
+    <p class="texto-grande tenue">
+      Sin tecnicismos: escribes, firmas y la nota queda sellada. Esto es lo que pasa por dentro.
+    </p>
+  </div>
+
+  <div class="contenedor historia" data-historia>
+    <ol class="historia-pasos">
+      {
+        PASOS.map((p, i) => (
+          <li class="paso" data-paso-n={i + 1}>
+            <div class="paso-texto">
+              <span class="paso-num" aria-hidden="true">{i + 1}</span>
+              <h3>{p.titulo}</h3>
+              <p class="tenue">{p.texto}</p>
+            </div>
+            <figure class="paso-figura">
+              <EscenaIntegridad paso={(i + 1) as 1 | 2 | 3 | 4 | 5} />
+            </figure>
+          </li>
+        ))
+      }
+    </ol>
+    <div class="historia-escenario">
+      <div class="historia-pegajosa">
+        <EscenaIntegridad paso={0} dinamica />
+      </div>
+    </div>
+  </div>
+
+  <div class="contenedor">
+    <details class="tecnico revelar">
+      <summary>
+        <Icono nombre="computadora" />
+        Detalles técnicos para tu área de sistemas
+      </summary>
+      <ul>
+        <li>Huella SHA-256 sobre un JSON canónico <code>{'{v, hashPrevio, datos}'}</code>: cada nota incluye la huella de la anterior del mismo paciente.</li>
+        <li>Firma Ed25519 de cada huella; la llave privada vive en el llavero del sistema operativo, no en la base de datos.</li>
+        <li>Triggers y un autorizador de SQLite niegan UPDATE y DELETE en notas, addendums, antecedentes y bitácora.</li>
+        <li>Los addendums se enlazan a la huella de la nota que corrigen. La bitácora de accesos también es una cadena.</li>
+        <li>Base cifrada con SQLCipher; la clave se deriva de tu contraseña con Argon2id.</li>
+      </ul>
+    </details>
+  </div>
+</section>
+
+<style>
+  .historia {
+    display: grid;
+    gap: 32px;
+    margin-top: clamp(40px, 6vw, 72px);
+  }
+
+  .historia-pasos {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: 56px;
+  }
+
+  .paso-texto {
+    max-width: 30rem;
+  }
+
+  .paso-num {
+    display: inline-grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    margin-bottom: 14px;
+    border: 1px solid var(--linea-oscura-fuerte);
+    border-radius: 50%;
+    font-family: var(--fuente-titulo);
+    font-weight: 600;
+    color: var(--texto-tenue);
+    transition:
+      color 0.4s var(--ease),
+      border-color 0.4s var(--ease),
+      background-color 0.4s var(--ease);
+  }
+
+  .paso h3 {
+    font-size: clamp(1.4rem, 1.1rem + 1.2vw, 2rem);
+    line-height: 1.15;
+  }
+
+  .paso p {
+    margin-top: 0.75rem;
+  }
+
+  .paso-figura {
+    margin: 24px 0 0;
+  }
+
+  .historia-escenario {
+    display: none;
+    align-self: stretch;
+  }
+
+  /* ── Con JS y movimiento: escenario pegajoso que cambia de estado ── */
+  :global(.js) .historia-escenario {
+    display: block;
+  }
+
+  :global(.js) .paso-figura {
+    display: none;
+  }
+
+  :global(.js) .paso {
+    min-height: 62svh;
+    display: flex;
+    align-items: center;
+  }
+
+  :global(.js) .paso-texto {
+    opacity: 0.35;
+    transition: opacity 0.5s var(--ease);
+  }
+
+  :global(.js) .paso.es-activo .paso-texto {
+    opacity: 1;
+  }
+
+  :global(.js) .paso.es-activo .paso-num {
+    color: var(--medianoche);
+    background: var(--esmeralda-vivo);
+    border-color: var(--esmeralda-vivo);
+  }
+
+  .historia-pegajosa {
+    position: sticky;
+    top: calc(var(--altura-nav) + 12px);
+  }
+
+  /* Móvil: el escenario arriba (pegajoso) y los pasos pasan por debajo. */
+  @media (max-width: 959px) {
+    :global(.js) .historia {
+      grid-template-areas: 'escenario' 'pasos';
+      gap: 0;
+    }
+
+    :global(.js) .historia-escenario {
+      grid-area: escenario;
+      position: sticky;
+      top: var(--altura-nav);
+      z-index: 2;
+      padding: 8px 0 16px;
+      background: linear-gradient(var(--medianoche) 88%, transparent);
+    }
+
+    :global(.js) .historia-pegajosa {
+      position: static;
+      max-width: min(420px, 100%);
+      margin-inline: auto;
+    }
+
+    :global(.js) .historia-pasos {
+      grid-area: pasos;
+      gap: 0;
+    }
+
+    :global(.js) .paso {
+      min-height: 46svh;
+      align-items: flex-start;
+      padding-top: 12px;
+    }
+  }
+
+  @media (min-width: 960px) {
+    .historia {
+      grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+      gap: 64px;
+      align-items: start;
+    }
+
+    .paso-figura {
+      max-width: 520px;
+    }
+
+    :global(.js) .historia-pasos {
+      gap: 0;
+      padding-bottom: 12svh;
+    }
+
+    :global(.js) .paso {
+      min-height: 72svh;
+    }
+  }
+
+  /* Movimiento reducido: los 5 estados apilados, sin escenario pegajoso. */
+  @media (prefers-reduced-motion: reduce) {
+    :global(.js) .historia-escenario {
+      display: none;
+    }
+
+    :global(.js) .paso-figura {
+      display: block;
+    }
+
+    :global(.js) .paso {
+      display: block;
+      min-height: 0;
+    }
+
+    :global(.js) .paso-texto {
+      opacity: 1;
+    }
+  }
+
+  /* ── Detalles técnicos ── */
+  .tecnico {
+    margin-top: clamp(40px, 6vw, 72px);
+    border: 1px solid var(--linea-oscura);
+    border-radius: var(--radio);
+    background: rgb(255 255 255 / 0.02);
+  }
+
+  .tecnico summary {
+    display: flex;
+    align-items: center;
+    gap: 0.6em;
+    min-height: 56px;
+    padding: 0 20px;
+    cursor: pointer;
+    font-weight: 600;
+    list-style: none;
+  }
+
+  .tecnico summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .tecnico summary :global(.icono) {
+    width: 1.3em;
+    height: 1.3em;
+    color: var(--azul-vivo);
+  }
+
+  .tecnico summary::after {
+    content: '+';
+    margin-left: auto;
+    font-size: 1.4rem;
+    color: var(--texto-tenue);
+  }
+
+  .tecnico[open] summary::after {
+    content: '−';
+  }
+
+  .tecnico ul {
+    display: grid;
+    gap: 0.6rem;
+    margin: 0;
+    padding: 0 24px 24px 44px;
+    color: var(--texto-tenue);
+    font-size: 1rem;
+  }
+
+  .tecnico code {
+    font-family: inherit;
+    color: var(--texto);
+  }
+</style>

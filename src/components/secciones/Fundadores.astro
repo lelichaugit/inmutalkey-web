@@ -1,0 +1,329 @@
+---
+// Programa Fundadores: el corazón comercial del sitio. Licencia digital; precio, lugares y fechas en site.config.ts
+// (mientras sean TODO_DEFINIR, el sitio invita a preguntar por WhatsApp en lugar de inventar cifras).
+import QRCode from 'qrcode';
+
+import { enlaceWhatsApp } from '../../lib/whatsapp';
+import { estaDefinido, sitio, type Valor } from '../../site.config';
+import ChatSimulado, { type Mensaje } from '../ChatSimulado.astro';
+import Icono from '../Icono.astro';
+
+const { precios, cupos, licencia } = sitio;
+const enlace = enlaceWhatsApp(sitio.contacto.whatsapp, sitio.contacto.mensajes.fundadores);
+const qr = enlace
+  ? await QRCode.toString(enlace, { type: 'svg', margin: 1, errorCorrectionLevel: 'M', color: { dark: '#0d1b35', light: '#ffffff' } })
+  : null;
+
+const dinero = (v: Valor<number>): string | null =>
+  estaDefinido(v) ? `$${v.toLocaleString('es-MX', { maximumFractionDigits: 0 })}` : null;
+const precio = dinero(precios.fundadores);
+const publico = dinero(precios.publico);
+
+const fecha = estaDefinido(precios.finPrecioFundador)
+  ? new Date(`${precios.finPrecioFundador}T12:00:00`).toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' })
+  : null;
+
+const lugares =
+  estaDefinido(cupos.totales) && estaDefinido(cupos.ocupados) && cupos.totales > 0
+    ? { total: cupos.totales, libres: Math.max(cupos.totales - cupos.ocupados, 0), avance: Math.min(cupos.ocupados / cupos.totales, 1) }
+    : null;
+const claseAvance = lugares ? `avance-${Math.round(lugares.avance * 20) * 5}` : '';
+
+const INCLUYE = [
+  'Licencia digital vitalicia para tu instalación',
+  'Todas las funciones actuales del programa',
+  `${licencia.diasPrueba} días de prueba completos antes de pagar`,
+  'Contacto directo con el equipo que lo desarrolla',
+  'Tu opinión cuenta para lo que viene',
+  'Reseña verificada como médico fundador',
+] as const;
+
+const CHAT: readonly Mensaje[] = [
+  { de: 'medico', hora: '18:40', texto: sitio.contacto.mensajes.fundadores },
+  {
+    de: 'inmutalkey',
+    hora: '18:41',
+    texto: 'Hola, doctor. Como fundador tiene precio exclusivo, licencia vitalicia y contacto directo con nosotros.',
+  },
+  { de: 'medico', hora: '18:42', texto: '¿Puedo probarlo antes de pagar?' },
+  {
+    de: 'inmutalkey',
+    hora: '18:43',
+    texto: `Claro: tiene ${licencia.diasPrueba} días completos. Si le convence, activa su licencia y conserva todo lo capturado.`,
+  },
+  { de: 'medico', hora: '18:44', texto: 'Perfecto, apárteme un lugar.' },
+  { de: 'inmutalkey', hora: '18:44', texto: '¡Listo, doctor! Le comparto los pasos para confirmarlo.' },
+];
+---
+
+<section class="seccion fondo-luz fundadores" id="fundadores" aria-labelledby="fundadores-titulo">
+  <div class="contenedor">
+    <div class="entrada revelar">
+      <p class="pildora"><Icono nombre="llave" /> Lugares limitados</p>
+      <h2 id="fundadores-titulo">Programa Fundadores</h2>
+      <p class="texto-grande tenue">
+        Para los primeros médicos que confían en InmutalKey: precio exclusivo de fundador, licencia vitalicia y una línea
+        directa con quien hace el programa.
+      </p>
+    </div>
+
+    <div class="fundadores-rejilla">
+      <div class="plan-columna">
+        <article class="plan revelar">
+          <header class="plan-cabecera">
+            <span class="plan-etiqueta">Licencia de fundador</span>
+            <p class="plan-precio">
+              {
+                precio ? (
+                  <>
+                    <strong>{precio}</strong> <span>{precios.moneda}</span>
+                    {publico && <s class="tenue">{publico}</s>}
+                  </>
+                ) : (
+                  <strong class="plan-precio-consulta">Precio exclusivo por WhatsApp</strong>
+                )
+              }
+            </p>
+            <p class="tenue plan-pago">Un solo pago. Sin mensualidades.</p>
+          </header>
+
+          {
+            lugares && (
+              <div class="lugares" role="img" aria-label={`Quedan ${lugares.libres} de ${lugares.total} lugares`}>
+                <span>
+                  Quedan <strong>{lugares.libres}</strong> de {lugares.total} lugares
+                </span>
+                <span class="lugares-barra">
+                  <span class:list={['lugares-avance', claseAvance]} />
+                </span>
+              </div>
+            )
+          }
+
+          <ul class="plan-incluye">
+            {
+              INCLUYE.map((i) => (
+                <li>
+                  <Icono nombre="check" />
+                  {i}
+                </li>
+              ))
+            }
+          </ul>
+
+          {
+            enlace && (
+              <a class="boton boton-primario plan-cta" href={enlace} target="_blank" rel="noopener noreferrer">
+                <Icono nombre="chat" /> Apartar mi lugar
+              </a>
+            )
+          }
+          <p class="plan-nota tenue">
+            {fecha && <>Precio de fundador válido hasta el {fecha}. </>}
+            {estaDefinido(precios.notaPrecios) && <>{precios.notaPrecios} </>}
+            Consulta los <a href="/terminos-fundadores">términos del programa</a>.
+          </p>
+        </article>
+
+        {
+          qr && (
+            <div class="qr revelar">
+              <span class="qr-imagen" set:html={qr} />
+              <span>
+                <strong>¿Estás en la computadora?</strong>
+                <span class="tenue">Escanea con la cámara de tu celular y escríbenos por WhatsApp.</span>
+              </span>
+            </div>
+          )
+        }
+      </div>
+      <ChatSimulado mensajes={CHAT} etiqueta="Conversación de ejemplo: un médico pregunta por el programa Fundadores y aparta su lugar." />
+    </div>
+  </div>
+</section>
+
+<style>
+  .fundadores-rejilla {
+    display: grid;
+    gap: clamp(40px, 6vw, 72px);
+    align-items: start;
+    margin-top: clamp(36px, 5vw, 56px);
+  }
+
+  @media (min-width: 1000px) {
+    .fundadores-rejilla {
+      grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+    }
+  }
+
+  .plan-columna {
+    display: grid;
+    gap: 16px;
+  }
+
+  .plan {
+    position: relative;
+    display: grid;
+    gap: 22px;
+    padding: clamp(24px, 4vw, 36px);
+    border: 1px solid rgb(46 159 224 / 0.55);
+    border-radius: 24px;
+    background:
+      radial-gradient(120% 80% at 100% 0%, rgb(46 159 224 / 0.16), transparent 60%),
+      rgb(255 255 255 / 0.04);
+    box-shadow: 0 40px 80px -40px rgb(1 120 176 / 0.7);
+  }
+
+  .plan-cabecera {
+    display: grid;
+    gap: 6px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--linea-oscura);
+  }
+
+  .plan-etiqueta {
+    color: var(--azul-vivo);
+    font-weight: 600;
+  }
+
+  .plan-precio {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 10px;
+  }
+
+  .plan-precio strong {
+    font-family: var(--fuente-titulo);
+    font-size: clamp(2.5rem, 2rem + 2vw, 3.25rem);
+    font-weight: 600;
+    line-height: 1;
+  }
+
+  .plan-precio .plan-precio-consulta {
+    font-size: clamp(1.5rem, 1.2rem + 1vw, 2rem);
+    line-height: 1.2;
+  }
+
+  .plan-pago {
+    font-size: 1rem;
+  }
+
+  .plan-incluye {
+    display: grid;
+    gap: 12px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  @media (min-width: 640px) {
+    .plan-incluye {
+      grid-template-columns: 1fr 1fr;
+      gap: 14px 24px;
+    }
+  }
+
+  .plan-incluye li {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+  }
+
+  .plan-incluye :global(.icono) {
+    flex: none;
+    width: 20px;
+    height: 20px;
+    margin-top: 3px;
+    color: var(--azul-vivo);
+  }
+
+  .plan-cta {
+    justify-self: start;
+  }
+
+  .plan-nota {
+    font-size: 0.95rem;
+  }
+
+  .lugares {
+    display: grid;
+    gap: 8px;
+  }
+
+  .lugares strong {
+    font-family: var(--fuente-titulo);
+    font-size: 1.4rem;
+  }
+
+  .lugares-barra {
+    display: block;
+    height: 8px;
+    border-radius: 999px;
+    background: rgb(255 255 255 / 0.1);
+    overflow: hidden;
+  }
+
+  .lugares-avance {
+    display: block;
+    height: 100%;
+    background: linear-gradient(90deg, var(--azul), var(--azul-vivo));
+    transform-origin: 0 50%;
+  }
+
+  /* Avance en pasos de 5 % (sin estilos en línea por la CSP). */
+  .avance-0 { transform: scaleX(0.02); }
+  .avance-5 { transform: scaleX(0.05); }
+  .avance-10 { transform: scaleX(0.1); }
+  .avance-15 { transform: scaleX(0.15); }
+  .avance-20 { transform: scaleX(0.2); }
+  .avance-25 { transform: scaleX(0.25); }
+  .avance-30 { transform: scaleX(0.3); }
+  .avance-35 { transform: scaleX(0.35); }
+  .avance-40 { transform: scaleX(0.4); }
+  .avance-45 { transform: scaleX(0.45); }
+  .avance-50 { transform: scaleX(0.5); }
+  .avance-55 { transform: scaleX(0.55); }
+  .avance-60 { transform: scaleX(0.6); }
+  .avance-65 { transform: scaleX(0.65); }
+  .avance-70 { transform: scaleX(0.7); }
+  .avance-75 { transform: scaleX(0.75); }
+  .avance-80 { transform: scaleX(0.8); }
+  .avance-85 { transform: scaleX(0.85); }
+  .avance-90 { transform: scaleX(0.9); }
+  .avance-95 { transform: scaleX(0.95); }
+  .avance-100 { transform: scaleX(1); }
+
+  .qr {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    padding: 16px;
+    border: 1px solid var(--linea-oscura);
+    border-radius: var(--radio);
+  }
+
+  .qr-imagen {
+    flex: none;
+    width: 112px;
+    padding: 6px;
+    border-radius: 12px;
+    background: #fff;
+  }
+
+  .qr-imagen :global(svg) {
+    width: 100%;
+    height: auto;
+  }
+
+  .qr > span:last-child {
+    display: grid;
+    gap: 4px;
+  }
+
+  @media (max-width: 719px) {
+    .qr {
+      display: none;
+    }
+  }
+</style>

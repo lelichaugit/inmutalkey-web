@@ -1,0 +1,414 @@
+---
+// Monitor de signos: peso, talla y SpO₂ editables; IMC en vivo con la clasificación OMS; SpO₂ fuera de rango en rojo.
+// Mismas reglas que la app (src/lib/imc.ts). Lógica en src/scripts/signos.ts.
+import { calcularImc, clasificarImc, ETIQUETA_IMC } from '../../lib/imc';
+import Icono from '../Icono.astro';
+
+const PESO = 70;
+const TALLA = 170;
+const imc = calcularImc(PESO, TALLA) ?? 0;
+---
+
+<section class="seccion fondo-oscuro fondo-cuadricula signos-seccion" id="signos" data-signos aria-labelledby="signos-titulo">
+  <div class="contenedor signos-rejilla">
+    <div class="entrada revelar">
+      <h2 id="signos-titulo">Signos vitales sin calculadora</h2>
+      <p class="texto-grande tenue">
+        Escribe el peso y la talla y el IMC aparece al instante con su clasificación. Si un valor es imposible, el
+        programa te avisa antes de firmar.
+      </p>
+      <p class="tenue">Pruébalo: cambia los números del monitor.</p>
+    </div>
+
+    <div class="monitor revelar" role="group" aria-label="Monitor de signos de un paciente de ejemplo">
+      <header class="monitor-cabecera">
+        <span><Icono nombre="usuario" /> Paciente de ejemplo · 34 años</span>
+        <span class="monitor-vivo"><i></i> En consulta</span>
+      </header>
+
+      <div class="monitor-ecg" aria-hidden="true">
+        <svg viewBox="0 0 600 90" preserveAspectRatio="none">
+          <path
+            class="ecg-trazo"
+            pathLength="1"
+            d="M0 50 H70 l8 -6 l8 6 H120 l6 4 l6 -38 l7 52 l6 -18 H180 l10 -9 l12 9 H260 l8 -6 l8 6 H310 l6 4 l6 -38 l7 52 l6 -18 H370 l10 -9 l12 9 H450 l8 -6 l8 6 H500 l6 4 l6 -38 l7 52 l6 -18 H560 l10 -9 l12 9 H600"
+          ></path>
+        </svg>
+        <span class="ecg-lectura"><small>FC</small><strong>72</strong><small>lpm</small></span>
+      </div>
+
+      <div class="monitor-lecturas">
+        <div class="lectura">
+          <small>TA</small>
+          <strong>120/80</strong>
+          <small>mmHg</small>
+        </div>
+        <div class="lectura">
+          <small>Temp</small>
+          <strong>36.6</strong>
+          <small>°C</small>
+        </div>
+        <label class="lectura lectura-editable" data-lectura-spo2>
+          <small>SpO₂</small>
+          <input name="spo2" value="97" inputmode="numeric" aria-describedby="signos-spo2-error" />
+          <small>%</small>
+        </label>
+        <p class="lectura-error" id="signos-spo2-error" data-error-spo2 hidden></p>
+      </div>
+
+      <div class="monitor-imc">
+        <label class="campo-monitor">
+          <small>Peso (kg)</small>
+          <input name="peso" value={PESO} inputmode="decimal" />
+        </label>
+        <label class="campo-monitor">
+          <small>Talla (cm)</small>
+          <input name="talla" value={TALLA} inputmode="decimal" />
+        </label>
+        <div class="imc-resultado" aria-live="polite">
+          <small>IMC</small>
+          <strong data-imc-valor>{imc.toFixed(1)}</strong>
+          <span data-imc-texto>{ETIQUETA_IMC[clasificarImc(imc)]}</span>
+        </div>
+      </div>
+
+      <div class="gauge" aria-hidden="true">
+        <div class="gauge-barra">
+          <span class="zona zona-bajo"></span>
+          <span class="zona zona-normal"></span>
+          <span class="zona zona-sobre"></span>
+          <span class="zona zona-obesidad"></span>
+        </div>
+        <span class="gauge-marca" data-gauge-marca></span>
+        <div class="gauge-etiquetas">
+          <span>18.5</span><span>25</span><span>30</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .signos-rejilla {
+    display: grid;
+    gap: clamp(32px, 5vw, 64px);
+    align-items: center;
+  }
+
+  @media (min-width: 960px) {
+    .signos-rejilla {
+      grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+    }
+  }
+
+  .monitor {
+    --verde-monitor: #34d399;
+    --cian: #67e8f9;
+    padding: clamp(16px, 3vw, 24px);
+    border: 1px solid var(--linea-oscura-fuerte);
+    border-radius: 22px;
+    background:
+      radial-gradient(90% 70% at 20% 0%, rgb(46 159 224 / 0.12), transparent 70%),
+      #050a14;
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.06),
+      0 40px 80px -30px rgb(0 0 0 / 0.8);
+  }
+
+  .monitor-cabecera {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 14px;
+    color: var(--texto-tenue);
+    font-size: 0.95rem;
+  }
+
+  .monitor-cabecera span {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45em;
+  }
+
+  .monitor-cabecera :global(.icono) {
+    width: 1.1em;
+    height: 1.1em;
+  }
+
+  .monitor-vivo i {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--verde-monitor);
+    box-shadow: 0 0 10px var(--verde-monitor);
+    animation: vivo 1.2s ease-in-out infinite;
+  }
+
+  @keyframes vivo {
+    50% {
+      opacity: 0.35;
+    }
+  }
+
+  .monitor-ecg {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 10px 14px;
+    border: 1px solid rgb(52 211 153 / 0.18);
+    border-radius: 14px;
+    background: rgb(52 211 153 / 0.04);
+  }
+
+  /* Se estira al ancho disponible (sin non-scaling-stroke: con él, pathLength se ignora y el trazo desaparece). */
+  .monitor-ecg svg {
+    flex: 1;
+    min-width: 0;
+    width: 100%;
+    height: 80px;
+    overflow: hidden;
+  }
+
+  .ecg-lectura {
+    flex: none;
+  }
+
+  .ecg-trazo {
+    fill: none;
+    stroke: var(--verde-monitor);
+    stroke-width: 2.4;
+    stroke-linejoin: round;
+    filter: drop-shadow(0 0 4px rgb(52 211 153 / 0.7));
+    stroke-dasharray: 0.32 0.68;
+    animation: ecg 2.6s linear infinite;
+  }
+
+  @keyframes ecg {
+    from {
+      stroke-dashoffset: 1;
+    }
+    to {
+      stroke-dashoffset: 0;
+    }
+  }
+
+  .ecg-lectura {
+    display: grid;
+    justify-items: end;
+    color: var(--verde-monitor);
+    line-height: 1;
+  }
+
+  .ecg-lectura strong {
+    font-family: var(--fuente-titulo);
+    font-size: 2.6rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .ecg-lectura small,
+  .lectura small,
+  .campo-monitor small,
+  .imc-resultado small {
+    color: var(--texto-tenue);
+    font-size: 0.8rem;
+    font-weight: 500;
+  }
+
+  .monitor-lecturas {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+    margin-top: 10px;
+  }
+
+  .lectura {
+    display: grid;
+    gap: 2px;
+    padding: 12px 14px;
+    border: 1px solid var(--linea-oscura);
+    border-radius: 14px;
+    background: rgb(255 255 255 / 0.02);
+  }
+
+  .lectura strong,
+  .lectura input {
+    font-family: var(--fuente-titulo);
+    font-size: clamp(1.5rem, 1.2rem + 1vw, 2rem);
+    font-weight: 600;
+    line-height: 1.1;
+    color: var(--cian);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .lectura input,
+  .campo-monitor input {
+    width: 100%;
+    min-width: 0;
+    padding: 0;
+    border: 0;
+    border-bottom: 1px dashed rgb(255 255 255 / 0.25);
+    background: transparent;
+  }
+
+  .lectura input:focus,
+  .campo-monitor input:focus {
+    outline: none;
+    border-bottom-color: var(--azul-vivo);
+  }
+
+  .lectura-editable {
+    cursor: text;
+  }
+
+  .lectura-editable.es-invalido {
+    border-color: rgb(255 107 107 / 0.6);
+    background: rgb(255 107 107 / 0.08);
+  }
+
+  .lectura-editable.es-invalido input {
+    color: var(--error);
+  }
+
+  .lectura-error {
+    grid-column: 1 / -1;
+    margin: 0;
+    padding: 8px 12px;
+    border-radius: 10px;
+    background: rgb(255 107 107 / 0.1);
+    color: var(--error);
+    font-size: 0.95rem;
+    font-weight: 600;
+  }
+
+  .monitor-imc {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1.3fr;
+    gap: 10px;
+    margin-top: 10px;
+  }
+
+  .campo-monitor,
+  .imc-resultado {
+    display: grid;
+    gap: 2px;
+    padding: 12px 14px;
+    border: 1px solid var(--linea-oscura);
+    border-radius: 14px;
+  }
+
+  .campo-monitor input {
+    font-family: var(--fuente-titulo);
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--texto);
+  }
+
+  .imc-resultado {
+    border-color: rgb(46 159 224 / 0.4);
+    background: rgb(46 159 224 / 0.08);
+  }
+
+  .imc-resultado strong {
+    font-family: var(--fuente-titulo);
+    font-size: 2rem;
+    font-weight: 600;
+    line-height: 1.05;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .imc-resultado span {
+    color: var(--azul-vivo);
+    font-weight: 600;
+    font-size: 0.95rem;
+  }
+
+  .gauge {
+    position: relative;
+    margin-top: 18px;
+    padding-top: 6px;
+  }
+
+  .gauge-barra {
+    display: grid;
+    grid-template-columns: 3.5fr 6.5fr 5fr 15fr;
+    gap: 3px;
+    height: 8px;
+  }
+
+  .zona {
+    border-radius: 4px;
+  }
+
+  .zona-bajo {
+    background: #60a5fa;
+  }
+  .zona-normal {
+    background: #34d399;
+  }
+  .zona-sobre {
+    background: #fbbf24;
+  }
+  .zona-obesidad {
+    background: linear-gradient(90deg, #fb923c, #ef4444);
+  }
+
+  .gauge-marca {
+    position: absolute;
+    top: 0;
+    /* Sin JS: posición del IMC de ejemplo (24.2 → (24.2 − 15) / 30). */
+    left: calc(var(--pos, 0.307) * 100%);
+    width: 4px;
+    height: 20px;
+    margin-left: -2px;
+    border-radius: 2px;
+    background: #fff;
+    box-shadow: 0 0 0 3px rgb(6 11 22 / 0.8);
+    transition: left 0.6s var(--ease);
+  }
+
+  .gauge-etiquetas {
+    position: relative;
+    height: 1.4em;
+    margin-top: 8px;
+    color: var(--texto-tenue);
+    font-size: 0.8rem;
+  }
+
+  .gauge-etiquetas span {
+    position: absolute;
+    transform: translateX(-50%);
+  }
+
+  .gauge-etiquetas span:nth-child(1) {
+    left: 11.7%;
+  }
+  .gauge-etiquetas span:nth-child(2) {
+    left: 33.3%;
+  }
+  .gauge-etiquetas span:nth-child(3) {
+    left: 50%;
+  }
+
+  @media (max-width: 559px) {
+    .monitor-imc {
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .imc-resultado {
+      grid-column: 1 / -1;
+    }
+
+    .ecg-lectura strong {
+      font-size: 2rem;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ecg-trazo {
+      animation: none;
+      stroke-dasharray: none;
+    }
+  }
+</style>

@@ -7,7 +7,8 @@ Actualizado: 15-oct-2026. Sustituye al traspaso del 14-oct (23:00).
 - **El repo `inmutalkey-web` estaba vacío** (sin commits). Los archivos que el traspaso anterior daba por escritos (§1 de aquella versión) nunca llegaron a GitHub, y tampoco `docs/PROMPT_ORIGINAL.md`. Se **reconstruyeron** a partir de la descripción del traspaso. Si Alan conserva los originales, se suben a una rama aparte y se comparan; lo reconstruido no es copia de lo anterior.
 - Sin `PROMPT_ORIGINAL.md`, este archivo es la especificación vigente. Lo que el prompt fijaba y aquí no aparece (p. ej., el texto exacto del mensaje de WhatsApp) quedó como decisión provisional marcada en `src/site.config.ts`.
 - Los logos se tomaron del repo clínico (`src/assets/logo.png` = sólido, `src/assets/cleanlogo.png` = línea). La tarjeta Fundadores (frente/reverso) **no** está disponible: falta para la sección Fundadores.
-- Alan compartió en el chat un render 3D del isotipo (blanco, en relieve, sobre negro) y decidió que **es el logo principal del sitio** (ver §3). No llegó como archivo: subirlo por GitHub a `public/brand/originales/isotipo-3d.png` (máxima resolución, ≥ 1200 px de alto) y correr `npm run marca`.
+- Alan compartió en el chat un render 3D del isotipo (blanco, en relieve, sobre negro) y decidió que **es el logo principal del sitio** (ver §3).
+- **Imágenes de Drive**: la carpeta compartida tiene `logomainscroll.jpg` (render 3D), `inmutalkeylogowsp.jpg` (avatar), `IKlogoblanco.jpg`, capturas de la app y la tarjeta (`startup (2).pdf`). Desde esta sesión `drive.google.com` está bloqueado por la política de red y el conector de Drive solo entrega base64 en la conversación, así que **la vía es subirlas a `capturas/` por GitHub**. `npm run build:cloudflare` las procesa solo (ver `capturas/LEEME.md`).
 
 ## 1. Funciones verificadas contra `clinica-nom004` (rama de trabajo, commit 91b57c8)
 
@@ -50,7 +51,7 @@ No estaban en el traspaso y sí existen:
 - Identidad de género / trato preferente (opcional, no sustituye al sexo asignado al nacer).
 - Instalador firmado con certificado **autofirmado** + sello de tiempo DigiCert: SmartScreen **sí** avisará. FAQ 9 y `/verificar` siguen siendo necesarios.
 
-Próximamente (no presentar como disponible): PortaVault portátil (la ruta sigue en `app_data_dir()`), respaldo `.ikbak` verificable y restauración guiada, exportación PDF + verificador, importación desde otros sistemas (no existe), Mac (en evaluación).
+Próximamente (no presentar como disponible): respaldo `.ikbak` verificable y restauración guiada, exportación PDF + verificador, importación desde otros sistemas (no existe), Mac (en evaluación). **PortaVault queda fuera del sitio** por decisión de Alan (15-oct): primero se lanzan licencias solo digitales.
 
 ## 2. Riesgos de producto detectados (para Alan, fuera del alcance de la web)
 
@@ -73,10 +74,17 @@ Nuevas (Alan, 15-oct):
   - Texto base 17–18 px, botones de 52 px, contraste AA o mejor, una sola acción principal (WhatsApp) por pantalla.
   - "Diseñado para la NOM-004" en vez de "conforme a la NOM-004" hasta la revisión legal.
 
+- **Movimiento sin GSAP**: el "scrub" se hace con CSS y las variables `--p`/`--salida` que pone `base.ts`; la historia de integridad cambia de estado con IntersectionObserver (`escenas.ts`). Mismo efecto, 0 KB de librería. Todo el JS del sitio pesa ~12 KB comprimido.
+- **Simulador** (`Demo.astro` + `demo.ts`): réplica de la interfaz real (tema "Claro estándar", barra superior compacta, agenda lateral, semáforo de 3 luces, toasts, los 6 temas). 7 capítulos automáticos al entrar en vista; la nota es editable y usa las mismas reglas que la app (`src/lib/semaforo.ts`, `imc.ts`, `cie10.ts`). Sin JS se ve la consulta terminada.
+- **Chats simulados** (`ChatSimulado.astro` + `chat.ts`): prueba de 30 días (Pasos) y Fundadores. Rotulados "Conversación de ejemplo"; sin logo de WhatsApp.
+- **Navegación premium**: View Transitions entre páginas (CSS), indicador de sección activa, barra que se oculta al bajar y vuelve al subir, menú móvil a pantalla completa, precarga al pasar el cursor, accesos flotantes (WhatsApp en móvil, volver arriba en escritorio).
+- **Fundadores = centro comercial del sitio**, una sola licencia digital. El modelo financiero de Alan se leyó solo para entender la economía; **ninguna cifra ni texto suyo está en el repo**. Consecuencias: no prometer soporte o actualizaciones gratis de por vida, ni funciones de red/multiusuario; "un solo pago" aplica a la licencia de fundador.
+- **Despliegue**: Cloudflare Pages conectado al repo, ver `README_DEPLOY.md`.
+
 Del traspaso anterior:
 
 - **Diseño**: continuidad con la tarjeta (medianoche con luz azul abajo a la derecha; reverso claro azulado). Outfit para titulares; Inter para texto. El resto del sitio, sobrio.
-- Secuencia de fondos: Nav · Hero (oscuro + cuadrícula) · Reseñas (oscuro) · Problema (claro) · Integridad (oscuro, pineada) · Signos (navy + cuadrícula) · Incluye (claro) · Zero-Cloud (negro) · PortaVault (navy) · Pasos (oscuro, numerados) · Fundadores (oscuro con luz) · FAQ · CTA final · Pie (negro).
+- Secuencia de fondos: Nav · Hero (oscuro + cuadrícula) · Reseñas (oscuro) · Problema (claro) · Integridad (oscuro, pegajosa) · Simulador (navy + cuadrícula) · Signos (oscuro + cuadrícula) · Capturas (oscuro, si existen) · Incluye (claro) · Zero-Cloud (negro) · Pasos (oscuro, numerados) · Fundadores (oscuro con luz) · FAQ (oscuro) · CTA final (luz) · Pie (negro).
 - Evitar: etiquetas en MAYÚSCULAS sobre cada título, "→" en botones, monoespaciada, rejilla de tarjetas idénticas con sombra, resaltar una sola palabra del titular. Rejilla de funciones con líneas finas tipo panel de instrumento.
 - Esmeralda solo para firmado/íntegro/verificado. Reseñas de ejemplo con la cinta "Ejemplo ilustrativo", nunca "Reseña verificada".
 - Icono de WhatsApp: burbuja de chat genérica.
@@ -94,10 +102,10 @@ Del traspaso anterior:
 ## 4. Pendiente, en orden
 
 - **Fase A** — hecha: reconstrucción, Nav, Pie, Icono, `base.ts`, manifest, robots, sitemap, `generar-marca.mjs`, guardian en `src/lib/guardian.ts`, pruebas Vitest de lo existente. `src/pages/index.astro` es **provisional** (solo prueba el layout). Commit: `feat(web): fase A base, diseño y configuración`.
-- **Fase B** — `index.astro` y secciones (Hero con el render 3D), reseñas de ejemplo, QR, `escenas.ts`, `signos.ts`, páginas `/verificar`, `/privacidad`, `/terminos-fundadores`, `/resena`, `404`.
+- **Fase B** — hecha: portada completa, simulador, chats, monitor de signos, reseñas de ejemplo, QR, navegación premium, páginas `/verificar`, `/privacidad` (borrador, LFPDPPP 2025 verificada), `/terminos-fundadores` (borrador), `/resena` (formulario; el envío llega en la Fase C), `404`, `README_DEPLOY.md`.
 - **Fase C** — validación zod, Functions, migraciones D1, formulario, pruebas Vitest.
 - **Fase D** — check, test, builds, medición de JS, READMEs, Pages + D1 + secretos, revisión visual, commit final.
 
 ## 5. TODO_DEFINIR (para Alan)
 
-Confirmar WhatsApp `522291525847` · texto del mensaje prellenado · correo de contacto · precios Fundadores/Lanzamiento/Público · cupos totales y ocupados · fecha fin del precio de lanzamiento · actualizaciones incluidas · "después de la prueba" · soporte fuera de Fundadores · nombre de archivo, versión y SHA-256 del instalador · disponibilidad de PortaVault · razón social, domicilio y correo del aviso de privacidad · revisión legal · tarjeta Fundadores en imagen · render 3D del isotipo como archivo.
+WhatsApp `522291525847` **confirmado** · textos prellenados (provisionales) · correo de contacto · precio de fundador y precio público · nota de precios (IVA, medios de pago) · lugares totales y ocupados · fecha fin del precio de fundador · actualizaciones incluidas · "después de la prueba" · soporte fuera de Fundadores · nombre de archivo, versión y SHA-256 del instalador · razón social, domicilio y correo del aviso de privacidad · cancelaciones y jurisdicción de los términos · revisión legal · subir a `capturas/` el render 3D, el avatar y las capturas de la app.

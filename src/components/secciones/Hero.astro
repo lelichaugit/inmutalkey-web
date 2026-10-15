@@ -1,0 +1,298 @@
+---
+import { enlaceWhatsApp } from '../../lib/whatsapp';
+import { sitio } from '../../site.config';
+import Icono from '../Icono.astro';
+import Isotipo3D from '../Isotipo3D.astro';
+
+const prueba = enlaceWhatsApp(sitio.contacto.whatsapp, sitio.contacto.mensajes.prueba);
+---
+
+<section class="hero fondo-oscuro fondo-cuadricula" id="inicio" data-progreso-scroll aria-labelledby="hero-titulo">
+  <div class="hero-luz" aria-hidden="true"></div>
+
+  <div class="contenedor hero-rejilla">
+    <div class="hero-texto">
+      <p class="pildora hero-pildora">
+        <Icono nombre="estetoscopio" />
+        Expediente clínico para consultorio privado
+      </p>
+      <h1 id="hero-titulo">Tus notas clínicas, selladas y en tu computadora.</h1>
+      <p class="texto-grande tenue hero-sub">
+        Cada nota que firmas queda sellada: nadie puede cambiarla sin que se note. Diseñado para la NOM-004, funciona
+        sin internet y tus expedientes nunca salen de tu consultorio.
+      </p>
+      <div class="hero-acciones">
+        {
+          prueba && (
+            <a class="boton boton-primario" href={prueba} target="_blank" rel="noopener noreferrer">
+              <Icono nombre="chat" />
+              Pide tus {sitio.licencia.diasPrueba} días de prueba
+            </a>
+          )
+        }
+        <a class="boton boton-secundario" href="#demo">
+          <Icono nombre="play" />
+          Pruébalo aquí mismo
+        </a>
+      </div>
+      <ul class="hero-confianza">
+        <li><Icono nombre="check" />Prueba completa de {sitio.licencia.diasPrueba} días</li>
+        <li><Icono nombre="check" />Windows 10 y 11</li>
+        <li><Icono nombre="check" />Licencia vitalicia</li>
+      </ul>
+    </div>
+
+    <div class="hero-llave" data-isotipo-principal>
+      <div class="hero-llave-scroll">
+        <div class="hero-llave-flotar">
+          <span class="hero-llave-halo" aria-hidden="true"></span>
+          <Isotipo3D
+            prioridad
+            brillo
+            sizes="(min-width: 960px) 360px, 200px"
+            alt="Isotipo de InmutalKey: una llave con la vara de Asclepio"
+            class="hero-isotipo"
+          />
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <a class="hero-bajar" href="#integridad">
+    <span>Mira cómo funciona</span>
+    <span class="hero-bajar-linea" aria-hidden="true"></span>
+  </a>
+</section>
+
+<style>
+  .hero {
+    /* Avance de salida del hero (0 → 1), lo pone base.ts. */
+    --s: var(--salida, 0);
+    position: relative;
+    display: grid;
+    align-items: center;
+    min-height: calc(100svh - var(--altura-nav));
+    margin-top: calc(-1 * var(--altura-nav));
+    padding-top: calc(var(--altura-nav) + clamp(24px, 4vw, 48px));
+    padding-bottom: clamp(72px, 9vw, 112px);
+    overflow-x: clip;
+  }
+
+  .hero-luz {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background:
+      radial-gradient(55% 60% at 78% 62%, rgb(1 120 176 / 0.28), transparent 70%),
+      radial-gradient(70% 55% at 100% 110%, rgb(46 159 224 / 0.32), transparent 70%);
+    pointer-events: none;
+  }
+
+  .hero-rejilla {
+    display: grid;
+    gap: clamp(24px, 4vw, 48px);
+    align-items: center;
+  }
+
+  .hero-texto {
+    max-width: 640px;
+    transform: translateY(calc(var(--s) * -48px));
+    opacity: calc(1 - var(--s) * 1.4);
+  }
+
+  .hero-texto > * + * {
+    margin-top: 1.4rem;
+  }
+
+  .hero-pildora {
+    color: var(--texto-tenue);
+  }
+
+  .hero-sub {
+    max-width: 56ch;
+  }
+
+  .hero-acciones {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding-top: 0.4rem;
+  }
+
+  .hero-confianza {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 22px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    color: var(--texto-tenue);
+    font-size: 0.975rem;
+  }
+
+  .hero-confianza li {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45em;
+  }
+
+  .hero-confianza :global(.icono) {
+    width: 1.15em;
+    height: 1.15em;
+    color: var(--azul-vivo);
+  }
+
+  /* ── La llave ── */
+
+  /* Altura explícita en cada capa: las alturas en % no se resuelven dentro de la rejilla y el SVG usaría su tamaño propio. */
+  .hero-llave {
+    --alto-llave: clamp(200px, 30svh, 300px);
+    position: relative;
+    display: grid;
+    place-items: center;
+    height: var(--alto-llave);
+    order: -1;
+    perspective: 1200px;
+  }
+
+  /* Capa 1: lo que hace el scroll (baja más lento que la página, gira y se aleja; al final cede su lugar a la barra). */
+  .hero-llave-scroll {
+    height: var(--alto-llave);
+    transform-style: preserve-3d;
+    transform: translate3d(0, calc(var(--s) * 12vh), 0) rotateY(calc(var(--s) * 32deg)) rotateZ(calc(var(--s) * -6deg))
+      scale(calc(1 - var(--s) * 0.3));
+    opacity: clamp(0, calc(1 - var(--s) * 1.7), 1);
+    will-change: transform, opacity;
+  }
+
+  /* Capa 2: respiración en reposo. */
+  .hero-llave-flotar {
+    position: relative;
+    height: var(--alto-llave);
+    animation:
+      llave-entrada 1.6s var(--ease) both,
+      llave-flotar 7s ease-in-out 1.6s infinite;
+  }
+
+  .hero-llave :global(.hero-isotipo) {
+    position: relative;
+    z-index: 1;
+    height: var(--alto-llave);
+  }
+
+  .hero-llave-halo {
+    position: absolute;
+    inset: 12% -30%;
+    z-index: 0;
+    border-radius: 50%;
+    background: radial-gradient(closest-side, rgb(46 159 224 / 0.32), rgb(1 120 176 / 0.12) 55%, transparent 75%);
+    filter: blur(24px);
+    opacity: calc(0.75 + var(--s) * 0.5);
+    animation: halo-latido 7s ease-in-out infinite;
+  }
+
+  /* La luz que recorre la llave avanza con el scroll (el brillo lo dibuja Isotipo3D, recortado a la silueta). */
+  .hero-llave :global(.isotipo-brillo) {
+    background-position: calc(130% - var(--s) * 160%) 0;
+  }
+
+  @keyframes llave-entrada {
+    from {
+      opacity: 0;
+      transform: translateY(24px) scale(0.92);
+      filter: blur(10px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+      filter: blur(0);
+    }
+  }
+
+  @keyframes llave-flotar {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-10px);
+    }
+  }
+
+  @keyframes halo-latido {
+    0%,
+    100% {
+      transform: scale(1);
+    }
+    50% {
+      transform: scale(1.06);
+    }
+  }
+
+  .hero-bajar {
+    position: absolute;
+    left: 50%;
+    bottom: 20px;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    color: var(--texto-tenue);
+    font-size: 0.875rem;
+    text-decoration: none;
+    transform: translateX(-50%);
+    opacity: calc(1 - var(--s) * 4);
+  }
+
+  .hero-bajar-linea {
+    width: 1px;
+    height: 40px;
+    background: linear-gradient(var(--azul-vivo), transparent);
+    transform-origin: top;
+    animation: bajar 2.2s var(--ease) infinite;
+  }
+
+  @keyframes bajar {
+    0% {
+      transform: scaleY(0);
+      opacity: 1;
+    }
+    70% {
+      transform: scaleY(1);
+      opacity: 1;
+    }
+    100% {
+      transform: scaleY(1);
+      opacity: 0;
+    }
+  }
+
+  @media (min-width: 960px) {
+    .hero-rejilla {
+      grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+    }
+
+    .hero-llave {
+      --alto-llave: min(70svh, 620px);
+      order: 0;
+    }
+
+    .hero-bajar {
+      display: flex;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hero-texto,
+    .hero-llave-scroll {
+      transform: none;
+      opacity: 1;
+    }
+
+    .hero-llave-flotar,
+    .hero-llave-halo,
+    .hero-bajar-linea {
+      animation: none;
+    }
+  }
+</style>

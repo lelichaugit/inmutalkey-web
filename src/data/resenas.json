@@ -1,0 +1,92 @@
+[
+  {
+    "id": "ejemplo-01",
+    "nombre": "Dra. [Nombre]",
+    "especialidad": "Medicina general",
+    "estrellas": 5,
+    "texto": "Lo instalé en la computadora del consultorio y esa misma tarde ya estaba capturando pacientes. Se nota que lo hizo alguien que conoce la consulta.",
+    "verificado": false,
+    "esEjemplo": true
+  },
+  {
+    "id": "ejemplo-02",
+    "nombre": "Dr. [Nombre]",
+    "especialidad": "Pediatría",
+    "estrellas": 5,
+    "texto": "El semáforo antes de firmar me recuerda lo que me falta. Ya no se me pasan los signos vitales.",
+    "verificado": false,
+    "esEjemplo": true
+  },
+  {
+    "id": "ejemplo-03",
+    "nombre": "Dra. [Nombre]",
+    "especialidad": "Medicina interna",
+    "estrellas": 5,
+    "texto": "Me da tranquilidad que la nota firmada ya no se pueda tocar. Si me equivoco, agrego un addendum y queda todo claro.",
+    "verificado": false,
+    "esEjemplo": true
+  },
+  {
+    "id": "ejemplo-04",
+    "nombre": "Dra. [Nombre]",
+    "especialidad": "Ginecología",
+    "estrellas": 5,
+    "texto": "Que funcione sin internet era indispensable. En mi consultorio la señal va y viene.",
+    "verificado": false,
+    "esEjemplo": true
+  },
+  {
+    "id": "ejemplo-05",
+    "nombre": "Dr. [Nombre]",
+    "especialidad": "Medicina familiar",
+    "estrellas": 4,
+    "texto": "La receta sale con su folio y lista para imprimir en media carta, como la uso siempre.",
+    "verificado": false,
+    "esEjemplo": true
+  },
+  {
+    "id": "ejemplo-06",
+    "nombre": "Dr. [Nombre]",
+    "especialidad": "Cardiología",
+    "estrellas": 5,
+    "texto": "Tener la agenda del día a un lado del expediente me ordena la mañana.",
+    "verificado": false,
+    "esEjemplo": true
+  },
+  {
+    "id": "ejemplo-07",
+    "nombre": "Dra. [Nombre]",
+    "especialidad": "Dermatología",
+    "estrellas": 5,
+    "texto": "Respaldo en mi USB al cerrar el día. Es un clic y me avisa cuando la copia quedó bien.",
+    "verificado": false,
+    "esEjemplo": true
+  },
+  {
+    "id": "ejemplo-08",
+    "nombre": "Dr. [Nombre]",
+    "especialidad": "Traumatología",
+    "estrellas": 4,
+    "texto": "El buscador encuentra al paciente por nombre o por diagnóstico en cuanto empiezo a escribir.",
+    "verificado": false,
+    "esEjemplo": true
+  },
+  {
+    "id": "ejemplo-09",
+    "nombre": "Dra. [Nombre]",
+    "especialidad": "Psiquiatría",
+    "estrellas": 5,
+    "texto": "Me gusta que mis expedientes no estén en un servidor ajeno. Se quedan conmigo.",
+    "verificado": false,
+    "esEjemplo": true
+  },
+  {
+    "id": "ejemplo-10",
+    "nombre": "Dr. [Nombre]",
+    "especialidad": "Medicina general",
+    "estrellas": 5,
+    "texto": "El tema de lectura antifatiga se agradece al final de un día largo.",
+    "verificado": false,
+    "esEjemplo": true
+  }
+]
