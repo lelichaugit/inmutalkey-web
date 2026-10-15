@@ -3,7 +3,7 @@
 //
 // Funciona igual con Lenis (escritorio: rueda y trackpad suavizados) que con el scroll nativo de iPhone, iPad y
 // Android: en ambos casos la ventana se desplaza de verdad y aquí solo se lee `window.scrollY`. Con Lenis, base.ts
-// llama a `cuadroAhora()` desde su evento `scroll` para que las variables salgan en el mismo cuadro que la página.
+// llama a `cuadroAhora()` desde su evento `scroll` (sincroniza el primer cuadro de cada gesto; sin pasadas dobles).
 //
 // Rendimiento: la geometría se mide al iniciar y cuando algo cambia de tamaño (offsetTop, que ignora los transform:
 // el parallax no se mide a sí mismo). En cada cuadro no se lee el DOM; solo se escriben las variables que cambiaron,
@@ -42,9 +42,9 @@ export interface MotorScroll {
   /** Pide un cuadro (por ejemplo, después de un salto programático). */
   pedirCuadro(): void;
   /**
-   * Actualiza las variables en este mismo cuadro. Para Lenis: mueve la ventana dentro de su requestAnimationFrame y el
-   * evento `scroll` del navegador llega en el cuadro siguiente; si se esperara a ese evento, el parallax y las escenas
-   * irían un cuadro (16.7 ms a 60 Hz) detrás de la página y se notaría un temblor, sobre todo en monitores de 60 Hz.
+   * Actualiza las variables ya, en este cuadro, y cancela el cuadro pendiente (nunca dos pasadas por cuadro). Para
+   * Lenis: mueve la ventana dentro de su requestAnimationFrame; en el primer cuadro de cada gesto aún no hay evento
+   * `scroll` del navegador que pida un cuadro, y sin esta llamada las variables irían ese cuadro detrás.
    */
   cuadroAhora(): void;
 }
@@ -119,6 +119,7 @@ export function iniciarScroll({ movimiento, alCuadro }: OpcionesScroll): MotorSc
 
   let altoVentana = window.innerHeight;
   let pendiente = false;
+  let idCuadro = 0;
 
   const escribir = (p: Pista, nombre: string, valor: number): void => {
     const texto = valor.toFixed(4);
@@ -139,6 +140,8 @@ export function iniciarScroll({ movimiento, alCuadro }: OpcionesScroll): MotorSc
   };
 
   function cuadro(): void {
+    // Si llega antes que el cuadro pedido (Lenis → cuadroAhora), ese cuadro sobra: se cancela.
+    if (pendiente) window.cancelAnimationFrame(idCuadro);
     pendiente = false;
     const y = window.scrollY;
     const vh = altoVentana;
@@ -172,7 +175,7 @@ export function iniciarScroll({ movimiento, alCuadro }: OpcionesScroll): MotorSc
   function pedirCuadro(): void {
     if (pendiente) return;
     pendiente = true;
-    window.requestAnimationFrame(cuadro);
+    idCuadro = window.requestAnimationFrame(cuadro);
   }
 
   function medir(): void {

@@ -44,9 +44,10 @@ Despliegue: ver [README_DEPLOY.md](README_DEPLOY.md).
 - **Cambiar o agregar una red:** editar `REDES` en `src/data/socials.ts` (URL limpia, sin parámetros). Lo leen
   `SocialLinks` (pie y `/contacto`), `Contacto`, el `<head>` (`<link rel="me">` y JSON-LD) y `npm run qr`. Si la red
   es nueva, agregar su SVG a `scripts/optimizar-redes.mjs` y correr `npm run redes`.
-- **WhatsApp:** el número vive solo en `sitio.contacto.whatsapp` (`src/site.config.ts`, dígitos con lada 52). El botón
-  se muestra con `WHATSAPP_ENABLED = true` en `src/data/socials.ts`; con `false` (o con `TODO_DEFINIR`) no se imprime ni
-  el enlace ni el número en el HTML.
+- **WhatsApp:** el número vive solo en `sitio.contacto.whatsapp` (`src/site.config.ts`, dígitos con lada 52). El
+  interruptor `WHATSAPP_ENABLED` (`src/data/socials.ts`) apaga **todos** los botones de WhatsApp del sitio (barra, botón
+  flotante, hero, FAQ, /contacto, pie…): con `false` no se imprime ningún enlace ni el número y el build de producción
+  no exige número. Con `true`, el guardian exige un número válido en producción.
 - **QR de Instagram:** `/contacto` usa el nametag oficial si existe `public/img/qr-instagram.png` (o `public/`); si no,
   el QR propio `public/img/qr-instagram.svg` (corrección H, zona silenciosa de 4 módulos, generado en local). Las
   pruebas lo decodifican con jsQR y exigen la URL exacta del perfil.

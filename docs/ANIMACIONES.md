@@ -53,10 +53,11 @@ Mac suele verse más fluida por hardware (pantallas de 120 Hz, GPU con Metal) y 
 pasos finos; en Windows la rueda salta 100 px por muesca y muchas laptops tienen 60 Hz y GPU integrada. Lo que el sitio
 hace para compensar:
 
-- Lenis suaviza la rueda y el motor de scroll escribe las variables **en el mismo cuadro** que Lenis mueve la página
-  (`suave.on('scroll', motor.cuadroAhora)`); antes iban un cuadro detrás y el parallax temblaba a 60 Hz.
+- Lenis suaviza la rueda y el motor de scroll escribe las variables en el mismo cuadro que Lenis mueve la página,
+  también en el primer cuadro de cada gesto (`suave.on('scroll', motor.cuadroAhora)`, que cancela el cuadro pendiente:
+  nunca dos pasadas por cuadro). Efecto pequeño: sin él solo se desfasaba ese primer cuadro (≈ 0.4 % de los cuadros).
 - Reglas 11–13 de arriba (grano sin fusión, sin filtros animados, variables con tope).
-- Barra de scroll delgada y teñida (`scrollbar-width` / `scrollbar-color`): Windows dibuja una barra clásica gris.
+- Barra de scroll delgada y teñida solo en la página (`scrollbar-color` se hereda: los paneles internos vuelven a `auto`).
 
 Cómo medir: Chromium a 1440×900, `deviceScaleFactor` 1.25 (escala típica de Windows), `page.mouse.wheel(0, 100)` cada
 45 ms y tiempos de cuadro con `requestAnimationFrame`. Portada completa: 29.9 % → 4.5 % de cuadros > 25 ms.

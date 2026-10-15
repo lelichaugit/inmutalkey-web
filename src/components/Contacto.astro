@@ -2,7 +2,7 @@
 // Datos de contacto (WhatsApp, correo y redes) desde src/site.config.ts y src/data/socials.ts. Solo aparece lo definido.
 //   lista  · tipo + valor, uno por renglón (pie de página)
 //   fila   · píldoras en línea que se acomodan solas (cierre, menú del celular)
-import { correoContacto, REDES, REL_EXTERNO, REL_PERFIL_PROPIO, WHATSAPP_ENABLED, type IdRed } from '../data/socials';
+import { correoContacto, REDES, REL_EXTERNO, REL_PERFIL_PROPIO, type IdRed } from '../data/socials';
 import { enlaceWhatsApp, numeroVisible } from '../lib/whatsapp';
 import { sitio } from '../site.config';
 import Icono from './Icono.astro';
@@ -28,8 +28,8 @@ const {
   incluir = ['whatsapp', 'correo', 'instagram', 'x', 'linkedin'],
   class: clase,
 } = Astro.props;
-const whatsapp = WHATSAPP_ENABLED && incluir.includes('whatsapp') ? enlaceWhatsApp(sitio.contacto.whatsapp, mensaje) : null;
-const telefono = WHATSAPP_ENABLED ? numeroVisible(sitio.contacto.whatsapp) : null;
+const whatsapp = incluir.includes('whatsapp') ? enlaceWhatsApp(sitio.contacto.whatsapp, mensaje) : null;
+const telefono = numeroVisible(sitio.contacto.whatsapp);
 const correo = incluir.includes('correo') ? correoContacto() : null;
 const redes = REDES.filter((r) => incluir.includes(r.id));
 ---
@@ -171,8 +171,17 @@ const redes = REDES.filter((r) => incluir.includes(r.id));
     display: block;
   }
 
+  /* Oculto a la vista, no al lector de pantalla: «Instagram @inmutalkey» y «X @inmutalkey» no se anuncian igual. */
   .contacto-fila .contacto-tipo {
-    display: none;
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+    border: 0;
   }
 
   .contacto-fila a :global(.icono),

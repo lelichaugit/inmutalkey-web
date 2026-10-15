@@ -5,9 +5,11 @@
 import { sitio } from '../site.config.ts';
 
 /**
- * Interruptor del botón de WhatsApp Business. El número vive en un solo lugar: `sitio.contacto.whatsapp`
- * (src/site.config.ts). Para activarlo basta con un número válido ahí y `WHATSAPP_ENABLED = true`; con `false` (o con
- * el marcador `TODO_DEFINIR`) no se imprime ni el enlace ni el número en el HTML.
+ * Interruptor de WhatsApp Business en TODO el sitio (barra, botón flotante, hero, FAQ, /contacto, pie…): todos los
+ * botones pasan por `enlaceWhatsApp`/`numeroVisible` (src/lib/whatsapp.ts), que lo respetan. El número vive en un solo
+ * lugar: `sitio.contacto.whatsapp` (src/site.config.ts).
+ *   · `true`  → se publica; en producción el guardian exige un número válido.
+ *   · `false` → no se imprime ningún enlace ni el número en el HTML, y el build no exige número.
  */
 export const WHATSAPP_ENABLED = true;
 
@@ -74,6 +76,12 @@ export const AVISO_PESTANA = 'se abre en una pestaña nueva';
 
 export function etiquetaAccesible(red: Pick<Red, 'etiqueta'>): string {
   return `${red.etiqueta}, ${AVISO_PESTANA}`;
+}
+
+/** Para enlaces que muestran el verbo («Seguir», «Conectar»): el texto visible va dentro del nombre (WCAG 2.5.3). */
+export function etiquetaConAccion(red: Pick<Red, 'etiqueta' | 'accion'>): string {
+  const enlace = red.accion === 'Conectar' ? 'con' : 'a';
+  return `${red.accion} ${enlace} ${etiquetaAccesible(red)}`;
 }
 
 export function redPorId(id: IdRed): Red {

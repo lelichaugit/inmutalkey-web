@@ -14,6 +14,11 @@ describe('enlaceWhatsApp', () => {
     expect(enlaceWhatsApp('522291525847', '  ')).toBe('https://wa.me/522291525847');
   });
 
+  it('null con WhatsApp apagado (WHATSAPP_ENABLED = false), aunque el número sea válido', () => {
+    expect(enlaceWhatsApp('522291525847', 'Hola', false)).toBeNull();
+    expect(numeroVisible('522291525847', false)).toBeNull();
+  });
+
   it('null si falta o no es válido', () => {
     expect(enlaceWhatsApp(TODO_DEFINIR, 'x')).toBeNull();
     expect(enlaceWhatsApp('+52 229 152 5847', 'x')).toBeNull();

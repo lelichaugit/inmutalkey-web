@@ -4,15 +4,15 @@
 import Icono from '../components/Icono.astro';
 import IconoMarca from '../components/IconoMarca.astro';
 import SocialLinks from '../components/SocialLinks.astro';
-import { AVISO_PESTANA, correoContacto, redPorId, REL_EXTERNO, WHATSAPP_ENABLED } from '../data/socials';
+import { AVISO_PESTANA, correoContacto, redPorId, REL_EXTERNO } from '../data/socials';
 import PaginaTexto from '../layouts/PaginaTexto.astro';
 import { buscarQrInstagram } from '../lib/qr';
 import { enlaceWhatsApp, numeroVisible } from '../lib/whatsapp';
 import { sitio } from '../site.config';
 
 const correo = correoContacto();
-const whatsapp = WHATSAPP_ENABLED ? enlaceWhatsApp(sitio.contacto.whatsapp, sitio.contacto.mensajeWhatsApp) : null;
-const telefono = WHATSAPP_ENABLED ? numeroVisible(sitio.contacto.whatsapp) : null;
+const whatsapp = enlaceWhatsApp(sitio.contacto.whatsapp, sitio.contacto.mensajeWhatsApp);
+const telefono = numeroVisible(sitio.contacto.whatsapp);
 const instagram = redPorId('instagram');
 const qr = buscarQrInstagram();
 ---
@@ -31,7 +31,7 @@ const qr = buscarQrInstagram();
       {
         correo && (
           <li>
-            <a class="canal canal-principal" href={`mailto:${correo}`} aria-label={`Escribir un correo a ${correo}`}>
+            <a class="canal canal-principal" href={`mailto:${correo}`} aria-label={`Escribir correo a ${correo}`}>
               <span class="canal-sello">
                 <Icono nombre="correo" />
               </span>
@@ -50,7 +50,7 @@ const qr = buscarQrInstagram();
               href={whatsapp}
               target="_blank"
               rel={REL_EXTERNO}
-              aria-label={`Escribir a InmutalKey por WhatsApp, ${AVISO_PESTANA}`}
+              aria-label={`Abrir WhatsApp Business, ${telefono}, ${AVISO_PESTANA}`}
             >
               <span class="canal-sello">
                 <IconoMarca nombre="whatsapp" />
@@ -278,9 +278,10 @@ const qr = buscarQrInstagram();
     color: #fff;
   }
 
+  /* Más oscuro, no más claro, al pasar el cursor: blanco sobre #016a9c = 5.9:1 (sobre #0a87c4 serían 3.98:1). */
   .canal-principal:hover .canal-accion,
   .canal-principal:focus-visible .canal-accion {
-    background: #0a87c4;
+    background: #016a9c;
   }
 
   .canal:active {

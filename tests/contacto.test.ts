@@ -1,10 +1,11 @@
 import { experimental_AstroContainer as AstroContainer } from 'astro/container';
 import { beforeAll, describe, expect, it } from 'vitest';
 
+import Contacto from '../src/components/Contacto.astro';
 import SocialLinks from '../src/components/SocialLinks.astro';
 import { REDES } from '../src/data/socials';
 import { revisarHtml } from '../src/lib/guardian';
-import Contacto from '../src/pages/contacto.astro';
+import PaginaContacto from '../src/pages/contacto.astro';
 
 const SITIO = 'https://inmutalkey.com';
 let container: AstroContainer;
@@ -33,10 +34,31 @@ describe('SocialLinks', () => {
   });
 });
 
+/** Nombre accesible aproximado de cada <a>: aria-label o, si no hay, su texto sin lo marcado aria-hidden. */
+function nombresDeEnlaces(html: string): string[] {
+  return [...html.matchAll(/<a\b([^>]*)>([\s\S]*?)<\/a>/gi)].map((m) => {
+    const etiqueta = /aria-label="([^"]*)"/.exec(m[1] ?? '')?.[1];
+    if (etiqueta) return etiqueta;
+    const visible = (m[2] ?? '').replace(/<svg[\s\S]*?<\/svg>/gi, '').replace(/<[^>]+>/g, ' ');
+    return visible.replace(/\s+/g, ' ').trim();
+  });
+}
+
+describe('Contacto (fila del cierre)', () => {
+  it('ningún par de enlaces se anuncia igual (Instagram y X comparten @inmutalkey)', async () => {
+    const html = await container.renderToString(Contacto, { props: { variante: 'fila' } });
+    const nombres = nombresDeEnlaces(html);
+    expect(nombres.length).toBeGreaterThanOrEqual(5);
+    expect(new Set(nombres).size).toBe(nombres.length);
+    expect(nombres).toContain('Instagram @inmutalkey');
+    expect(nombres).toContain('X @inmutalkey');
+  });
+});
+
 describe('/contacto', () => {
   let html = '';
   beforeAll(async () => {
-    html = await container.renderToString(Contacto, { request: new Request(`${SITIO}/contacto`) });
+    html = await container.renderToString(PaginaContacto, { request: new Request(`${SITIO}/contacto`) });
   });
 
   it('pasa el guardian: sin recursos de terceros, sin scripts en línea, enlaces externos con rel y sin rastreo', () => {
@@ -53,6 +75,13 @@ describe('/contacto', () => {
     expect(html).not.toMatch(/<iframe/i);
     expect(html).not.toMatch(/<script[^>]+src="https?:/i);
     expect(html).not.toMatch(/platform\.twitter|connect\.facebook|instagram\.com\/embed|platform\.linkedin/i);
+  });
+
+  it('el texto visible de cada botón está dentro de su nombre accesible (WCAG 2.5.3)', () => {
+    expect(html).toContain('aria-label="Escribir correo a contacto@inmutalkey.com"');
+    expect(html).toMatch(/aria-label="Abrir WhatsApp Business, \+52 229 152 5847, se abre en una pestaña nueva"/);
+    expect(html).toContain('aria-label="Seguir a InmutalKey en Instagram, se abre en una pestaña nueva"');
+    expect(html).toContain('aria-label="Conectar con Alan Vargas Fregoso, fundador de InmutalKey, en LinkedIn, se abre en una pestaña nueva"');
   });
 
   it('correo como canal principal antes de las redes, y QR con su texto alternativo', () => {

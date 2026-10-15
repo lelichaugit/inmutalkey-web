@@ -917,7 +917,9 @@ const FICHA: readonly { icono: NombreIcono; titulo: string; texto: string; dato:
     background: radial-gradient(closest-side, rgb(0 0 0 / 0.75), transparent);
   }
 
+  /* position: relative la pinta después de .zv-llave-mover (capa de posicionados), encima de su sombra ::after. */
   .zv-llave-pie {
+    position: relative;
     color: var(--texto);
   }
 

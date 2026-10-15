@@ -7,6 +7,7 @@ import { defineConfig } from 'astro/config';
 
 import { detectarEntorno } from './src/lib/entorno.ts';
 import { revisarCss, revisarHtml } from './src/lib/guardian.ts';
+import { WHATSAPP_ENABLED } from './src/data/socials.ts';
 import { enlaceWhatsApp } from './src/lib/whatsapp.ts';
 import { pendientes, sitio } from './src/site.config.ts';
 
@@ -40,7 +41,8 @@ function guardian() {
         logger.info(`entorno: ${entorno}`);
         const faltan = pendientes();
         if (faltan.length > 0) logger.warn(`TODO_DEFINIR (${faltan.length}): ${faltan.join(', ')}`);
-        if (entorno === 'produccion' && command === 'build' && enlaceWhatsApp(sitio.contacto.whatsapp, '') === null) {
+        // Con WhatsApp apagado (WHATSAPP_ENABLED = false) no se exige número: sus botones no se imprimen.
+        if (entorno === 'produccion' && command === 'build' && WHATSAPP_ENABLED && enlaceWhatsApp(sitio.contacto.whatsapp, '') === null) {
           throw new Error('guardian: falta un número de WhatsApp válido en src/site.config.ts (contacto.whatsapp).');
         }
       },

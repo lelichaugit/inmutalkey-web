@@ -75,7 +75,7 @@ let suave: Lenis | null = null;
 if (!movimientoReducido.matches && window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
   void import('./suave').then((m) => {
     suave = m.iniciarSuave();
-    // Mismo cuadro que Lenis: sin esto, parallax y escenas irían un cuadro detrás de la página (temblor a 60 Hz).
+    // Mismo cuadro que Lenis también en el primero de cada gesto (después, el evento scroll ya cae en el mismo cuadro).
     suave.on('scroll', motor.cuadroAhora);
     if (raiz.classList.contains('menu-abierto')) suave.stop();
   });

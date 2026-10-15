@@ -3,7 +3,7 @@
 // iframes, SDK ni píxeles de ninguna red.
 //   variant="footer" · fila compacta de íconos (pie global)
 //   variant="cards"  · tarjetas con ícono grande, handle, propósito y acción (/contacto)
-import { etiquetaAccesible, REDES, REL_PERFIL_PROPIO, REL_EXTERNO } from '../data/socials';
+import { etiquetaAccesible, etiquetaConAccion, REDES, REL_PERFIL_PROPIO, REL_EXTERNO } from '../data/socials';
 import IconoMarca from './IconoMarca.astro';
 
 interface Props {
@@ -42,7 +42,7 @@ const { variant, class: clase } = Astro.props;
             href={red.url}
             target="_blank"
             rel={red.propio ? REL_PERFIL_PROPIO : REL_EXTERNO}
-            aria-label={etiquetaAccesible(red)}
+            aria-label={etiquetaConAccion(red)}
           >
             <span class="red-sello">
               <IconoMarca nombre={red.icono} />
@@ -284,6 +284,7 @@ const { variant, class: clase } = Astro.props;
     }
 
     .red:active,
+    .redes-tarjetas .red:active,
     .red:active .red-sello {
       transform: none;
     }
