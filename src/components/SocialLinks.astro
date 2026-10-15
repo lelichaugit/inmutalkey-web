@@ -1,0 +1,292 @@
+---
+// Redes de InmutalKey desde src/data/socials.ts (única fuente de verdad). Solo enlaces estáticos: sin widgets,
+// iframes, SDK ni píxeles de ninguna red.
+//   variant="footer" · fila compacta de íconos (pie global)
+//   variant="cards"  · tarjetas con ícono grande, handle, propósito y acción (/contacto)
+import { etiquetaAccesible, etiquetaConAccion, REDES, REL_PERFIL_PROPIO, REL_EXTERNO } from '../data/socials';
+import IconoMarca from './IconoMarca.astro';
+
+interface Props {
+  variant: 'footer' | 'cards';
+  class?: string;
+}
+
+const { variant, class: clase } = Astro.props;
+---
+
+{
+  variant === 'footer' ? (
+    <ul class:list={['redes', 'redes-pie', clase]} aria-label="Redes sociales de InmutalKey">
+      {REDES.map((red) => (
+        <li>
+          <a
+            class={`red red-${red.id}`}
+            href={red.url}
+            target="_blank"
+            rel={red.propio ? REL_PERFIL_PROPIO : REL_EXTERNO}
+            aria-label={etiquetaAccesible(red)}
+          >
+            <span class="red-sello">
+              <IconoMarca nombre={red.icono} />
+            </span>
+          </a>
+        </li>
+      ))}
+    </ul>
+  ) : (
+    <ul class:list={['redes', 'redes-tarjetas', clase]}>
+      {REDES.map((red) => (
+        <li>
+          <a
+            class={`red red-${red.id}`}
+            href={red.url}
+            target="_blank"
+            rel={red.propio ? REL_PERFIL_PROPIO : REL_EXTERNO}
+            aria-label={etiquetaConAccion(red)}
+          >
+            <span class="red-sello">
+              <IconoMarca nombre={red.icono} />
+            </span>
+            <span class="red-nombre">{red.nombre}</span>
+            <span class="red-handle">{red.handle}</span>
+            <span class="red-proposito">{red.proposito}</span>
+            <span class="red-accion" aria-hidden="true">
+              {red.accion}
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" focusable="false">
+                <path d="M7 17 17 7M8.5 7H17v8.5" />
+              </svg>
+            </span>
+          </a>
+        </li>
+      ))}
+    </ul>
+  )
+}
+
+<style>
+  .redes {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .red {
+    --marca-fondo: var(--azul);
+    --marca-glifo: #fff;
+    color: var(--texto);
+    text-decoration: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Marca en reposo: monocromo de la paleta del sitio. En hover/foco el sello se rellena con el color de marca
+     (degradado de Instagram, X en blanco, LinkedIn #0A66C2) con el glifo en negativo, que mantiene el contraste. */
+  .red-instagram {
+    --marca-fondo: linear-gradient(45deg, #feda75 0%, #fa7e1e 25%, #d62976 50%, #962fbf 75%, #4f5bd5 100%);
+  }
+
+  .red-x {
+    --marca-fondo: #fff;
+    --marca-glifo: #000;
+  }
+
+  .red-linkedin {
+    --marca-fondo: #0a66c2;
+  }
+
+  .red-sello {
+    position: relative;
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border: 1px solid var(--linea-oscura-fuerte);
+    border-radius: 12px;
+    background: rgb(255 255 255 / 0.04);
+    color: var(--texto);
+    font-size: 22px;
+    isolation: isolate;
+    overflow: hidden;
+    transition:
+      color 0.2s var(--ease),
+      border-color 0.2s var(--ease),
+      transform 0.2s var(--ease);
+  }
+
+  .red-sello::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: var(--marca-fondo);
+    opacity: 0;
+    transition: opacity 0.2s var(--ease);
+  }
+
+  .red:focus-visible {
+    outline-offset: 4px;
+    border-radius: 14px;
+  }
+
+  .red:hover .red-sello,
+  .red:focus-visible .red-sello {
+    border-color: transparent;
+    color: var(--marca-glifo);
+  }
+
+  .red:hover .red-sello::before,
+  .red:focus-visible .red-sello::before {
+    opacity: 1;
+  }
+
+  .red:active .red-sello {
+    transform: scale(0.94);
+  }
+
+  /* ── Pie: fila compacta ── */
+
+  .redes-pie {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 10px;
+    margin-top: 1.25rem;
+  }
+
+  .redes-pie .red {
+    display: grid;
+    place-items: center;
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  /* ── Tarjetas ── */
+
+  .redes-tarjetas {
+    display: grid;
+    gap: 16px;
+    grid-template-columns: 1fr;
+  }
+
+  @media (min-width: 900px) {
+    .redes-tarjetas {
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+  }
+
+  .redes-tarjetas li {
+    display: flex;
+    min-width: 0;
+  }
+
+  .redes-tarjetas .red {
+    position: relative;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    grid-template-areas:
+      'sello nombre'
+      'sello handle'
+      'texto texto'
+      'accion accion';
+    align-items: center;
+    column-gap: 16px;
+    row-gap: 2px;
+    width: 100%;
+    padding: 22px;
+    border: 1px solid var(--linea-oscura-fuerte);
+    border-radius: 20px;
+    background:
+      radial-gradient(90% 120% at 0% 0%, rgb(46 159 224 / 0.08), transparent 70%),
+      rgb(255 255 255 / 0.03);
+    transition:
+      border-color 0.2s var(--ease),
+      background-color 0.2s var(--ease),
+      transform 0.2s var(--ease);
+  }
+
+  .redes-tarjetas .red-sello {
+    grid-area: sello;
+    width: 64px;
+    height: 64px;
+    border-radius: 16px;
+    font-size: 32px;
+  }
+
+  .red-nombre {
+    grid-area: nombre;
+    align-self: end;
+    font-family: var(--fuente-titulo);
+    font-size: 1.375rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    line-height: 1.15;
+  }
+
+  .red-handle {
+    grid-area: handle;
+    align-self: start;
+    color: var(--texto-tenue);
+    font-size: 0.9375rem;
+    overflow-wrap: anywhere;
+  }
+
+  .red-proposito {
+    grid-area: texto;
+    margin-top: 16px;
+    color: var(--texto-tenue);
+  }
+
+  .red-accion {
+    grid-area: accion;
+    justify-self: start;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 44px;
+    margin-top: 18px;
+    padding: 0 18px;
+    border: 1px solid var(--linea-oscura-fuerte);
+    border-radius: 999px;
+    font-weight: 600;
+    transition:
+      background-color 0.2s var(--ease),
+      border-color 0.2s var(--ease);
+  }
+
+  .redes-tarjetas .red:hover,
+  .redes-tarjetas .red:focus-visible {
+    border-color: rgb(46 159 224 / 0.55);
+    background-color: rgb(255 255 255 / 0.05);
+  }
+
+  .redes-tarjetas .red:hover .red-accion,
+  .redes-tarjetas .red:focus-visible .red-accion {
+    border-color: var(--azul-vivo);
+    background: var(--azul);
+    color: #fff;
+  }
+
+  .redes-tarjetas .red:active {
+    transform: scale(0.985);
+  }
+
+  @media (hover: hover) and (prefers-reduced-motion: no-preference) {
+    .redes-tarjetas .red:hover {
+      transform: translateY(-2px);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .red,
+    .red *,
+    .red-sello::before {
+      transition: none !important;
+    }
+
+    .red:active,
+    .redes-tarjetas .red:active,
+    .red:active .red-sello {
+      transform: none;
+    }
+  }
+</style>

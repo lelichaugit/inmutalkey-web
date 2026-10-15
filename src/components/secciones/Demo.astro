@@ -85,8 +85,10 @@ const MOTIVOS_ADDENDUM = [
     <div class="demo-escenario">
       <!-- Presentación del "dispositivo": al acercarse, la ventana pasa de inclinada y pequeña a plana y a tamaño
            completo, y su pantalla se enciende. Ligada al --p de este envoltorio (scroll.ts); el simulador no se fija
-           porque es interactivo. Sin JS o con movimiento reducido se ve plano y encendido desde el principio. -->
-      <div class="presentacion" data-progreso-scroll>
+           porque es interactivo. Sin JS o con movimiento reducido se ve plano y encendido desde el principio.
+           data-progreso-hasta: la presentación termina en --p 0.45 (--t y --luz ya valen 1); pasado ese punto no se
+           escribe más y los ~430 elementos del simulador no se recalculan en cada cuadro de scroll. -->
+      <div class="presentacion" data-progreso-scroll data-progreso-hasta="0.45">
         <span class="presentacion-halo" aria-hidden="true"></span>
         <div class="dispositivo">
           <span class="visor" aria-hidden="true"><i></i><i></i><i></i><i></i></span>

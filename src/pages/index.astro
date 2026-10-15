@@ -13,9 +13,10 @@ import Resenas from '../components/secciones/Resenas.astro';
 import Signos from '../components/secciones/Signos.astro';
 import ZeroCloud from '../components/secciones/ZeroCloud.astro';
 import Base from '../layouts/Base.astro';
+import { sitio } from '../site.config';
 ---
 
-<Base titulo="InmutalKey · Expediente clínico con notas selladas" tituloCompleto logoDiferido riel>
+<Base titulo={sitio.titulo} tituloCompleto logoDiferido riel>
   <Hero />
   <Resenas />
   <Problema />

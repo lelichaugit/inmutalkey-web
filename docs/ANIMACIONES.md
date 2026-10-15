@@ -39,6 +39,28 @@ fijadas, parallax, texto que se ilumina).
    secuestre en escritorio.
 10. **Celular primero**: escenas más cortas (`--largo` ≈ 2), nada de efectos que dependan del cursor, objetivos
     táctiles de 44 px y texto de cuerpo de 16 px o más.
+11. **Nada de `mix-blend-mode`** (lo vigila `tests/rendimiento.test.ts`): una capa fija con modo de fusión obliga a
+    recomponer toda la página en cada cuadro. Medido en Chromium a 60 Hz con rueda por pasos (Windows): 30 % de
+    cuadros > 25 ms con el grano en `soft-light` contra 0.6 % con fusión normal.
+12. **Nada de `filter` (`drop-shadow`, `blur`) sobre algo que cambia en cada cuadro** (escala ligada al scroll, brillo
+    que lo recorre): se vuelve a rasterizar cada cuadro. Halo y sombra con gradientes en un pseudo-elemento.
+13. **Variables solo mientras hacen falta**: cada escritura de `--p` recalcula el estilo de todo el subárbol. Si la
+    animación termina antes del 1, usa `data-progreso-hasta`; `--salida` es opcional (`data-progreso-salida`).
+
+## Fluidez en Windows
+
+Mac suele verse más fluida por hardware (pantallas de 120 Hz, GPU con Metal) y porque su trackpad entrega el scroll en
+pasos finos; en Windows la rueda salta 100 px por muesca y muchas laptops tienen 60 Hz y GPU integrada. Lo que el sitio
+hace para compensar:
+
+- Lenis suaviza la rueda y el motor de scroll escribe las variables en el mismo cuadro que Lenis mueve la página,
+  también en el primer cuadro de cada gesto (`suave.on('scroll', motor.cuadroAhora)`, que cancela el cuadro pendiente:
+  nunca dos pasadas por cuadro). Efecto pequeño: sin él solo se desfasaba ese primer cuadro (≈ 0.4 % de los cuadros).
+- Reglas 11–13 de arriba (grano sin fusión, sin filtros animados, variables con tope).
+- Barra de scroll delgada y teñida solo en la página (`scrollbar-color` se hereda: los paneles internos vuelven a `auto`).
+
+Cómo medir: Chromium a 1440×900, `deviceScaleFactor` 1.25 (escala típica de Windows), `page.mouse.wheel(0, 100)` cada
+45 ms y tiempos de cuadro con `requestAnimationFrame`. Portada completa: 29.9 % → 4.5 % de cuadros > 25 ms.
 
 ## Revelado al entrar en vista
 
@@ -59,7 +81,9 @@ fijadas, parallax, texto que se ilumina).
 | Atributo | Efecto |
 |---|---|
 | `data-parallax="suave" \| "medio" \| "fuerte" \| "inverso"` | Se desplaza 48 / 96 / 160 / −72 px a lo largo de su paso por la ventana |
-| `data-progreso-scroll` | `--p` (0 → 1 mientras cruza la ventana) para usarla en `calc()`. Opcionales: `data-progreso-hasta="0.45"` (tope: al llegar deja de escribir) y `data-progreso-salida` (también `--salida`, 0 → 1 al salir por arriba) |
+| `data-progreso-scroll` | `--p` (0 → 1 mientras cruza la ventana) para usarla en `calc()` |
+| `data-progreso-hasta="0.45"` (con el anterior) | Tope de `--p`: pasado ese punto ya no se escribe. Úsalo cuando la animación termina antes del 1 y el subárbol es grande (cada escritura recalcula el estilo de todos los descendientes) |
+| `data-progreso-salida` (con el anterior) | Además escribe `--salida` (0 → 1 al salir por arriba). Opcional: solo si un componente la usa |
 | `data-texto-luz` | Párrafo que se ilumina palabra por palabra al leerlo (`--lectura` 0 → 1; cada palabra lleva `--w` y el contenedor `--n`) |
 
 ## Destinos `[data-p]` (rendimiento)

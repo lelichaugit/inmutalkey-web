@@ -1,0 +1,387 @@
+---
+// Contacto: el correo es el canal principal (y WhatsApp si está activo); después, las redes y el QR de Instagram.
+// Todo son enlaces estáticos: ni widgets, ni iframes, ni píxeles de redes sociales (promesa de privacidad).
+import Icono from '../components/Icono.astro';
+import IconoMarca from '../components/IconoMarca.astro';
+import SocialLinks from '../components/SocialLinks.astro';
+import { AVISO_PESTANA, correoContacto, redPorId, REL_EXTERNO } from '../data/socials';
+import PaginaTexto from '../layouts/PaginaTexto.astro';
+import { buscarQrInstagram } from '../lib/qr';
+import { enlaceWhatsApp, numeroVisible } from '../lib/whatsapp';
+import { sitio } from '../site.config';
+
+const correo = correoContacto();
+const whatsapp = enlaceWhatsApp(sitio.contacto.whatsapp, sitio.contacto.mensajeWhatsApp);
+const telefono = numeroVisible(sitio.contacto.whatsapp);
+const instagram = redPorId('instagram');
+const qr = buscarQrInstagram();
+---
+
+<PaginaTexto
+  titulo="Contacto"
+  descripcion="Escríbenos para resolver dudas, pedir una demostración o recibir el instalador. También puedes seguir el avance de InmutalKey en redes."
+  antetitulo="Hablemos"
+  amplio
+>
+  <section class="contacto-bloque" aria-labelledby="contacto-directo">
+    <h2 id="contacto-directo" class="contacto-titulo">Contacto directo</h2>
+    <p class="contacto-intro">El correo es nuestro canal principal: ahí respondemos dudas, demostraciones y soporte.</p>
+
+    <ul class:list={['canales', { 'canales-dos': whatsapp && telefono }]}>
+      {
+        correo && (
+          <li>
+            <a class="canal canal-principal" href={`mailto:${correo}`} aria-label={`Escribir correo a ${correo}`}>
+              <span class="canal-sello">
+                <Icono nombre="correo" />
+              </span>
+              <span class="canal-tipo">Correo</span>
+              <span class="canal-valor">{correo.split('@')[0]}@<wbr />{correo.split('@')[1]}</span>
+              <span class="canal-accion" aria-hidden="true">Escribir correo</span>
+            </a>
+          </li>
+        )
+      }
+      {
+        whatsapp && telefono && (
+          <li>
+            <a
+              class="canal canal-whatsapp"
+              href={whatsapp}
+              target="_blank"
+              rel={REL_EXTERNO}
+              aria-label={`Abrir WhatsApp Business, ${telefono}, ${AVISO_PESTANA}`}
+            >
+              <span class="canal-sello">
+                <IconoMarca nombre="whatsapp" />
+              </span>
+              <span class="canal-tipo">WhatsApp Business</span>
+              <span class="canal-valor sin-corte">{telefono}</span>
+              <span class="canal-accion" aria-hidden="true">Abrir WhatsApp</span>
+            </a>
+          </li>
+        )
+      }
+    </ul>
+  </section>
+
+  <section class="contacto-bloque" aria-labelledby="contacto-redes">
+    <h2 id="contacto-redes" class="contacto-titulo">Síguenos</h2>
+    <p class="contacto-intro">Novedades del producto, noticias y el perfil profesional de quien lo construye.</p>
+
+    <SocialLinks variant="cards" />
+
+    <div class="contacto-extra">
+      <figure class="qr">
+        <img
+          class="qr-imagen"
+          src={qr.src}
+          width="180"
+          height={qr.oficial ? undefined : '180'}
+          alt="Código QR para abrir el perfil @inmutalkey en Instagram"
+          decoding="async"
+          loading="lazy"
+        />
+        <figcaption>
+          <span class="qr-titulo">Escanea para seguirnos en Instagram</span>
+          <span class="qr-handle">{instagram.handle}</span>
+        </figcaption>
+      </figure>
+
+      <div class="privacidad">
+        <Icono nombre="escudo" class="privacidad-icono" />
+        <h3>Enlaces directos, sin rastreadores</h3>
+        <p>
+          No incrustamos publicaciones, botones ni píxeles de redes sociales. Navegar por inmutalkey.com no le avisa a
+          ninguna red que estuviste aquí; solo al abrir un perfil sales a su sitio, con sus propias reglas de privacidad.
+        </p>
+      </div>
+    </div>
+  </section>
+</PaginaTexto>
+
+<style>
+  .contacto-bloque + .contacto-bloque {
+    margin-top: clamp(56px, 7vw, 96px);
+  }
+
+  /* Mismo lenguaje que los títulos de las páginas de lectura: marca azul corta encima. */
+  .contacto-titulo {
+    position: relative;
+    padding-top: 18px;
+    font-size: clamp(1.5rem, 1.25rem + 1vw, 2rem);
+  }
+
+  .contacto-titulo::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 28px;
+    height: 2px;
+    border-radius: 2px;
+    background: var(--azul-vivo);
+  }
+
+  .contacto-intro {
+    max-width: 60ch;
+    margin: 0.6em 0 1.6em;
+    color: var(--texto-tenue);
+  }
+
+  /* ── Canales directos ── */
+
+  .canales {
+    display: grid;
+    gap: 16px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  @media (min-width: 900px) {
+    .canales-dos {
+      grid-template-columns: 1.4fr 1fr;
+      gap: 20px;
+    }
+  }
+
+  .canales li {
+    display: flex;
+    min-width: 0;
+  }
+
+  .canal {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    grid-template-areas:
+      'sello tipo'
+      'sello valor'
+      'accion accion';
+    align-items: center;
+    column-gap: 16px;
+    width: 100%;
+    padding: 22px;
+    border: 1px solid var(--linea-oscura-fuerte);
+    border-radius: 20px;
+    background: rgb(255 255 255 / 0.03);
+    color: var(--texto);
+    text-decoration: none;
+    transition:
+      border-color 0.2s var(--ease),
+      background-color 0.2s var(--ease),
+      transform 0.2s var(--ease);
+  }
+
+  /* En celular el valor (correo, teléfono) toma todo el ancho para no partirse a media palabra. */
+  @media (max-width: 479px) {
+    .canal {
+      grid-template-areas:
+        'sello tipo'
+        'valor valor'
+        'accion accion';
+    }
+
+    .canal .canal-tipo {
+      align-self: center;
+    }
+
+    .canal .canal-valor {
+      margin-top: 14px;
+    }
+  }
+
+  .canal-principal {
+    border-color: rgb(46 159 224 / 0.45);
+    background:
+      radial-gradient(90% 140% at 0% 0%, rgb(46 159 224 / 0.16), transparent 70%),
+      rgb(255 255 255 / 0.04);
+  }
+
+  .canal:focus-visible {
+    outline-offset: 4px;
+    border-radius: 20px;
+  }
+
+  .canal-sello {
+    grid-area: sello;
+    display: grid;
+    place-items: center;
+    width: 64px;
+    height: 64px;
+    border: 1px solid var(--linea-oscura-fuerte);
+    border-radius: 16px;
+    background: rgb(255 255 255 / 0.04);
+    color: var(--azul-vivo);
+    font-size: 30px;
+  }
+
+  .canal-sello :global(.icono) {
+    width: 30px;
+    height: 30px;
+  }
+
+  .canal-whatsapp .canal-sello {
+    color: var(--texto);
+  }
+
+  .canal-tipo {
+    grid-area: tipo;
+    align-self: end;
+    color: var(--texto-tenue);
+    font-size: 0.9375rem;
+  }
+
+  .canal-valor {
+    grid-area: valor;
+    align-self: start;
+    font-family: var(--fuente-titulo);
+    font-size: clamp(1.125rem, 1rem + 0.6vw, 1.5rem);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    line-height: 1.25;
+    overflow-wrap: break-word;
+  }
+
+  .canal-accion {
+    grid-area: accion;
+    justify-self: start;
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    margin-top: 18px;
+    padding: 0 20px;
+    border: 1px solid var(--linea-oscura-fuerte);
+    border-radius: 999px;
+    font-weight: 600;
+    transition:
+      background-color 0.2s var(--ease),
+      border-color 0.2s var(--ease);
+  }
+
+  .canal-principal .canal-accion {
+    border-color: transparent;
+    background: var(--azul);
+    color: #fff;
+  }
+
+  .canal:hover,
+  .canal:focus-visible {
+    border-color: rgb(46 159 224 / 0.6);
+    background-color: rgb(255 255 255 / 0.06);
+  }
+
+  .canal:hover .canal-accion,
+  .canal:focus-visible .canal-accion {
+    border-color: var(--azul-vivo);
+    background: var(--azul);
+    color: #fff;
+  }
+
+  /* Más oscuro, no más claro, al pasar el cursor: blanco sobre #016a9c = 5.9:1 (sobre #0a87c4 serían 3.98:1). */
+  .canal-principal:hover .canal-accion,
+  .canal-principal:focus-visible .canal-accion {
+    background: #016a9c;
+  }
+
+  .canal:active {
+    transform: scale(0.985);
+  }
+
+  @media (hover: hover) and (prefers-reduced-motion: no-preference) {
+    .canal:hover {
+      transform: translateY(-2px);
+    }
+  }
+
+  /* ── QR + nota de privacidad ── */
+
+  .contacto-extra {
+    display: grid;
+    gap: 16px;
+    margin-top: 20px;
+  }
+
+  @media (min-width: 900px) {
+    .contacto-extra {
+      grid-template-columns: auto 1fr;
+      gap: 20px;
+    }
+  }
+
+  /* Fondo blanco siempre: el QR necesita contraste máximo para escanear bien sobre el tema oscuro. */
+  .qr {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 16px 24px;
+    margin: 0;
+    padding: 20px;
+    border-radius: 20px;
+    background: #fff;
+    color: var(--tinta);
+  }
+
+  .qr-imagen {
+    display: block;
+    flex: none;
+    width: 180px;
+    height: auto;
+    border-radius: 12px;
+    image-rendering: pixelated;
+  }
+
+  .qr figcaption {
+    display: grid;
+    gap: 4px;
+    max-width: 22ch;
+  }
+
+  .qr-titulo {
+    font-family: var(--fuente-titulo);
+    font-size: 1.25rem;
+    font-weight: 600;
+    line-height: 1.2;
+  }
+
+  .qr-handle {
+    color: var(--tinta-tenue);
+    font-weight: 500;
+  }
+
+  .privacidad {
+    padding: 22px;
+    border: 1px solid var(--linea-oscura-fuerte);
+    border-left: 3px solid var(--esmeralda-vivo);
+    border-radius: 20px;
+    background: rgb(255 255 255 / 0.03);
+  }
+
+  .privacidad :global(.privacidad-icono) {
+    width: 28px;
+    height: 28px;
+    color: var(--esmeralda-vivo);
+  }
+
+  .privacidad h3 {
+    margin-top: 12px;
+    font-size: var(--h3);
+  }
+
+  .privacidad p {
+    max-width: 60ch;
+    margin: 0.6em 0 0;
+    color: var(--texto-tenue);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .canal,
+    .canal-accion {
+      transition: none;
+    }
+
+    .canal:active {
+      transform: none;
+    }
+  }
+</style>

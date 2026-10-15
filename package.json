@@ -17,6 +17,8 @@
     "vectorizar:llave": "python3 scripts/vectorizar-llave.py",
     "vectorizar": "python3 scripts/vectorizar-logo.py",
     "capturas": "node scripts/procesar-capturas.mjs",
+    "redes": "node scripts/optimizar-redes.mjs",
+    "qr": "node scripts/generar-qr.mjs",
     "activos": "npm run marca && npm run capturas",
     "build:cloudflare": "npm run activos && astro build"
   },
@@ -31,8 +33,11 @@
     "@cloudflare/workers-types": "5.20261015.1",
     "@types/node": "24.19.2",
     "@types/qrcode": "1.5.6",
+    "jsqr": "1.4.0",
     "opentype.js": "2.0.0",
     "sharp": "0.34.5",
+    "simple-icons": "16.35.0",
+    "svgo": "4.1.0",
     "typescript": "5.9.3",
     "vitest": "5.0.4",
     "wrangler": "4.151.0"

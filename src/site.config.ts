@@ -1,4 +1,5 @@
-// Único lugar con datos que cambian (precios, cupos, contacto, instalador, legal).
+// Único lugar con datos que cambian (precios, cupos, contacto, instalador, legal). Las redes sociales viven en
+// src/data/socials.ts.
 // Un valor `TODO_DEFINIR` se muestra con un texto neutro en el sitio y el build lo avisa;
 // en producción, la integración `guardian` (astro.config.mjs) detiene el build si falta el WhatsApp.
 
@@ -12,6 +13,8 @@ export function estaDefinido<T>(valor: Valor<T>): valor is T {
 
 export interface ConfigSitio {
   readonly nombre: string;
+  /** Título de la portada: es el que muestran los marcadores de Chrome y la vista previa al compartir el enlace. */
+  readonly titulo: string;
   readonly url: string;
   readonly idioma: string;
   readonly descripcion: string;
@@ -26,10 +29,6 @@ export interface ConfigSitio {
       readonly fundadores: string;
     };
     readonly correo: Valor<string>;
-  };
-  readonly redes: {
-    /** Usuario de Instagram, sin @. */
-    readonly instagram: Valor<string>;
   };
   /** Licencia digital. `publico` = precio posterior, para mostrar el ahorro. Con o sin IVA: indícalo en `notaPrecios`. */
   readonly precios: {
@@ -66,6 +65,7 @@ export interface ConfigSitio {
 
 export const sitio: ConfigSitio = {
   nombre: 'InmutalKey',
+  titulo: 'InmutalKey · Expediente Clínico Privado',
   url: 'https://inmutalkey.com',
   idioma: 'es-MX',
   descripcion:
@@ -78,9 +78,6 @@ export const sitio: ConfigSitio = {
       fundadores: 'Hola, vi InmutalKey en inmutalkey.com y me interesa el programa Fundadores.',
     },
     correo: 'contacto@inmutalkey.com',
-  },
-  redes: {
-    instagram: 'inmutalkey',
   },
   precios: {
     moneda: 'MXN',
@@ -111,13 +108,6 @@ export const sitio: ConfigSitio = {
     revisadoPorAbogado: false,
   },
 };
-
-/** Perfil de Instagram (o `null` si aún no está definido). */
-export function enlaceInstagram(usuario: Valor<string> = sitio.redes.instagram): string | null {
-  if (!estaDefinido(usuario)) return null;
-  const limpio = usuario.trim().replace(/^@/, '');
-  return /^[A-Za-z0-9._]{1,30}$/.test(limpio) ? `https://www.instagram.com/${limpio}/` : null;
-}
 
 /** Rutas (`precios.fundadores`, …) de los valores aún sin definir. */
 export function pendientes(valor: unknown = sitio, prefijo = ''): string[] {

@@ -90,6 +90,8 @@ if (!movimientoReducido.matches && window.matchMedia('(hover: hover) and (pointe
   void import('./suave').then((m) => {
     const lenis = m.iniciarSuave();
     suave = lenis;
+    // Mismo cuadro que Lenis también en el primero de cada gesto (después, el evento scroll ya cae en el mismo cuadro).
+    lenis.on('scroll', motor.cuadroAhora);
     if (raiz.classList.contains('menu-abierto')) lenis.stop();
     // Llegada desde otra página a /#seccion: el navegador saltó antes de que las fuentes y las escenas tomaran su
     // alto; se recoloca con el mismo cálculo que los enlaces internos y el foco pasa a la sección.

@@ -5,8 +5,9 @@ import Icono from '../components/Icono.astro';
 import Nav from '../components/Nav.astro';
 import Pie from '../components/Pie.astro';
 import Riel from '../components/Riel.astro';
+import { correoContacto, FUNDADOR, REDES, redPorId } from '../data/socials';
 import { enlaceWhatsApp } from '../lib/whatsapp';
-import { enlaceInstagram, estaDefinido, sitio } from '../site.config';
+import { sitio } from '../site.config';
 
 interface Props {
   /** Título de la página (sin el sufijo de marca). En la portada se usa tal cual. */
@@ -39,26 +40,47 @@ const prueba = enlaceWhatsApp(sitio.contacto.whatsapp, sitio.contacto.mensajes.p
 const canonica = new URL(Astro.url.pathname.replace(/\.html$/, '').replace(/\/index$/, '/'), sitio.url).href;
 const og = new URL(imagenOg, sitio.url).href;
 
-const instagram = enlaceInstagram();
+const correo = correoContacto();
+const linkedin = redPorId('linkedin');
+const idOrganizacion = `${sitio.url}/#organizacion`;
+const idFundador = `${sitio.url}/#fundador`;
 
+// LinkedIn es el perfil personal del fundador: va en `Person.sameAs`, no en `Organization.sameAs` (que declara
+// "esta cuenta ES la organización"). La organización lo enlaza como `founder`.
 // Sin precio ni calificaciones: no hay precios definitivos ni reseñas verificadas que lo respalden.
 const jsonLd = {
   '@context': 'https://schema.org',
-  '@type': 'SoftwareApplication',
-  name: sitio.nombre,
-  url: sitio.url,
-  description: sitio.descripcion,
-  applicationCategory: 'MedicalApplication',
-  operatingSystem: 'Windows 10, Windows 11',
-  inLanguage: sitio.idioma,
-  image: new URL('/brand/logo-solido.svg', sitio.url).href,
-  publisher: {
-    '@type': 'Organization',
-    name: sitio.nombre,
-    url: sitio.url,
-    ...(estaDefinido(sitio.contacto.correo) ? { email: sitio.contacto.correo } : {}),
-    ...(instagram ? { sameAs: [instagram] } : {}),
-  },
+  '@graph': [
+    {
+      '@type': 'Organization',
+      '@id': idOrganizacion,
+      name: sitio.nombre,
+      url: sitio.url,
+      logo: new URL('/brand/logo-solido.svg', sitio.url).href,
+      ...(correo ? { email: correo } : {}),
+      sameAs: REDES.filter((r) => r.id !== 'linkedin').map((r) => r.url),
+      founder: { '@id': idFundador },
+    },
+    {
+      '@type': 'Person',
+      '@id': idFundador,
+      name: FUNDADOR.nombre,
+      jobTitle: FUNDADOR.puesto,
+      sameAs: [linkedin.url],
+      worksFor: { '@id': idOrganizacion },
+    },
+    {
+      '@type': 'SoftwareApplication',
+      name: sitio.nombre,
+      url: sitio.url,
+      description: sitio.descripcion,
+      applicationCategory: 'MedicalApplication',
+      operatingSystem: 'Windows 10, Windows 11',
+      inLanguage: sitio.idioma,
+      image: new URL('/brand/logo-solido.svg', sitio.url).href,
+      publisher: { '@id': idOrganizacion },
+    },
+  ],
 };
 ---
 
@@ -94,11 +116,15 @@ const jsonLd = {
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta property="og:image:type" content="image/png" />
-    <meta property="og:image:alt" content="InmutalKey: expediente clínico con notas selladas" />
+    <meta property="og:image:alt" content={sitio.titulo} />
     <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={tituloFinal} />
+    <meta name="twitter:description" content={descripcion} />
     <meta name="twitter:image" content={og} />
     <meta name="apple-mobile-web-app-title" content={sitio.nombre} />
+    <meta name="application-name" content={sitio.nombre} />
 
+    {REDES.map((r) => <link rel="me" href={r.url} />)}
     <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
     <slot name="head" />
   </head>

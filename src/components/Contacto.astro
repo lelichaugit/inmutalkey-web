@@ -1,10 +1,14 @@
 ---
-// Datos de contacto (WhatsApp, correo, Instagram) desde src/site.config.ts. Solo aparece lo que está definido.
+// Datos de contacto (WhatsApp, correo y redes) desde src/site.config.ts y src/data/socials.ts. Solo aparece lo definido.
 //   lista  · tipo + valor, uno por renglón (pie de página)
 //   fila   · píldoras en línea que se acomodan solas (cierre, menú del celular)
+import { correoContacto, REDES, REL_EXTERNO, REL_PERFIL_PROPIO, type IdRed } from '../data/socials';
 import { enlaceWhatsApp, numeroVisible } from '../lib/whatsapp';
-import { enlaceInstagram, estaDefinido, sitio } from '../site.config';
+import { sitio } from '../site.config';
 import Icono from './Icono.astro';
+import IconoMarca from './IconoMarca.astro';
+
+type Medio = 'whatsapp' | 'correo' | IdRed;
 
 interface Props {
   variante?: 'lista' | 'fila';
@@ -13,7 +17,7 @@ interface Props {
   /** Fondo sobre el que va (cambia los colores). */
   tono?: 'oscuro' | 'claro';
   /** Qué medios mostrar (por omisión, todos los definidos). */
-  incluir?: ReadonlyArray<'whatsapp' | 'correo' | 'instagram'>;
+  incluir?: ReadonlyArray<Medio>;
   class?: string;
 }
 
@@ -21,21 +25,20 @@ const {
   variante = 'lista',
   mensaje = sitio.contacto.mensajeWhatsApp,
   tono = 'oscuro',
-  incluir = ['whatsapp', 'correo', 'instagram'],
+  incluir = ['whatsapp', 'correo', 'instagram', 'x', 'linkedin'],
   class: clase,
 } = Astro.props;
 const whatsapp = incluir.includes('whatsapp') ? enlaceWhatsApp(sitio.contacto.whatsapp, mensaje) : null;
 const telefono = numeroVisible(sitio.contacto.whatsapp);
-const correo = incluir.includes('correo') && estaDefinido(sitio.contacto.correo) ? sitio.contacto.correo : null;
-const instagram = incluir.includes('instagram') ? enlaceInstagram() : null;
-const usuario = estaDefinido(sitio.redes.instagram) ? sitio.redes.instagram.replace(/^@/, '') : null;
+const correo = incluir.includes('correo') ? correoContacto() : null;
+const redes = REDES.filter((r) => incluir.includes(r.id));
 ---
 
 <ul class:list={['contacto', `contacto-${variante}`, `contacto-${tono}`, clase]}>
   {
     whatsapp && telefono && (
       <li>
-        <a href={whatsapp} target="_blank" rel="noopener noreferrer">
+        <a href={whatsapp} target="_blank" rel={REL_EXTERNO}>
           <Icono nombre="chat" />
           <span class="contacto-texto">
             <span class="contacto-tipo">WhatsApp</span>
@@ -59,17 +62,17 @@ const usuario = estaDefinido(sitio.redes.instagram) ? sitio.redes.instagram.repl
     )
   }
   {
-    instagram && usuario && (
+    redes.map((red) => (
       <li>
-        <a href={instagram} target="_blank" rel="noopener noreferrer me">
-          <Icono nombre="instagram" />
+        <a href={red.url} target="_blank" rel={red.propio ? REL_PERFIL_PROPIO : REL_EXTERNO}>
+          <IconoMarca nombre={red.icono} />
           <span class="contacto-texto">
-            <span class="contacto-tipo">Instagram</span>
-            <span class="contacto-valor">@{usuario}</span>
+            <span class="contacto-tipo">{red.nombre}</span>
+            <span class="contacto-valor">{red.handle}</span>
           </span>
         </a>
       </li>
-    )
+    ))
   }
 </ul>
 
@@ -103,14 +106,16 @@ const usuario = estaDefinido(sitio.redes.instagram) ? sitio.redes.instagram.repl
     -webkit-tap-highlight-color: transparent;
   }
 
-  .contacto a :global(.icono) {
+  .contacto a :global(.icono),
+  .contacto a :global(.icono-marca) {
     flex: none;
     width: 22px;
     height: 22px;
     color: var(--azul-vivo);
   }
 
-  .contacto-claro a :global(.icono) {
+  .contacto-claro a :global(.icono),
+  .contacto-claro a :global(.icono-marca) {
     color: var(--azul);
   }
 
@@ -166,11 +171,21 @@ const usuario = estaDefinido(sitio.redes.instagram) ? sitio.redes.instagram.repl
     display: block;
   }
 
+  /* Oculto a la vista, no al lector de pantalla: «Instagram @inmutalkey» y «X @inmutalkey» no se anuncian igual. */
   .contacto-fila .contacto-tipo {
-    display: none;
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+    border: 0;
   }
 
-  .contacto-fila a :global(.icono) {
+  .contacto-fila a :global(.icono),
+  .contacto-fila a :global(.icono-marca) {
     width: 20px;
     height: 20px;
   }
