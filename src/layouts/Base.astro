@@ -67,6 +67,7 @@ const jsonLd = {
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <script is:inline src="/clases.js"></script>
     <title>{tituloFinal}</title>
     <meta name="description" content={descripcion} />
     <link rel="canonical" href={canonica} />
@@ -113,8 +114,8 @@ const jsonLd = {
     <div class="flotante" data-arriba data-visible="no">
       {
         prueba && (
-          <a class="boton boton-primario flotante-cta" href={prueba} target="_blank" rel="noopener noreferrer">
-            <Icono nombre="chat" /> WhatsApp
+          <a class="flotante-cta" href={prueba} target="_blank" rel="noopener noreferrer" aria-label="Escríbenos por WhatsApp">
+            <Icono nombre="chat" />
           </a>
         )
       }

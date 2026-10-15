@@ -11,7 +11,7 @@ interface Props {
   descripcion: string;
   /** Texto corto sobre el título. */
   antetitulo?: string;
-  /** Muestra la cinta "Borrador: revisar con abogado". */
+  /** Muestra la cinta "Versión preliminar en revisión legal". */
   borrador?: boolean;
   actualizado?: string;
   indexar?: boolean;
@@ -31,7 +31,7 @@ const ruta = Astro.url.pathname.replace(/\.html$/, '').replace(/\/$/, '') || '/'
         {antetitulo && <p class="pildora">{antetitulo}</p>}
         <h1>{titulo}</h1>
         <p class="texto-grande tenue">{descripcion}</p>
-        {borrador && <p class="pildora pildora-ejemplo">Borrador: revisar con abogado antes de publicar</p>}
+        {borrador && <p class="pildora pildora-ejemplo">Versión preliminar · en revisión legal</p>}
         {actualizado && <p class="tenue pagina-fecha">Última actualización: {actualizado}</p>}
       </div>
     </div>

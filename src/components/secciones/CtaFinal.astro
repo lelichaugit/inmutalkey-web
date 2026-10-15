@@ -4,7 +4,6 @@
 // (data-progreso-scroll). Sin JS o con movimiento reducido: la llave sólida y quieta.
 import { enlaceWhatsApp } from '../../lib/whatsapp';
 import { sitio } from '../../site.config';
-import Contacto from '../Contacto.astro';
 import Icono from '../Icono.astro';
 import Isotipo3D from '../Isotipo3D.astro';
 
@@ -51,10 +50,6 @@ const dias = sitio.licencia.diasPrueba;
         )
       }
       <a class="boton boton-secundario" href="#demo"><Icono nombre="play" /> Pruébalo aquí mismo</a>
-    </div>
-    <div class="cta-contacto" data-animar="subir" data-retraso="4">
-      <p class="cta-contacto-titulo">También nos encuentras aquí</p>
-      <Contacto variante="fila" class="cta-contacto-lista" />
     </div>
   </div>
 </section>
@@ -260,26 +255,6 @@ const dias = sitio.licencia.diasPrueba;
     justify-content: center;
     gap: 12px;
     margin-top: 34px;
-  }
-
-  /* Datos de contacto (desde site.config): por si el médico prefiere correo, Instagram o guardar el número. */
-  .cta-contacto {
-    margin-top: clamp(36px, 5vw, 52px);
-    padding-top: 26px;
-    border-top: 1px solid var(--linea-oscura);
-  }
-
-  .cta-contacto-titulo {
-    margin: 0 0 14px;
-    color: var(--texto-tenue);
-    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-    font-size: 0.8125rem;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-  }
-
-  .cta-contacto :global(.cta-contacto-lista) {
-    justify-content: center;
   }
 
   .cta-whatsapp {

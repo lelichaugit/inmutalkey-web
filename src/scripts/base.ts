@@ -70,12 +70,38 @@ if (arriba && zonasContacto.length > 0 && 'IntersectionObserver' in window) {
   zonasContacto.forEach((z) => io.observe(z));
 }
 
+// El riel lateral se aparta mientras una escena usa el borde derecho (data-sin-riel).
+const zonasSinRiel = document.querySelectorAll('[data-sin-riel]');
+if (zonasSinRiel.length > 0 && 'IntersectionObserver' in window) {
+  const visibles = new Set<Element>();
+  const io = new IntersectionObserver((entradas) => {
+    for (const e of entradas) {
+      if (e.isIntersecting) visibles.add(e.target);
+      else visibles.delete(e.target);
+    }
+    raiz.classList.toggle('riel-oculto', visibles.size > 0);
+  });
+  zonasSinRiel.forEach((z) => io.observe(z));
+}
+
 // Desplazamiento suave (Lenis) solo con ratón o trackpad: en iPhone, iPad y Android el scroll nativo ya es suave.
 let suave: Lenis | null = null;
 if (!movimientoReducido.matches && window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
   void import('./suave').then((m) => {
-    suave = m.iniciarSuave();
-    if (raiz.classList.contains('menu-abierto')) suave.stop();
+    const lenis = m.iniciarSuave();
+    suave = lenis;
+    if (raiz.classList.contains('menu-abierto')) lenis.stop();
+    // Llegada desde otra página a /#seccion: el navegador saltó antes de que las fuentes y las escenas tomaran su
+    // alto; se recoloca con el mismo cálculo que los enlaces internos y el foco pasa a la sección.
+    const destino = location.hash.length > 1 ? document.getElementById(decodeURIComponent(location.hash.slice(1))) : null;
+    if (destino) {
+      const recolocar = (): void => {
+        lenis.scrollTo(destinoY(destino), { immediate: true, force: true });
+        enfocarDestino(destino);
+      };
+      if (document.readyState === 'complete') void document.fonts.ready.then(recolocar);
+      else window.addEventListener('load', () => void document.fonts.ready.then(recolocar), { once: true });
+    }
   });
 }
 
@@ -160,6 +186,14 @@ if (movimientoReducido.matches || !('IntersectionObserver' in window)) {
     { rootMargin: '0px 0px -8% 0px', threshold: 0.06 },
   );
   porObjetivo.forEach((_, objetivo) => io.observe(objetivo));
+
+  // Si el teclado llega a algo que aún no se revela (p. ej. en el borde inferior de la ventana), se revela ya.
+  document.addEventListener('focusin', (ev) => {
+    if (!(ev.target instanceof Element)) return;
+    for (let n: Element | null = ev.target; n; n = n.parentElement) {
+      if (n.matches('.revelar, [data-animar]')) n.classList.add('es-visible');
+    }
+  });
 
   const ioContar = new IntersectionObserver(
     (entradas, obs) => {
@@ -252,8 +286,13 @@ if (secciones.length > 0 && 'IntersectionObserver' in window) {
 // al tocar fuera o con Escape.
 const menu = document.querySelector<HTMLDetailsElement>('[data-nav-menu]');
 if (menu) {
+  // Mientras el menú cubre la pantalla, lo de atrás queda inerte: Tab y los lectores de pantalla no salen del menú.
+  const detras = document.querySelectorAll<HTMLElement>('main, footer, .flotante, .riel, [data-barra-progreso]');
   menu.addEventListener('toggle', () => {
     raiz.classList.toggle('menu-abierto', menu.open);
+    detras.forEach((el) => {
+      el.inert = menu.open;
+    });
     if (menu.open) suave?.stop();
     else suave?.start();
   });
@@ -273,6 +312,11 @@ if (menu) {
 
 // Al saltar a una sección (enlace interno), el foco va a ella para que lectores de pantalla y teclado sigan ahí.
 // Con Lenis el salto es suyo (misma curva que la rueda); sin Lenis, lo hace el navegador (`scroll-behavior: smooth`).
+function destinoY(destino: HTMLElement): number {
+  const margen = Number.parseFloat(getComputedStyle(raiz).scrollPaddingTop) || 0;
+  return destino.getBoundingClientRect().top + window.scrollY - margen;
+}
+
 function enfocarDestino(destino: HTMLElement): void {
   if (!destino.hasAttribute('tabindex')) destino.setAttribute('tabindex', '-1');
   destino.focus({ preventScroll: true });
@@ -292,9 +336,7 @@ document.addEventListener('click', (ev) => {
     if (location.hash !== a.hash) history.pushState(null, '', a.hash);
     // Destino calculado con la posición real de la ventana (no con el estado interno de Lenis, que puede ir un cuadro
     // atrás si la página se movió justo antes del clic), menos el `scroll-padding-top` de la barra.
-    const margen = Number.parseFloat(getComputedStyle(raiz).scrollPaddingTop) || 0;
-    const y = destino.getBoundingClientRect().top + window.scrollY - margen;
-    suave.scrollTo(y, { force: true, onComplete: () => enfocarDestino(destino) });
+    suave.scrollTo(destinoY(destino), { force: true, onComplete: () => enfocarDestino(destino) });
     return;
   }
   if ('onscrollend' in window) window.addEventListener('scrollend', () => enfocarDestino(destino), { once: true });

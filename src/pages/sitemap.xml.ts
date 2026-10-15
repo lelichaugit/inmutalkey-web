@@ -2,8 +2,13 @@ import type { APIRoute } from 'astro';
 
 import { sitio } from '../site.config';
 
-// Se arma con las páginas que existen de verdad; 404 y /resena (formulario por código) no se indexan.
-const EXCLUIDAS = new Set(['/404', '/resena']);
+// Se arma con las páginas que existen de verdad; 404 y /resena (formulario por código) no se indexan, ni las páginas
+// legales mientras sean versión preliminar (sin revisión de abogado).
+const EXCLUIDAS = new Set([
+  '/404',
+  '/resena',
+  ...(sitio.legal.revisadoPorAbogado ? [] : ['/privacidad', '/terminos-fundadores']),
+]);
 
 const rutas = Object.keys(import.meta.glob('./**/*.astro'))
   .filter((r) => !r.includes('['))

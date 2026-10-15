@@ -4,7 +4,7 @@
 //
 // Movimiento (mejora progresiva; sin JS o con movimiento reducido, la tarjeta se ve completa y quieta):
 //   · la tarjeta entra creciendo dentro de un visor (data-animar) y la llave la recorre con su luz
-//   · borde de luz: conic-gradient que gira con la @property local --giro (solo mientras la sección está a la vista)
+//   · borde de luz: conic-gradient que gira con la @property local --plan-giro (solo mientras la sección está a la vista)
 //   · medidor de lugares que se llena al verse (solo si cupos.totales y cupos.ocupados están definidos)
 //   · con ratón o trackpad, la tarjeta se inclina un poco hacia el puntero (script de abajo)
 import QRCode from 'qrcode';
@@ -228,7 +228,7 @@ const CHAT: readonly Mensaje[] = [
 
 <style>
   /* Ángulo del borde de luz: registrado para poder girarlo con @keyframes (antes de Safari 16.4 queda quieto). */
-  @property --giro {
+  @property --plan-giro {
     syntax: '<angle>';
     inherits: false;
     initial-value: 250deg;
@@ -364,7 +364,7 @@ const CHAT: readonly Mensaje[] = [
     padding: 1.5px;
     border-radius: inherit;
     background: conic-gradient(
-      from var(--giro),
+      from var(--plan-giro),
       rgb(46 159 224 / 0.26) 0deg,
       rgb(46 159 224 / 0.26) 200deg,
       rgb(46 159 224 / 0.7) 260deg,
@@ -394,10 +394,10 @@ const CHAT: readonly Mensaje[] = [
 
   @keyframes plan-giro {
     from {
-      --giro: 250deg;
+      --plan-giro: 250deg;
     }
     to {
-      --giro: 610deg;
+      --plan-giro: 610deg;
     }
   }
 

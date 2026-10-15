@@ -1,16 +1,18 @@
 ---
-// BORRADOR. Montos, cupos y fechas salen de site.config.ts; los puntos entre corchetes los define Alan con su abogado.
+// Versión preliminar (sin indexar mientras legal.revisadoPorAbogado sea false). Montos, cupos y fechas salen de
+// site.config.ts; lo que aún no está definido se dice con una frase neutra ("te lo confirmamos antes de pagar"),
+// nunca con corchetes. Los puntos 6 y 7 los redacta Alan con su abogado.
 import PaginaTexto from '../layouts/PaginaTexto.astro';
 import { estaDefinido, sitio } from '../site.config';
 
 const { precios, cupos, licencia, legal } = sitio;
-const dinero = (v: number | 'TODO_DEFINIR'): string =>
-  estaDefinido(v) ? `$${v.toLocaleString('es-MX')} ${precios.moneda}` : '[por definir]';
+const precio = estaDefinido(precios.fundadores) ? `$${precios.fundadores.toLocaleString('es-MX')} ${precios.moneda}` : null;
 const fin = estaDefinido(precios.finPrecioFundador)
   ? new Date(`${precios.finPrecioFundador}T12:00:00`).toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' })
-  : '[fecha por definir]';
-const lugares = estaDefinido(cupos.totales) ? String(cupos.totales) : '[número por definir]';
-const actualizaciones = estaDefinido(licencia.actualizacionesIncluidas) ? licencia.actualizacionesIncluidas : '[alcance de actualizaciones por definir]';
+  : null;
+const lugares = estaDefinido(cupos.totales) ? cupos.totales : null;
+const actualizaciones = estaDefinido(licencia.actualizacionesIncluidas) ? licencia.actualizacionesIncluidas : null;
+const correo = estaDefinido(sitio.contacto.correo) ? sitio.contacto.correo : null;
 ---
 
 <PaginaTexto
@@ -18,22 +20,38 @@ const actualizaciones = estaDefinido(licencia.actualizacionesIncluidas) ? licenc
   descripcion="Las condiciones del precio de fundador y de la licencia digital de InmutalKey."
   antetitulo="Legal"
   borrador={!legal.revisadoPorAbogado}
+  indexar={legal.revisadoPorAbogado}
   actualizado="15 de octubre de 2026"
 >
   <h2>1. Qué es el programa</h2>
   <p>
-    El programa Fundadores ofrece condiciones especiales a los primeros médicos que adquieren InmutalKey. Está limitado
-    a {lugares} lugares y el precio de fundador aplica hasta el {fin} o hasta agotar lugares, lo que ocurra primero.
+    El programa Fundadores ofrece condiciones especiales a los primeros médicos que adquieren InmutalKey.
+    {
+      lugares !== null && fin !== null
+        ? ` Está limitado a ${lugares} lugares y el precio de fundador aplica hasta el ${fin} o hasta agotar lugares, lo que ocurra primero.`
+        : ' Los lugares son limitados; el número de lugares y la vigencia del precio te los confirmamos por WhatsApp antes de cualquier pago.'
+    }
   </p>
 
   <h2>2. Precio</h2>
-  <p>Licencia digital de fundador: <strong>{dinero(precios.fundadores)}</strong>.</p>
-  <p>{estaDefinido(precios.notaPrecios) ? precios.notaPrecios : '[Indicar si los precios incluyen IVA y los medios de pago.]'}</p>
+  {
+    precio ? (
+      <p>Licencia digital de fundador: <strong>{precio}</strong>.</p>
+    ) : (
+      <p>El precio de fundador te lo confirmamos por WhatsApp, por escrito, antes de cualquier pago.</p>
+    )
+  }
+  <p>
+    {estaDefinido(precios.notaPrecios) ? precios.notaPrecios : 'Junto con el precio te indicamos si incluye IVA y los medios de pago disponibles.'}
+  </p>
 
   <h2>3. La licencia</h2>
   <ul>
     <li>Es vitalicia y queda ligada a una instalación del programa.</li>
-    <li>Incluye las funciones disponibles al momento de la compra. Actualizaciones: {actualizaciones}.</li>
+    <li>
+      Incluye las funciones disponibles al momento de la compra.
+      {actualizaciones ? ` Actualizaciones: ${actualizaciones}.` : ' El alcance de las actualizaciones te lo confirmamos antes de la compra.'}
+    </li>
     <li>Antes de comprar puedes usar el programa {licencia.diasPrueba} días completos sin costo.</li>
     <li>
       Si no activas la licencia al terminar la prueba, tus datos se conservan: puedes consultarlos, buscarlos,
@@ -55,8 +73,10 @@ const actualizaciones = estaDefinido(licencia.actualizacionesIncluidas) ? licenc
   </p>
 
   <h2>6. Cancelaciones y reembolsos</h2>
-  <p>[Por definir con el abogado: plazos, condiciones y forma de reembolso.]</p>
+  <p>Las condiciones de cancelación y reembolso te las enviamos por escrito antes de cualquier pago.</p>
 
-  <h2>7. Contacto y jurisdicción</h2>
-  <p>[Por definir: datos del proveedor, correo de contacto y tribunales competentes.]</p>
+  <h2>7. Contacto</h2>
+  <p>
+    Para cualquier duda sobre el programa escríbenos por WhatsApp{correo ? <> o a <a href={`mailto:${correo}`}>{correo}</a></> : ''}.
+  </p>
 </PaginaTexto>

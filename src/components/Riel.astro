@@ -52,13 +52,15 @@ const SECCIONES = [
     list-style: none;
   }
 
+  /* Solo el punto recibe el puntero: la etiqueta flota a la izquierda sin ensanchar el enlace (antes la caja
+     invisible tapaba el borde derecho de las preguntas y del simulador). */
   .riel a {
+    position: relative;
     display: flex;
     align-items: center;
-    justify-content: flex-end;
-    gap: 12px;
+    justify-content: center;
+    width: 28px;
     height: 28px;
-    padding-left: 12px;
     color: var(--texto-tenue);
     text-decoration: none;
   }
@@ -75,6 +77,9 @@ const SECCIONES = [
   }
 
   .riel-texto {
+    position: absolute;
+    top: 50%;
+    right: calc(100% + 2px);
     padding: 3px 10px;
     border-radius: 999px;
     background: rgb(6 11 22 / 0.85);
@@ -82,7 +87,7 @@ const SECCIONES = [
     font-weight: 500;
     white-space: nowrap;
     opacity: 0;
-    transform: translateX(8px);
+    transform: translate(8px, -50%);
     transition:
       opacity 0.3s var(--ease),
       transform 0.3s var(--ease);
@@ -92,7 +97,17 @@ const SECCIONES = [
   .riel a:hover .riel-texto,
   .riel a:focus-visible .riel-texto {
     opacity: 1;
-    transform: none;
+    transform: translate(0, -50%);
+  }
+
+  /* Se aparta mientras una escena ocupa el borde derecho (recorrido horizontal de "Qué incluye"): data-sin-riel. */
+  .riel {
+    transition: opacity 0.35s var(--ease);
+  }
+
+  :global(html.riel-oculto) .riel {
+    opacity: 0;
+    pointer-events: none;
   }
 
   .riel a:hover .riel-punto {

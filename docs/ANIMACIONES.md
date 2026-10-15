@@ -59,8 +59,20 @@ fijadas, parallax, texto que se ilumina).
 | Atributo | Efecto |
 |---|---|
 | `data-parallax="suave" \| "medio" \| "fuerte" \| "inverso"` | Se desplaza 48 / 96 / 160 / −72 px a lo largo de su paso por la ventana |
-| `data-progreso-scroll` | `--p` (0 → 1 mientras cruza la ventana) y `--salida` (0 → 1 al salir por arriba) para usarlas en `calc()` |
+| `data-progreso-scroll` | `--p` (0 → 1 mientras cruza la ventana) para usarla en `calc()`. Opcionales: `data-progreso-hasta="0.45"` (tope: al llegar deja de escribir) y `data-progreso-salida` (también `--salida`, 0 → 1 al salir por arriba) |
 | `data-texto-luz` | Párrafo que se ilumina palabra por palabra al leerlo (`--lectura` 0 → 1; cada palabra lleva `--w` y el contenedor `--n`) |
+
+## Destinos `[data-p]` (rendimiento)
+
+Una variable escrita en un contenedor se hereda: cada cuadro, el navegador recalcula el estilo de **todo** su subárbol.
+En una escena de 260 elementos eso eran 7.7 ms por cuadro en escritorio y 13 fps en un Android de gama media. Regla:
+
+- Marca con `data-p` cada elemento que de verdad se mueve con el scroll (o un envoltorio pequeño de varios).
+- Si una pista (`data-escena`, `data-progreso-scroll`, `data-parallax`, `data-texto-luz`) tiene descendientes `[data-p]`,
+  el motor escribe `--p`/`--e`/`--s` **solo en ellos**; si no tiene, en la pista misma (como antes).
+- Cada `[data-p]` pertenece a la pista rastreada más cercana hacia arriba (o a sí mismo si es una pista).
+- Los tramos (`--t: clamp(…var(--p, 1)…)`) se declaran **en el propio elemento** que los usa, no en la raíz de la escena.
+- `data-paso` y `.alcanzo-N` siguen en la raíz de la escena (cambian pocas veces).
 
 ## Escenas fijadas (estilo Apple)
 
@@ -103,6 +115,7 @@ su plano técnico vectorial alineado al píxel + una línea de escáner. Toma el
 | Atributo | Efecto |
 |---|---|
 | `data-contar="7"` | El número cuenta de 0 a 7 al verse (el HTML ya trae el 7; admite decimales: `"38.2"`) |
+| `data-sin-riel` | Zona donde se aparta el riel lateral de secciones (una escena que usa el borde derecho) |
 | `data-sin-flotante` | Zona donde se retira el botón flotante de WhatsApp (ya hay contacto a la vista o es interactiva: simulador, signos, cierre; el pie también) |
 | `a[data-compartir]` | Abre la hoja nativa de compartir del teléfono; sin ella, sigue el enlace de WhatsApp (`Compartir.astro`) |
 | `a[data-seccion][data-etiqueta]` | Enlace que participa en la sección activa: barra, riel lateral y título de sección en la barra del celular |

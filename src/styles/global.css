@@ -112,17 +112,6 @@ body {
 }
 
 /* Grano sutil sobre todo el sitio (archivo propio: la CSP no admite data:) */
-body::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  z-index: 100;
-  pointer-events: none;
-  background-image: url('/img/grano.svg');
-  background-size: 180px 180px;
-  opacity: 0.05;
-  mix-blend-mode: soft-light;
-}
 
 h1,
 h2,
@@ -277,13 +266,29 @@ textarea {
   color: var(--texto);
 }
 
+/* Negro y navy se funden con medianoche en sus bordes: las secciones oscuras se tocan siempre en el mismo tono
+   (sin "costuras" entre bloques). */
 .fondo-negro {
-  background: var(--negro);
+  --rampa: clamp(80px, 12vw, 180px);
+  background: linear-gradient(
+    180deg,
+    var(--medianoche) 0,
+    var(--negro) var(--rampa),
+    var(--negro) calc(100% - var(--rampa)),
+    var(--medianoche) 100%
+  );
   color: var(--texto);
 }
 
 .fondo-navy {
-  background: linear-gradient(180deg, #0a1730 0%, #0d1f3f 100%);
+  --rampa: clamp(80px, 12vw, 180px);
+  background: linear-gradient(
+    180deg,
+    var(--medianoche) 0,
+    #0a1730 var(--rampa),
+    #0d1f3f calc(100% - var(--rampa)),
+    var(--medianoche) 100%
+  );
   color: var(--texto);
 }
 
@@ -549,7 +554,7 @@ textarea {
 .js .revelar:not(.es-visible),
 .js [data-animar='subir']:not(.es-visible) {
   opacity: 0;
-  transform: translate3d(0, 28px, 0);
+  transform: translate(0, 28px);
 }
 
 .js [data-animar='aparecer']:not(.es-visible) {
@@ -563,12 +568,12 @@ textarea {
 
 .js [data-animar='izquierda']:not(.es-visible) {
   opacity: 0;
-  transform: translate3d(-44px, 0, 0);
+  transform: translate(-44px, 0);
 }
 
 .js [data-animar='derecha']:not(.es-visible) {
   opacity: 0;
-  transform: translate3d(44px, 0, 0);
+  transform: translate(44px, 0);
 }
 
 .js [data-animar='desenfoque']:not(.es-visible) {
@@ -579,6 +584,15 @@ textarea {
 
 .js [data-animar='cortina']:not(.es-visible) {
   clip-path: inset(0 0 100% 0);
+}
+
+/* Red de seguridad: lo que recibe el foco del teclado se ve, aunque su revelado no se haya disparado. */
+.js [data-animar]:focus-within,
+.js .revelar:focus-within {
+  opacity: 1;
+  transform: none;
+  filter: none;
+  clip-path: none;
 }
 
 [data-retraso='1'] { --retraso: 100ms; }
@@ -603,7 +617,7 @@ textarea {
 
 .js [data-animar='titulo'] .palabra > span {
   display: inline-block;
-  transform: translate3d(0, 108%, 0);
+  transform: translate(0, 108%);
   transition: transform 0.95s var(--ease);
   transition-delay: calc(var(--w, 0) * 55ms + var(--retraso, 0ms));
 }
@@ -732,7 +746,6 @@ html.lenis {
 }
 
 @media print {
-  body::before,
   .barra-progreso {
     display: none !important;
   }
@@ -762,24 +775,50 @@ html.menu-abierto {
   opacity: 0;
   transform: translateY(14px);
   pointer-events: none;
+  /* Oculto = fuera del orden de Tab y de los lectores de pantalla (visibility), no solo transparente. */
+  visibility: hidden;
   transition:
     opacity 0.4s var(--ease),
-    transform 0.4s var(--ease);
+    transform 0.4s var(--ease),
+    visibility 0s linear 0.4s;
 }
 
 .js .flotante[data-visible='si'] {
   opacity: 1;
   transform: none;
   pointer-events: auto;
+  visibility: visible;
+  transition-delay: 0s;
 }
 
 .js.menu-abierto .flotante {
   opacity: 0;
   pointer-events: none;
+  visibility: hidden;
 }
 
+/* Botón redondo y compacto: tapa lo mínimo de las escenas. */
 .flotante-cta {
-  box-shadow: 0 14px 30px -10px rgb(0 0 0 / 0.7);
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--azul);
+  color: #fff;
+  box-shadow:
+    0 14px 30px -10px rgb(0 0 0 / 0.7),
+    0 0 0 1px rgb(255 255 255 / 0.12) inset;
+  transition: transform 0.25s var(--ease);
+}
+
+.flotante-cta .icono {
+  width: 26px;
+  height: 26px;
+}
+
+.flotante-cta:active {
+  transform: scale(0.94);
 }
 
 .flotante-arriba {

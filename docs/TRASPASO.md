@@ -61,6 +61,13 @@ Próximamente (no presentar como disponible): respaldo `.ikbak` verificable y re
 
 ## 3. Decisiones vigentes
 
+> **Actualización 15-oct (rediseño "clínico-tec")**: a petición de Alan ("enfoque clínico-tec high tech"), los nombres
+> técnicos (SHA-256, Ed25519, AES-256, Argon2id) pueden aparecer en el recorrido principal **solo como etiqueta
+> secundaria junto a una etiqueta en lenguaje de consultorio** (p. ej. "FIRMA · Ed25519", "Cifrada en tu equipo ·
+> AES-256"). Nunca como el único texto ni como el mensaje. Fuera de eso, siguen en "Detalles técnicos", /verificar y la FAQ.
+> **Respaldo**: mientras la copia no incluya `clinica.salt` ni la llave Ed25519 (§2.1), el sitio dice que la copia
+> comprobada sirve para recuperar la base **en la misma computadora**; "llevarla a otro equipo" es "En camino".
+
 Nuevas (Alan, 15-oct):
 
 - **Logo principal = render 3D del isotipo**, protagonista del hero y **animado con el scroll**. Sustituye la decisión anterior "ECG y trazo del logo con CSS" en el hero.

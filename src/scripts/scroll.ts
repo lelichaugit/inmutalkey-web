@@ -7,6 +7,11 @@
 // Rendimiento: la geometría se mide al iniciar y cuando algo cambia de tamaño (offsetTop, que ignora los transform:
 // el parallax no se mide a sí mismo). En cada cuadro no se lee el DOM; solo se escriben las variables que cambiaron,
 // así que un elemento lejos de la vista (valores ya en 0 o 1) no cuesta nada.
+//
+// Destinos ([data-p]): una variable CSS escrita en un contenedor se hereda y obliga a recalcular el estilo de TODO su
+// subárbol en cada cuadro (en Integridad eran ~260 elementos: 13 fps en un Android de gama media). Si una pista tiene
+// descendientes con `data-p`, las variables se escriben solo en ellos (los que de verdad se mueven); si no, en la
+// pista misma. Cada `[data-p]` pertenece a la pista rastreada más cercana hacia arriba (o a sí mismo).
 
 type Tipo = 'escena' | 'progreso' | 'parallax' | 'luz';
 
@@ -22,6 +27,12 @@ interface Pista {
   marcas: number[];
   paso: number;
   escritos: Map<string, string>;
+  /** Dónde se escriben las variables: sus `[data-p]` o, si no tiene, la pista misma. */
+  destinos: HTMLElement[];
+  /** `data-progreso-hasta`: tope de --p (cuando la animación ya terminó, deja de escribir). */
+  hasta: number;
+  /** `data-progreso-salida`: además de --p, escribe --salida. */
+  conSalida: boolean;
 }
 
 export interface OpcionesScroll {
@@ -82,7 +93,20 @@ export function iniciarScroll({ movimiento, alCuadro }: OpcionesScroll): MotorSc
         .map(Number)
         .filter((m) => Number.isFinite(m) && m > 0 && m <= 1)
         .sort((a, b) => a - b);
-      pistas.push({ el, tipo, top: 0, alto: 0, escenario: 0, marcas, paso: -1, escritos: new Map() });
+      const hasta = Number(el.dataset['progresoHasta']);
+      pistas.push({
+        el,
+        tipo,
+        top: 0,
+        alto: 0,
+        escenario: 0,
+        marcas,
+        paso: -1,
+        escritos: new Map(),
+        destinos: [],
+        hasta: Number.isFinite(hasta) && hasta > 0 && hasta <= 1 ? hasta : 1,
+        conSalida: el.hasAttribute('data-progreso-salida'),
+      });
     });
   };
 
@@ -94,6 +118,20 @@ export function iniciarScroll({ movimiento, alCuadro }: OpcionesScroll): MotorSc
     agregar('[data-texto-luz]', 'luz');
   }
 
+  // Reparte los [data-p] entre sus pistas.
+  const porElemento = new Map<HTMLElement, Pista>();
+  for (const p of pistas) if (!porElemento.has(p.el)) porElemento.set(p.el, p);
+  document.querySelectorAll<HTMLElement>('[data-p]').forEach((el) => {
+    for (let n: HTMLElement | null = el; n; n = n.parentElement) {
+      const pista = porElemento.get(n);
+      if (pista) {
+        pista.destinos.push(el);
+        return;
+      }
+    }
+  });
+  for (const p of pistas) if (p.destinos.length === 0) p.destinos.push(p.el);
+
   let altoVentana = window.innerHeight;
   let pendiente = false;
 
@@ -101,7 +139,7 @@ export function iniciarScroll({ movimiento, alCuadro }: OpcionesScroll): MotorSc
     const texto = valor.toFixed(4);
     if (p.escritos.get(nombre) === texto) return;
     p.escritos.set(nombre, texto);
-    p.el.style.setProperty(nombre, texto);
+    for (const d of p.destinos) d.style.setProperty(nombre, texto);
   };
 
   const marcarPaso = (p: Pista, avance: number): void => {
@@ -134,8 +172,8 @@ export function iniciarScroll({ movimiento, alCuadro }: OpcionesScroll): MotorSc
         case 'progreso':
         case 'parallax':
           // --p: 0 cuando el borde superior toca el borde inferior de la ventana; 1 cuando el inferior sale por arriba.
-          escribir(p, '--p', limitar((y + vh - p.top) / (vh + p.alto)));
-          if (p.tipo === 'progreso') escribir(p, '--salida', limitar((y - p.top) / Math.max(p.alto, 1)));
+          escribir(p, '--p', Math.min(limitar((y + vh - p.top) / (vh + p.alto)), p.hasta));
+          if (p.conSalida) escribir(p, '--salida', limitar((y - p.top) / Math.max(p.alto, 1)));
           break;
         case 'luz':
           // --lectura: 0 cuando el texto asoma al 82 % de la ventana; 1 cuando su final sube al 42 %.

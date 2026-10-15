@@ -39,7 +39,7 @@ export const GRUPOS: readonly GrupoFunciones[] = [
       {
         icono: 'escudo',
         titulo: 'Consentimiento informado',
-        detalle: 'Procedimiento, objetivos, riesgos y testigos, sellado igual que las notas.',
+        detalle: 'Procedimiento, objetivos, riesgos y testigos. Queda sellado con su huella y ya no se puede modificar.',
       },
       {
         icono: 'impresora',
@@ -130,8 +130,8 @@ export const GRUPOS: readonly GrupoFunciones[] = [
       },
       {
         icono: 'respaldo',
-        titulo: 'Respaldo verificado',
-        detalle: 'Copia tu base a una USB o disco externo con un clic y comprueba que la copia quedó idéntica.',
+        titulo: 'Respaldo comprobado',
+        detalle: 'Copia tu base cifrada a una USB o disco externo con un clic y comprueba que la copia quedó idéntica.',
       },
       {
         icono: 'llave',
@@ -149,7 +149,7 @@ export const GRUPOS: readonly GrupoFunciones[] = [
 ];
 
 export const PROXIMAMENTE: readonly Funcion[] = [
-  { icono: 'respaldo', titulo: 'Restauración guiada', detalle: 'Respaldo verificable y restauración paso a paso en otro equipo.' },
+  { icono: 'respaldo', titulo: 'Restauración guiada', detalle: 'Lleva tu respaldo a otro equipo, paso a paso.' },
   { icono: 'descarga', titulo: 'Expediente en PDF', detalle: 'Exportación del expediente con un verificador de autenticidad.' },
-  { icono: 'computadora', titulo: 'Mac', detalle: 'En evaluación. Hoy: Windows 10 y 11.' },
+  { icono: 'computadora', titulo: 'Mac', detalle: 'En evaluación. Hoy: Windows\u00a010 y\u00a011.' },
 ];

@@ -46,7 +46,7 @@ export const PREGUNTAS: readonly Pregunta[] = [
     pregunta: '¿Qué significa que la nota quede sellada?',
     respuesta: [
       'Al firmar, el programa calcula una huella única del contenido de la nota y la firma con una llave que solo existe en tu equipo. Cada nota se enlaza con la anterior del mismo paciente.',
-      'Si alguien modificara la base de datos por fuera del programa, la auditoría de integridad lo señala.',
+      'Si alguien modificara la base de datos por fuera del programa, la auditoría de integridad lo señalaría.',
     ],
   },
   {
@@ -62,7 +62,7 @@ export const PREGUNTAS: readonly Pregunta[] = [
     pregunta: '¿Cumple con la NOM-004?',
     respuesta: [
       'Está diseñado alrededor de la NOM-004-SSA3-2012: ficha de identificación, historia clínica, notas de evolución con sus apartados y un semáforo que revisa 7 requisitos antes de dejarte firmar.',
-      'Cómo se integre a tu práctica también cuenta: InmutalKey es una herramienta y no sustituye la asesoría legal.',
+      'La forma en que lo uses en tu práctica también cuenta: InmutalKey es una herramienta y no sustituye la asesoría legal.',
     ],
   },
   {
@@ -97,14 +97,14 @@ export const PREGUNTAS: readonly Pregunta[] = [
     pregunta: '¿Cómo respaldo mi información?',
     respuesta: [
       'Con un clic: el programa copia tu base cifrada a la carpeta Respaldos y, si quieres, a una USB o disco que elijas, y comprueba que la copia quedó idéntica.',
-      'La restauración guiada en otro equipo está en desarrollo; mientras tanto te acompañamos por WhatsApp.',
+      'Hoy esa copia sirve para recuperar tu base en esta misma computadora. Llevarla a otro equipo llegará con la restauración guiada, que está en desarrollo.',
     ],
   },
   {
     id: 'contrasena',
     pregunta: '¿Y si olvido mi contraseña?',
     respuesta: [
-      'Por seguridad, nadie puede abrir tu base sin ella, ni siquiera nosotros. Guárdala en un lugar seguro desde el primer día.',
+      'Si la olvidas, no hay forma de recuperarla ni de abrir tu base: ni siquiera nosotros podemos. Es el precio de que nadie más pueda entrar. Anótala y guárdala en un lugar seguro desde el primer día.',
     ],
   },
   {
