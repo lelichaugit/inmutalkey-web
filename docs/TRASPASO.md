@@ -79,7 +79,8 @@ Nuevas (Alan, 15-oct):
 - **Chats simulados** (`ChatSimulado.astro` + `chat.ts`): prueba de 30 días (Pasos) y Fundadores. Rotulados "Conversación de ejemplo"; sin logo de WhatsApp.
 - **Navegación premium**: View Transitions entre páginas (CSS), indicador de sección activa, barra que se oculta al bajar y vuelve al subir, menú móvil a pantalla completa, precarga al pasar el cursor, accesos flotantes (WhatsApp en móvil, volver arriba en escritorio).
 - **Fundadores = centro comercial del sitio**, una sola licencia digital. El modelo financiero de Alan se leyó solo para entender la economía; **ninguna cifra ni texto suyo está en el repo**. Consecuencias: no prometer soporte o actualizaciones gratis de por vida, ni funciones de red/multiusuario; "un solo pago" aplica a la licencia de fundador.
-- **Despliegue**: Cloudflare Pages conectado al repo, ver `README_DEPLOY.md`.
+- **Despliegue**: Worker con Static Assets (el proyecto de Alan se creó en el flujo de Workers, no de Pages). `wrangler.toml` con `[assets]` (`drop-trailing-slash`, `404-page`); build `npm run build:cloudflare`, deploy `npx wrangler deploy`. Verificado con `wrangler dev`: CSP y encabezados de `_headers`, rutas sin `.html`, 404 propia. Ver `README_DEPLOY.md`.
+- **Fase C sobre Workers**: el API será un Worker (`main` + `run_worker_first = ["/api/*"]`) en lugar de Pages Functions; D1 se declara en `wrangler.toml` solo cuando exista la base.
 
 Del traspaso anterior:
 
@@ -92,7 +93,7 @@ Del traspaso anterior:
 - Historia pineada: `position: sticky` + IntersectionObserver que cambia `data-paso` (1–4); GSAP/ScrollTrigger diferido solo para el scrub. Sin JS o con reduced-motion: 4 estados apilados.
 - Monitor de signos: peso, talla y SpO₂ editables; IMC en vivo (OMS); SpO₂ fuera de 0–100 en rojo; "Paciente de ejemplo".
 - Turnstile: única excepción de la CSP (`challenges.cloudflare.com`), cargado al enfocar el formulario; claves de prueba fuera de producción.
-- www→apex con Redirect Rule de Cloudflare.
+- www→apex con Redirect Rule de Cloudflare (los Workers tampoco redirigen dominios solos).
 - `build.format: 'file'`, `trailingSlash: 'never'`, `inlineStylesheets: 'never'`.
 - Reseñas en producción: build desde `resenas.json` (solo `verificado && !esEjemplo`) + `GET /api/resenas` en cliente.
 - D1: `0001_solicitudes.sql`, `0002_resenas.sql`, `0003_limite_frecuencia.sql`; sin `BEGIN/COMMIT`, sin `DROP TABLE`.

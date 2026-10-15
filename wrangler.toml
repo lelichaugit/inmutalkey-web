@@ -1,13 +1,22 @@
-# Cloudflare Pages (sitio estático + Functions en /api/*). Ver README_DEPLOY.md (Fase D).
+# Cloudflare Workers con Static Assets: el sitio es estático (dist/) y Cloudflare lo sirve desde su red.
+# Build: `npm run build:cloudflare` · Deploy: `npx wrangler deploy`. Ver README_DEPLOY.md.
 name = "inmutalkey-web"
-compatibility_date = "2026-10-01"
-pages_build_output_dir = "./dist"
+compatibility_date = "2026-09-15"
 
-[[d1_databases]]
-binding = "DB"
-database_name = "inmutalkey-web"
-# MARCADOR: reemplazar por el id real que imprime `npx wrangler d1 create inmutalkey-web`.
-database_id = "00000000-0000-0000-0000-000000000000"
-migrations_dir = "migrations"
+[assets]
+directory = "./dist"
+# Las páginas se generan como archivo (verificar.html) y se sirven sin diagonal final: /verificar.
+html_handling = "drop-trailing-slash"
+# Rutas inexistentes → dist/404.html con estado 404.
+not_found_handling = "404-page"
 
-# Secretos (no van aquí): TURNSTILE_SECRET_KEY, RATE_LIMIT_SALT → `npx wrangler pages secret put <NOMBRE>`.
+# Fase C (formularios y reseñas): se agregará aquí el Worker de /api/* (`main` + `run_worker_first`)
+# y la base D1. No se declara antes: un Worker no se despliega con una base que todavía no existe.
+#
+# main = "src/worker/index.ts"
+# [assets] … run_worker_first = ["/api/*"]
+# [[d1_databases]]
+# binding = "DB"
+# database_name = "inmutalkey-web"
+# database_id = "<id que imprime `npx wrangler d1 create inmutalkey-web`>"
+# migrations_dir = "migrations"

@@ -1,7 +1,7 @@
 # inmutalkey.com
 
 Sitio público de **InmutalKey**, el expediente clínico para consultorio privado con notas selladas.
-Astro 5 estático en Cloudflare Pages; JavaScript mínimo y diferido; CSP estricta sin `unsafe-inline`.
+Astro 5 estático publicado como Worker con Static Assets en Cloudflare; JavaScript mínimo y diferido; CSP estricta sin `unsafe-inline`.
 
 ## Comandos
 
@@ -9,7 +9,8 @@ Astro 5 estático en Cloudflare Pages; JavaScript mínimo y diferido; CSP estric
 |---|---|
 | `npm run dev` | Servidor local (entorno `desarrollo`, con reseñas de ejemplo) |
 | `npm run build` | Compila a `dist/` y pasa el guardian |
-| `npm run build:cloudflare` | `activos` + `build` (el que usa Cloudflare Pages) |
+| `npm run build:cloudflare` | `activos` + `build` (el que usa Cloudflare) |
+| `npx wrangler dev` | Sirve `dist/` con el mismo motor de Cloudflare, encabezados incluidos |
 | `npm run check` | Tipos estrictos de Astro y TypeScript |
 | `npm test` | Pruebas Vitest |
 | `npm run activos` | `marca` + `capturas` |
