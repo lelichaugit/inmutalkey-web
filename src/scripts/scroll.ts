@@ -2,7 +2,8 @@
 // variables CSS. API en docs/ANIMACIONES.md.
 //
 // Funciona igual con Lenis (escritorio: rueda y trackpad suavizados) que con el scroll nativo de iPhone, iPad y
-// Android: en ambos casos la ventana se desplaza de verdad y aquí solo se lee `window.scrollY`.
+// Android: en ambos casos la ventana se desplaza de verdad y aquí solo se lee `window.scrollY`. Con Lenis, base.ts
+// llama a `cuadroAhora()` desde su evento `scroll` para que las variables salgan en el mismo cuadro que la página.
 //
 // Rendimiento: la geometría se mide al iniciar y cuando algo cambia de tamaño (offsetTop, que ignora los transform:
 // el parallax no se mide a sí mismo). En cada cuadro no se lee el DOM; solo se escriben las variables que cambiaron,
@@ -20,6 +21,10 @@ interface Pista {
   escenario: number;
   /** Umbrales de --p que cuentan como pasos (solo escenas con data-escena-marcas). */
   marcas: number[];
+  /** Tope de --p (`data-progreso-hasta`): pasado ese punto ya no se escribe y el subárbol no se recalcula. */
+  hasta: number;
+  /** ¿Escribe --salida? Solo con `data-progreso-salida` (cada variable escrita recalcula el estilo del subárbol). */
+  salida: boolean;
   paso: number;
   escritos: Map<string, string>;
 }
@@ -36,6 +41,12 @@ export interface MotorScroll {
   medir(): void;
   /** Pide un cuadro (por ejemplo, después de un salto programático). */
   pedirCuadro(): void;
+  /**
+   * Actualiza las variables en este mismo cuadro. Para Lenis: mueve la ventana dentro de su requestAnimationFrame y el
+   * evento `scroll` del navegador llega en el cuadro siguiente; si se esperara a ese evento, el parallax y las escenas
+   * irían un cuadro (16.7 ms a 60 Hz) detrás de la página y se notaría un temblor, sobre todo en monitores de 60 Hz.
+   */
+  cuadroAhora(): void;
 }
 
 const limitar = (v: number): number => (v < 0 ? 0 : v > 1 ? 1 : v);
@@ -82,7 +93,19 @@ export function iniciarScroll({ movimiento, alCuadro }: OpcionesScroll): MotorSc
         .map(Number)
         .filter((m) => Number.isFinite(m) && m > 0 && m <= 1)
         .sort((a, b) => a - b);
-      pistas.push({ el, tipo, top: 0, alto: 0, escenario: 0, marcas, paso: -1, escritos: new Map() });
+      const hasta = Number(el.dataset['progresoHasta'] ?? 1);
+      pistas.push({
+        el,
+        tipo,
+        top: 0,
+        alto: 0,
+        escenario: 0,
+        marcas,
+        paso: -1,
+        escritos: new Map(),
+        hasta: Number.isFinite(hasta) && hasta > 0 && hasta <= 1 ? hasta : 1,
+        salida: el.hasAttribute('data-progreso-salida'),
+      });
     });
   };
 
@@ -134,8 +157,8 @@ export function iniciarScroll({ movimiento, alCuadro }: OpcionesScroll): MotorSc
         case 'progreso':
         case 'parallax':
           // --p: 0 cuando el borde superior toca el borde inferior de la ventana; 1 cuando el inferior sale por arriba.
-          escribir(p, '--p', limitar((y + vh - p.top) / (vh + p.alto)));
-          if (p.tipo === 'progreso') escribir(p, '--salida', limitar((y - p.top) / Math.max(p.alto, 1)));
+          escribir(p, '--p', Math.min(limitar((y + vh - p.top) / (vh + p.alto)), p.hasta));
+          if (p.salida) escribir(p, '--salida', limitar((y - p.top) / Math.max(p.alto, 1)));
           break;
         case 'luz':
           // --lectura: 0 cuando el texto asoma al 82 % de la ventana; 1 cuando su final sube al 42 %.
@@ -185,5 +208,5 @@ export function iniciarScroll({ movimiento, alCuadro }: OpcionesScroll): MotorSc
 
   medir();
   cuadro();
-  return { medir, pedirCuadro };
+  return { medir, pedirCuadro, cuadroAhora: cuadro };
 }

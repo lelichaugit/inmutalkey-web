@@ -892,15 +892,29 @@ const FICHA: readonly { icono: NombreIcono; titulo: string; texto: string; dato:
     min-height: 0;
     aspect-ratio: 304 / 724;
     transform: translate3d(0, calc((1 - var(--t3)) * 9%), 0) scale(calc(0.9 + var(--t3) * 0.1));
-    filter: drop-shadow(0 0 36px rgb(46 159 224 / 0.35)) drop-shadow(0 24px 40px rgb(0 0 0 / 0.8));
+    will-change: transform;
   }
 
+  /* Halo y sombra con gradientes, no con filter: drop-shadow. La llave cambia en cada cuadro (escala y brillo que la
+     recorre) y un filtro sobre ella se volvía a rasterizar en cada cuadro de scroll: 23 % de cuadros > 25 ms en
+     Chromium a 60 Hz (Windows) contra 0.2 % sin él. Los gradientes se pintan una vez y viajan con la capa. */
   .zv-llave-mover::before {
     content: '';
     position: absolute;
-    inset: 10% -60%;
+    inset: 4% -70%;
     z-index: -1;
-    background: radial-gradient(closest-side, rgb(46 159 224 / 0.28), transparent);
+    background: radial-gradient(closest-side, rgb(46 159 224 / 0.34), rgb(46 159 224 / 0.1) 55%, transparent);
+  }
+
+  .zv-llave-mover::after {
+    content: '';
+    position: absolute;
+    left: -20%;
+    right: -20%;
+    bottom: -6%;
+    z-index: -1;
+    height: 14%;
+    background: radial-gradient(closest-side, rgb(0 0 0 / 0.75), transparent);
   }
 
   .zv-llave-pie {
