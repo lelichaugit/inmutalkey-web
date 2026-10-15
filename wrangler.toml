@@ -1,0 +1,13 @@
+# Cloudflare Pages (sitio estático + Functions en /api/*). Ver README_DEPLOY.md (Fase D).
+name = "inmutalkey-web"
+compatibility_date = "2026-10-01"
+pages_build_output_dir = "./dist"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "inmutalkey-web"
+# MARCADOR: reemplazar por el id real que imprime `npx wrangler d1 create inmutalkey-web`.
+database_id = "00000000-0000-0000-0000-000000000000"
+migrations_dir = "migrations"
+
+# Secretos (no van aquí): TURNSTILE_SECRET_KEY, RATE_LIMIT_SALT → `npx wrangler pages secret put <NOMBRE>`.

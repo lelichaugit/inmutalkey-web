@@ -1,0 +1,217 @@
+// Genera las piezas de marca del sitio a partir de src/data/logo.json y, si existe, del render 3D del isotipo.
+//
+//   npm run marca
+//
+// Salida en public/:
+//   favicon.svg · favicon.ico (PNG dentro de ICO, 16 y 32) · apple-touch-icon.png (180)
+//   icon-192.png · icon-512.png · icon-maskable-512.png · og.png (1200×630, texto convertido a trazos)
+//   brand/isotipo-3d-{480,800,1200}.{avif,webp}  ← solo si existe public/brand/originales/isotipo-3d.{png,jpg,jpeg,webp}
+// y src/data/isotipo.json (dimensiones del render para el hero; `disponible: false` si aún no se sube).
+//
+// El render 3D es blanco sobre negro: se "aplasta" el negro a 0 para que con `mix-blend-mode: screen`
+// se funda sin borde con cualquier fondo oscuro del sitio (y con la luz azul de la tarjeta).
+
+import { existsSync } from 'node:fs';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { fileURLToPath } from 'node:url';
+
+import opentype from 'opentype.js';
+import sharp from 'sharp';
+
+const raiz = (ruta) => fileURLToPath(new URL(`../${ruta}`, import.meta.url));
+
+const AZUL_MARINO = '#0d1b35';
+const MEDIANOCHE = '#060b16';
+const TEXTO = '#eef3f9';
+const TEXTO_TENUE = '#a9b6c8';
+const ANCHOS_ISOTIPO = [480, 800, 1200];
+
+const logo = JSON.parse(await readFile(raiz('src/data/logo.json'), 'utf8'));
+const [, , ANCHO_LOGO, ALTO_LOGO] = logo.viewBox.split(' ').map(Number);
+
+/** Isotipo sólido como grupo SVG de `alto` px con la esquina superior izquierda en (x, y). */
+function isotipo({ x, y, alto, base = '#ffffff' }) {
+  const s = alto / ALTO_LOGO;
+  const paths = logo.solido
+    .map((c) => `<path fill="${c.color === 'currentColor' ? base : c.color}" d="${c.d}"/>`)
+    .join('');
+  return `<g transform="translate(${x.toFixed(2)} ${y.toFixed(2)}) scale(${s.toFixed(5)})">${paths}</g>`;
+}
+
+/** Isotipo centrado en un lienzo cuadrado de `lado` px, ocupando `proporcion` del alto. */
+function iconoCuadrado({ lado, proporcion, radio = 0, fondo = AZUL_MARINO }) {
+  const alto = lado * proporcion;
+  const ancho = (alto * ANCHO_LOGO) / ALTO_LOGO;
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${lado} ${lado}" width="${lado}" height="${lado}">`
+    + `<rect width="${lado}" height="${lado}" rx="${radio}" fill="${fondo}"/>`
+    + isotipo({ x: (lado - ancho) / 2, y: (lado - alto) / 2, alto })
+    + '</svg>';
+}
+
+/** ICO con imágenes PNG embebidas (válido desde Windows Vista y en todos los navegadores). */
+function empacarIco(pngs) {
+  const cabecera = Buffer.alloc(6);
+  cabecera.writeUInt16LE(0, 0);
+  cabecera.writeUInt16LE(1, 2);
+  cabecera.writeUInt16LE(pngs.length, 4);
+  let desplazamiento = 6 + 16 * pngs.length;
+  const entradas = pngs.map(({ lado, datos }) => {
+    const e = Buffer.alloc(16);
+    e.writeUInt8(lado >= 256 ? 0 : lado, 0);
+    e.writeUInt8(lado >= 256 ? 0 : lado, 1);
+    e.writeUInt8(0, 2);
+    e.writeUInt8(0, 3);
+    e.writeUInt16LE(1, 4);
+    e.writeUInt16LE(32, 6);
+    e.writeUInt32LE(datos.length, 8);
+    e.writeUInt32LE(desplazamiento, 12);
+    desplazamiento += datos.length;
+    return e;
+  });
+  return Buffer.concat([cabecera, ...entradas, ...pngs.map((p) => p.datos)]);
+}
+
+async function fuente(ruta) {
+  const b = await readFile(raiz(ruta));
+  return opentype.parse(b.buffer.slice(b.byteOffset, b.byteOffset + b.byteLength));
+}
+
+/**
+ * Texto → trazos, glifo por glifo con kerning GPOS. Se evita `font.getPath` porque opentype.js 2.0
+ * no soporta algunas sustituciones `ccmp` de Inter (lookupType 6, formato 2) y aborta.
+ */
+function texto(f, cadena, x, y, tam, color, espaciado = 0) {
+  const escala = tam / f.unitsPerEm;
+  const glifos = [...cadena].map((c) => f.charToGlyph(c));
+  const partes = [];
+  let cx = x;
+  glifos.forEach((g, i) => {
+    partes.push(g.getPath(cx, y, tam).toPathData(2));
+    cx += (g.advanceWidth ?? 0) * escala + espaciado * tam;
+    const siguiente = glifos[i + 1];
+    if (siguiente) {
+      try {
+        cx += f.getKerningValue(g, siguiente) * escala;
+      } catch {
+        // sin kerning para este par
+      }
+    }
+  });
+  return `<path fill="${color}" d="${partes.join('')}"/>`;
+}
+
+function buscarRender() {
+  for (const ext of ['png', 'jpg', 'jpeg', 'webp']) {
+    const ruta = raiz(`public/brand/originales/isotipo-3d.${ext}`);
+    if (existsSync(ruta)) return ruta;
+  }
+  return null;
+}
+
+/** Negro del fondo del render: mediana de luminancia en las cuatro esquinas. */
+async function nivelDeNegro(ruta) {
+  const { data, info } = await sharp(ruta).removeAlpha().greyscale().raw().toBuffer({ resolveWithObject: true });
+  const m = Math.max(8, Math.round(Math.min(info.width, info.height) * 0.04));
+  const muestras = [];
+  for (const [x0, y0] of [[0, 0], [info.width - m, 0], [0, info.height - m], [info.width - m, info.height - m]]) {
+    for (let y = y0; y < y0 + m; y++) for (let x = x0; x < x0 + m; x++) muestras.push(data[y * info.width + x]);
+  }
+  muestras.sort((a, b) => a - b);
+  return muestras[Math.floor(muestras.length * 0.9)] ?? 0;
+}
+
+/** Render con el negro llevado a 0 (para `mix-blend-mode: screen`). */
+async function renderLimpio(ruta) {
+  const negro = Math.min(await nivelDeNegro(ruta) + 4, 60);
+  const a = 255 / (255 - negro);
+  return sharp(ruta).removeAlpha().toColourspace('srgb').linear(a, -negro * a);
+}
+
+async function main() {
+  await mkdir(raiz('public/brand'), { recursive: true });
+
+  // ── Favicons e iconos de app ──
+  const favicon = iconoCuadrado({ lado: 64, proporcion: 0.84, radio: 14 });
+  await writeFile(raiz('public/favicon.svg'), favicon + '\n');
+
+  const ico = [];
+  for (const lado of [16, 32]) {
+    const svg = iconoCuadrado({ lado: 64, proporcion: lado === 16 ? 0.9 : 0.84, radio: 14 });
+    ico.push({ lado, datos: await sharp(Buffer.from(svg), { density: (72 * lado) / 64 * 4 }).resize(lado, lado).png().toBuffer() });
+  }
+  await writeFile(raiz('public/favicon.ico'), empacarIco(ico));
+
+  const png = (svg, lado, destino) =>
+    sharp(Buffer.from(svg), { density: 300 }).resize(lado, lado).png({ compressionLevel: 9 }).toFile(raiz(destino));
+  await png(iconoCuadrado({ lado: 180, proporcion: 0.74 }), 180, 'public/apple-touch-icon.png');
+  await png(iconoCuadrado({ lado: 192, proporcion: 0.78, radio: 40 }), 192, 'public/icon-192.png');
+  await png(iconoCuadrado({ lado: 512, proporcion: 0.78, radio: 108 }), 512, 'public/icon-512.png');
+  await png(iconoCuadrado({ lado: 512, proporcion: 0.6 }), 512, 'public/icon-maskable-512.png');
+
+  // ── Render 3D (logo principal del hero) ──
+  const render = buscarRender();
+  let datosIsotipo = { disponible: false };
+  if (render) {
+    const meta = await sharp(render).metadata();
+    const anchoOriginal = meta.width ?? 0;
+    const altoOriginal = meta.height ?? 0;
+    const anchos = ANCHOS_ISOTIPO.filter((w) => w <= anchoOriginal);
+    if (anchos.length === 0) anchos.push(anchoOriginal);
+    for (const w of anchos) {
+      const base = (await renderLimpio(render)).resize({ width: w });
+      await base.clone().avif({ quality: 58, effort: 7 }).toFile(raiz(`public/brand/isotipo-3d-${w}.avif`));
+      await base.clone().webp({ quality: 82, effort: 6 }).toFile(raiz(`public/brand/isotipo-3d-${w}.webp`));
+    }
+    datosIsotipo = { disponible: true, ancho: anchoOriginal, alto: altoOriginal, anchos };
+    console.log(`isotipo 3D: ${anchos.join(', ')} px (AVIF + WebP)`);
+  } else {
+    console.warn('isotipo 3D: falta public/brand/originales/isotipo-3d.(png|jpg|webp) — el hero usará el isotipo plano.');
+  }
+  await writeFile(raiz('src/data/isotipo.json'), JSON.stringify(datosIsotipo, null, 1) + '\n');
+
+  // ── Imagen para redes (OG) ──
+  const outfit = await fuente('scripts/assets/outfit-latin-600-normal.woff');
+  const inter = await fuente('scripts/assets/inter-latin-500-normal.woff');
+  const W = 1200;
+  const H = 630;
+  const X = 84;
+  const lineasCuadricula = [];
+  for (let x = 0; x <= W; x += 56) lineasCuadricula.push(`<path d="M${x} 0V${H}"/>`);
+  for (let y = 0; y <= H; y += 56) lineasCuadricula.push(`<path d="M0 ${y}H${W}"/>`);
+
+  const zonaIsotipo = { x: 860, y: 40, ancho: 300, alto: 550 };
+  const isotipoPlano = render
+    ? ''
+    : isotipo({ x: zonaIsotipo.x + (zonaIsotipo.ancho - (480 * ANCHO_LOGO) / ALTO_LOGO) / 2, y: 75, alto: 480 });
+
+  const og = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}">
+<defs>
+  <radialGradient id="luz" cx="0.92" cy="1.08" r="0.75"><stop offset="0" stop-color="#0178b0" stop-opacity="0.55"/><stop offset="1" stop-color="#0178b0" stop-opacity="0"/></radialGradient>
+  <radialGradient id="mascara" cx="0.5" cy="0.45" r="0.6"><stop offset="0" stop-color="#fff" stop-opacity="1"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>
+  <mask id="m"><rect width="${W}" height="${H}" fill="url(#mascara)"/></mask>
+</defs>
+<rect width="${W}" height="${H}" fill="${MEDIANOCHE}"/>
+<g stroke="#ffffff" stroke-opacity="0.07" stroke-width="1" mask="url(#m)">${lineasCuadricula.join('')}</g>
+<rect width="${W}" height="${H}" fill="url(#luz)"/>
+${texto(outfit, 'InmutalKey', X, 196, 92, TEXTO, -0.02)}
+${texto(inter, 'Expediente clínico para tu consultorio.', X, 288, 34, TEXTO)}
+${texto(inter, 'Cada nota queda sellada: nadie puede alterarla.', X, 336, 34, TEXTO)}
+${texto(inter, 'Diseñado para la NOM-004 · Sin internet · En tu computadora', X, 520, 25, TEXTO_TENUE)}
+${isotipoPlano}
+</svg>`;
+
+  let lienzo = sharp(Buffer.from(og)).resize(W, H);
+  if (render) {
+    const alto = zonaIsotipo.alto;
+    const capa = await (await renderLimpio(render)).resize({ height: alto, width: zonaIsotipo.ancho, fit: 'inside' }).png().toBuffer();
+    const { width = 0 } = await sharp(capa).metadata();
+    lienzo = sharp(await lienzo.png().toBuffer()).composite([
+      { input: capa, left: Math.round(zonaIsotipo.x + (zonaIsotipo.ancho - width) / 2), top: zonaIsotipo.y, blend: 'screen' },
+    ]);
+  }
+  await lienzo.png({ compressionLevel: 9, palette: false }).toFile(raiz('public/og.png'));
+
+  console.log('marca: favicon.svg, favicon.ico, apple-touch-icon.png, icon-192/512, icon-maskable-512, og.png');
+}
+
+await main();

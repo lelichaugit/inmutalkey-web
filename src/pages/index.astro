@@ -1,0 +1,39 @@
+---
+// Portada PROVISIONAL de la Fase A (prueba de layout, navegación y pie). La Fase B la sustituye por las secciones.
+import Icono from '../components/Icono.astro';
+import Base from '../layouts/Base.astro';
+import { enlaceWhatsApp } from '../lib/whatsapp';
+import { sitio } from '../site.config';
+
+const whatsapp = enlaceWhatsApp(sitio.contacto.whatsapp, sitio.contacto.mensajeWhatsApp);
+---
+
+<Base titulo="InmutalKey · Expediente clínico con notas selladas" tituloCompleto>
+  <section class="seccion fondo-luz fondo-cuadricula provisional">
+    <div class="contenedor entrada">
+      <h1>Tus notas clínicas, selladas y en tu computadora.</h1>
+      <p class="texto-grande tenue">
+        Expediente clínico para consultorio privado, diseñado para la NOM-004. Cada nota firmada queda sellada: nadie
+        puede cambiarla sin que se note. Funciona sin internet.
+      </p>
+      {
+        whatsapp && (
+          <p>
+            <a class="boton boton-primario" href={whatsapp} target="_blank" rel="noopener noreferrer">
+              <Icono nombre="chat" />
+              Escríbenos por WhatsApp
+            </a>
+          </p>
+        )
+      }
+    </div>
+  </section>
+</Base>
+
+<style>
+  .provisional {
+    min-height: calc(100svh - var(--altura-nav));
+    display: grid;
+    align-items: center;
+  }
+</style>

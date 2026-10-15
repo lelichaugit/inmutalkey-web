@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /resena
+
+Sitemap: https://inmutalkey.com/sitemap.xml

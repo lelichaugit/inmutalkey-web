@@ -1,0 +1,241 @@
+---
+import { sitio } from '../site.config';
+import { enlaceWhatsApp } from '../lib/whatsapp';
+import Icono from './Icono.astro';
+import Logo from './Logo.astro';
+
+interface Props {
+  /**
+   * Portada: el isotipo de la barra espera a que el logo principal (render 3D del hero,
+   * marcado con `data-isotipo-principal`) salga de la vista, como si se "acomodara" en la barra.
+   */
+  logoDiferido?: boolean;
+}
+
+const { logoDiferido = false } = Astro.props;
+const whatsapp = enlaceWhatsApp(sitio.contacto.whatsapp, sitio.contacto.mensajeWhatsApp);
+
+const ENLACES = [
+  { href: '/#integridad', texto: 'Cómo protege tus notas' },
+  { href: '/#incluye', texto: 'Qué incluye' },
+  { href: '/#fundadores', texto: 'Fundadores' },
+  { href: '/#preguntas', texto: 'Preguntas' },
+] as const;
+---
+
+<header class="nav" data-nav data-logo={logoDiferido ? 'diferido' : 'visible'}>
+  <div class="contenedor nav-fila">
+    <a class="nav-marca" href="/" aria-label="InmutalKey, ir al inicio">
+      <Logo titulo={null} class="nav-isotipo" />
+      <span class="nav-nombre" aria-hidden="true">InmutalKey</span>
+    </a>
+
+    <nav class="nav-enlaces" aria-label="Principal">
+      <ul>
+        {ENLACES.map((e) => <li><a href={e.href}>{e.texto}</a></li>)}
+      </ul>
+    </nav>
+
+    {
+      whatsapp && (
+        <a class="boton boton-primario boton-chico nav-cta" href={whatsapp} target="_blank" rel="noopener noreferrer">
+          <Icono nombre="chat" />
+          <span>
+            Escríbenos<span class="nav-cta-largo"> por WhatsApp</span>
+          </span>
+        </a>
+      )
+    }
+
+    <details class="nav-menu" data-nav-menu>
+      <summary>
+        <Icono nombre="menu" class="nav-menu-abrir" />
+        <Icono nombre="cerrar" class="nav-menu-cerrar" />
+        <span class="visualmente-oculto">Menú</span>
+      </summary>
+      <nav aria-label="Menú">
+        <ul>
+          {ENLACES.map((e) => <li><a href={e.href}>{e.texto}</a></li>)}
+        </ul>
+      </nav>
+    </details>
+  </div>
+</header>
+
+<style>
+  .nav {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    height: var(--altura-nav);
+    border-bottom: 1px solid transparent;
+    transition:
+      background-color 0.35s var(--ease),
+      border-color 0.35s var(--ease),
+      backdrop-filter 0.35s var(--ease);
+  }
+
+  /* Sin JS, o ya con scroll: barra sólida translúcida. Arriba del todo (con JS): transparente sobre el hero. */
+  .nav,
+  :global(.js) .nav[data-scroll='si'] {
+    background: rgb(6 11 22 / 0.78);
+    border-bottom-color: var(--linea-oscura);
+    -webkit-backdrop-filter: blur(16px) saturate(150%);
+    backdrop-filter: blur(16px) saturate(150%);
+  }
+
+  :global(.js) .nav:not([data-scroll='si']) {
+    background: transparent;
+    border-bottom-color: transparent;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+
+  .nav-fila {
+    display: flex;
+    align-items: center;
+    gap: clamp(12px, 2.5vw, 32px);
+    height: 100%;
+  }
+
+  .nav-marca {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin-right: auto;
+    color: #fff;
+    text-decoration: none;
+    font-size: 2.25rem; /* alto del isotipo */
+    border-radius: 8px;
+  }
+
+  .nav-nombre {
+    font-family: var(--fuente-titulo);
+    font-size: 1.3125rem;
+    font-weight: 600;
+    letter-spacing: -0.015em;
+  }
+
+  .nav-marca :global(.nav-isotipo) {
+    transition:
+      opacity 0.5s var(--ease),
+      transform 0.6s var(--ease),
+      width 0.6s var(--ease);
+  }
+
+  /* El isotipo "se acomoda" en la barra cuando el logo 3D del hero sale de la vista. */
+  :global(.js) .nav[data-logo='diferido'] .nav-marca :global(.nav-isotipo) {
+    opacity: 0;
+    transform: translateY(10px) scale(0.6);
+  }
+
+  .nav-enlaces ul,
+  .nav-menu ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .nav-enlaces ul {
+    display: flex;
+    gap: clamp(16px, 2vw, 28px);
+  }
+
+  .nav-enlaces a {
+    color: var(--texto-tenue);
+    font-size: 1rem;
+    font-weight: 500;
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+
+  .nav-enlaces a:hover {
+    color: #fff;
+  }
+
+  .nav-cta-largo {
+    display: none;
+  }
+
+  .nav-menu {
+    position: relative;
+  }
+
+  .nav-menu summary {
+    display: grid;
+    place-items: center;
+    width: 48px;
+    height: 48px;
+    border: 1px solid var(--linea-oscura-fuerte);
+    border-radius: 999px;
+    cursor: pointer;
+    list-style: none;
+  }
+
+  .nav-menu summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .nav-menu summary :global(.icono) {
+    width: 22px;
+    height: 22px;
+  }
+
+  .nav-menu :global(.nav-menu-cerrar),
+  .nav-menu[open] :global(.nav-menu-abrir) {
+    display: none;
+  }
+
+  .nav-menu[open] :global(.nav-menu-cerrar) {
+    display: block;
+  }
+
+  .nav-menu nav {
+    position: absolute;
+    top: calc(100% + 12px);
+    right: 0;
+    width: min(320px, calc(100vw - 2 * var(--margen)));
+    padding: 8px;
+    border: 1px solid var(--linea-oscura-fuerte);
+    border-radius: var(--radio);
+    background: var(--medianoche-2);
+    box-shadow: 0 24px 60px -20px rgb(0 0 0 / 0.7);
+  }
+
+  .nav-menu nav a {
+    display: block;
+    padding: 14px 16px;
+    border-radius: var(--radio-chico);
+    font-size: 1.0625rem;
+    font-weight: 500;
+    text-decoration: none;
+  }
+
+  .nav-menu nav a:hover {
+    background: rgb(255 255 255 / 0.06);
+  }
+
+  @media (max-width: 959px) {
+    .nav-enlaces {
+      display: none;
+    }
+  }
+
+  @media (max-width: 380px) {
+    .nav-nombre {
+      font-size: 1.125rem;
+    }
+    .nav-cta {
+      padding-inline: 0.9em;
+    }
+  }
+
+  @media (min-width: 960px) {
+    .nav-menu {
+      display: none;
+    }
+    .nav-cta-largo {
+      display: inline;
+    }
+  }
+</style>

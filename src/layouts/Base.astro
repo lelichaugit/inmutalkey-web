@@ -1,0 +1,98 @@
+---
+import '../styles/global.css';
+
+import Nav from '../components/Nav.astro';
+import Pie from '../components/Pie.astro';
+import { sitio } from '../site.config';
+
+interface Props {
+  /** Título de la página (sin el sufijo de marca). En la portada se usa tal cual. */
+  titulo: string;
+  descripcion?: string;
+  /** `false` para 404, /resena y páginas que no deben indexarse. */
+  indexar?: boolean;
+  /** Ruta de la imagen OG relativa al sitio. */
+  imagenOg?: string;
+  /** Portada: el isotipo de la barra espera a que salga de vista el logo 3D del hero. */
+  logoDiferido?: boolean;
+  /** Portada: título sin el sufijo "· InmutalKey". */
+  tituloCompleto?: boolean;
+}
+
+const {
+  titulo,
+  descripcion = sitio.descripcion,
+  indexar = true,
+  imagenOg = '/og.png',
+  logoDiferido = false,
+  tituloCompleto = false,
+} = Astro.props;
+
+const tituloFinal = tituloCompleto ? titulo : `${titulo} · ${sitio.nombre}`;
+const canonica = new URL(Astro.url.pathname.replace(/\.html$/, '').replace(/\/index$/, '/'), sitio.url).href;
+const og = new URL(imagenOg, sitio.url).href;
+
+// Sin precio ni calificaciones: no hay precios definitivos ni reseñas verificadas que lo respalden.
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'SoftwareApplication',
+  name: sitio.nombre,
+  url: sitio.url,
+  description: sitio.descripcion,
+  applicationCategory: 'MedicalApplication',
+  operatingSystem: 'Windows 10, Windows 11',
+  inLanguage: sitio.idioma,
+  image: new URL('/brand/logo-solido.svg', sitio.url).href,
+  publisher: { '@type': 'Organization', name: sitio.nombre, url: sitio.url },
+};
+---
+
+<!doctype html>
+<html lang={sitio.idioma}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>{tituloFinal}</title>
+    <meta name="description" content={descripcion} />
+    <link rel="canonical" href={canonica} />
+    {!indexar && <meta name="robots" content="noindex, nofollow" />}
+
+    <link rel="preload" href="/fonts/outfit-variable-latin.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/fonts/inter-variable-latin.woff2" as="font" type="font/woff2" crossorigin />
+
+    <link rel="icon" href="/favicon.ico" sizes="32x32" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+    <meta name="theme-color" content="#060b16" />
+    <meta name="color-scheme" content="dark light" />
+    <meta name="format-detection" content="telephone=no" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="es_MX" />
+    <meta property="og:site_name" content={sitio.nombre} />
+    <meta property="og:title" content={tituloFinal} />
+    <meta property="og:description" content={descripcion} />
+    <meta property="og:url" content={canonica} />
+    <meta property="og:image" content={og} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="InmutalKey: expediente clínico con notas selladas" />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+    <slot name="head" />
+  </head>
+  <body>
+    <a class="saltar" href="#contenido">Saltar al contenido</a>
+    <div class="barra-progreso" data-barra-progreso aria-hidden="true"></div>
+    <Nav logoDiferido={logoDiferido} />
+    <main id="contenido" tabindex="-1">
+      <slot />
+    </main>
+    <Pie />
+    <script>
+      import '../scripts/base';
+    </script>
+  </body>
+</html>

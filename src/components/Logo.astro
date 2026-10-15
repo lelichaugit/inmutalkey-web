@@ -1,0 +1,42 @@
+---
+// Isotipo plano en SVG en línea (src/data/logo.json, generado por scripts/vectorizar-logo.py).
+// La capa base usa currentColor: azul marino sobre fondos claros, blanco sobre oscuros.
+// El logo principal del sitio es el render 3D (hero); este se usa en navegación, pie y piezas chicas.
+import logo from '../data/logo.json';
+
+type Variante = 'solido' | 'contorno' | 'linea';
+
+interface Props {
+  variante?: Variante;
+  /** Nombre accesible. `null` = decorativo (aria-hidden). */
+  titulo?: string | null;
+  class?: string;
+}
+
+const { variante = 'solido', titulo = 'InmutalKey', class: clase } = Astro.props;
+const capas = logo[variante];
+const [, , ancho, alto] = logo.viewBox.split(' ');
+---
+
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  viewBox={logo.viewBox}
+  width={ancho}
+  height={alto}
+  class:list={['logo', clase]}
+  role={titulo ? 'img' : undefined}
+  aria-label={titulo ?? undefined}
+  aria-hidden={titulo ? undefined : 'true'}
+  focusable="false"
+>
+  {titulo && <title>{titulo}</title>}
+  {capas.map((c) => <path fill={c.color} d={c.d} />)}
+</svg>
+
+<style>
+  .logo {
+    height: 1em;
+    width: auto;
+    flex: none;
+  }
+</style>

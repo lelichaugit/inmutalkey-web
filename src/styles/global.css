@@ -1,0 +1,512 @@
+/* InmutalKey — sistema visual del sitio.
+   Continuidad con la tarjeta: medianoche con luz azul abajo a la derecha; reverso claro azulado.
+   Público: médicos, no técnicos → texto grande, contraste alto, una acción principal por pantalla. */
+
+@font-face {
+  font-family: 'Outfit';
+  src: url('/fonts/outfit-variable-latin.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Inter';
+  src: url('/fonts/inter-variable-latin.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  /* Marca (tomados del isotipo) */
+  --navy: #0d1b35;
+  --azul: #0178b0;
+  --azul-vivo: #2e9fe0;
+  --esmeralda: #0a8b69; /* solo firmado / íntegro / verificado */
+  --esmeralda-vivo: #2fd19a;
+
+  /* Superficies */
+  --medianoche: #060b16;
+  --medianoche-2: #0b1424;
+  --negro: #000;
+  --claro: #eef3f9;
+  --claro-2: #e2eaf3;
+
+  /* Texto */
+  --texto: #eef3f9;
+  --texto-tenue: #a9b6c8;
+  --tinta: #0d1b35;
+  --tinta-tenue: #3d4d66;
+  --error: #ff6b6b;
+  --error-claro: #c62828;
+
+  /* Líneas */
+  --linea-oscura: rgb(255 255 255 / 0.1);
+  --linea-oscura-fuerte: rgb(255 255 255 / 0.18);
+  --linea-clara: rgb(13 27 53 / 0.12);
+
+  /* Tipografía */
+  --fuente-titulo: 'Outfit', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --fuente-texto: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --texto-base: 1.0625rem;
+  --texto-grande: clamp(1.125rem, 1.05rem + 0.35vw, 1.3125rem);
+  --h1: clamp(2.375rem, 1.6rem + 3.6vw, 4.5rem);
+  --h2: clamp(1.875rem, 1.4rem + 2.2vw, 3.125rem);
+  --h3: clamp(1.25rem, 1.15rem + 0.45vw, 1.5rem);
+
+  /* Ritmo */
+  --ancho: 1200px;
+  --ancho-texto: 64ch;
+  --margen: clamp(16px, 4vw, 40px);
+  --seccion: clamp(80px, 9vw + 40px, 152px);
+  --radio: 16px;
+  --radio-chico: 10px;
+  --altura-nav: 72px;
+
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+
+  color-scheme: dark;
+}
+
+@media (min-width: 768px) {
+  :root {
+    --texto-base: 1.125rem;
+  }
+}
+
+/* ───────────── Base ───────────── */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  scroll-padding-top: calc(var(--altura-nav) + 16px);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--medianoche);
+  color: var(--texto);
+  font-family: var(--fuente-texto);
+  font-size: var(--texto-base);
+  line-height: 1.6;
+  font-feature-settings: 'cv11', 'ss01';
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  overflow-x: clip;
+}
+
+/* Grano sutil sobre todo el sitio (archivo propio: la CSP no admite data:) */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  pointer-events: none;
+  background-image: url('/img/grano.svg');
+  background-size: 180px 180px;
+  opacity: 0.05;
+  mix-blend-mode: soft-light;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  margin: 0;
+  font-family: var(--fuente-titulo);
+  font-weight: 600;
+  line-height: 1.08;
+  letter-spacing: -0.022em;
+  text-wrap: balance;
+}
+
+h1 {
+  font-size: var(--h1);
+}
+
+h2 {
+  font-size: var(--h2);
+}
+
+h3 {
+  font-size: var(--h3);
+  line-height: 1.25;
+  letter-spacing: -0.012em;
+}
+
+p {
+  margin: 0;
+  text-wrap: pretty;
+}
+
+p + p {
+  margin-top: 1em;
+}
+
+img,
+svg,
+video {
+  display: block;
+  max-width: 100%;
+}
+
+img {
+  height: auto;
+}
+
+.icono {
+  flex: none;
+}
+
+a {
+  color: inherit;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.2em;
+}
+
+a:hover {
+  text-decoration-thickness: 2px;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+:focus-visible {
+  outline: 3px solid var(--azul-vivo);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+::selection {
+  background: rgb(46 159 224 / 0.35);
+}
+
+.visualmente-oculto {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.saltar {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 200;
+  padding: 0.75em 1.1em;
+  border-radius: var(--radio-chico);
+  background: var(--texto);
+  color: var(--navy);
+  font-weight: 600;
+  text-decoration: none;
+  transform: translateY(-160%);
+}
+
+.saltar:focus-visible {
+  transform: none;
+}
+
+/* ───────────── Maquetación ───────────── */
+
+.contenedor {
+  width: min(100% - 2 * var(--margen), var(--ancho));
+  margin-inline: auto;
+}
+
+.seccion {
+  position: relative;
+  padding-block: var(--seccion);
+  isolation: isolate;
+}
+
+.entrada {
+  max-width: var(--ancho-texto);
+}
+
+.entrada > * + * {
+  margin-top: 1.1rem;
+}
+
+.texto-grande {
+  font-size: var(--texto-grande);
+  line-height: 1.55;
+}
+
+.tenue {
+  color: var(--texto-tenue);
+}
+
+.sin-corte {
+  white-space: nowrap;
+}
+
+.fondo-claro .tenue {
+  color: var(--tinta-tenue);
+}
+
+/* ───────────── Fondos ───────────── */
+
+.fondo-oscuro {
+  background: var(--medianoche);
+  color: var(--texto);
+}
+
+.fondo-negro {
+  background: var(--negro);
+  color: var(--texto);
+}
+
+.fondo-navy {
+  background: linear-gradient(180deg, #0a1730 0%, #0d1f3f 100%);
+  color: var(--texto);
+}
+
+.fondo-claro {
+  background: var(--claro);
+  color: var(--tinta);
+  color-scheme: light;
+}
+
+/* La tarjeta: medianoche con luz azul que entra abajo a la derecha */
+.fondo-luz {
+  background:
+    radial-gradient(70% 60% at 92% 108%, rgb(1 120 176 / 0.42), transparent 70%),
+    radial-gradient(40% 35% at 100% 100%, rgb(46 159 224 / 0.22), transparent 70%),
+    var(--medianoche);
+  color: var(--texto);
+}
+
+/* Cuadrícula de instrumento, desvanecida hacia los bordes */
+.fondo-cuadricula::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image:
+    linear-gradient(var(--linea-oscura) 1px, transparent 1px),
+    linear-gradient(90deg, var(--linea-oscura) 1px, transparent 1px);
+  background-size: 56px 56px;
+  background-position: center top;
+  -webkit-mask-image: radial-gradient(ellipse 80% 70% at 50% 40%, #000 20%, transparent 75%);
+  mask-image: radial-gradient(ellipse 80% 70% at 50% 40%, #000 20%, transparent 75%);
+  opacity: 0.55;
+}
+
+.fondo-claro.fondo-cuadricula::before {
+  background-image:
+    linear-gradient(var(--linea-clara) 1px, transparent 1px),
+    linear-gradient(90deg, var(--linea-clara) 1px, transparent 1px);
+}
+
+/* ───────────── Botones ───────────── */
+
+.boton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6em;
+  min-height: 52px;
+  padding: 0.8em 1.5em;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  font-family: var(--fuente-texto);
+  font-size: 1.0625rem;
+  font-weight: 600;
+  line-height: 1.2;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    transform 0.25s var(--ease),
+    background-color 0.25s var(--ease),
+    border-color 0.25s var(--ease),
+    box-shadow 0.25s var(--ease);
+}
+
+.boton:hover {
+  transform: translateY(-1px);
+}
+
+.boton:active {
+  transform: translateY(0);
+}
+
+.boton svg {
+  width: 1.3em;
+  height: 1.3em;
+  flex: none;
+}
+
+.boton-primario {
+  background: var(--azul);
+  color: #fff;
+  box-shadow:
+    0 1px 0 rgb(255 255 255 / 0.18) inset,
+    0 10px 30px -10px rgb(1 120 176 / 0.75);
+}
+
+.boton-primario:hover {
+  background: #0a87c4;
+}
+
+.boton-secundario {
+  background: transparent;
+  border-color: var(--linea-oscura-fuerte);
+  color: inherit;
+}
+
+.boton-secundario:hover {
+  border-color: rgb(255 255 255 / 0.4);
+  background: rgb(255 255 255 / 0.04);
+}
+
+.fondo-claro .boton-secundario {
+  border-color: rgb(13 27 53 / 0.25);
+}
+
+.fondo-claro .boton-secundario:hover {
+  border-color: rgb(13 27 53 / 0.5);
+  background: rgb(13 27 53 / 0.04);
+}
+
+.boton-chico {
+  min-height: 44px;
+  padding: 0.55em 1.1em;
+  font-size: 0.975rem;
+}
+
+/* ───────────── Píldoras ───────────── */
+
+.pildora {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5em;
+  padding: 0.38em 0.9em;
+  border: 1px solid var(--linea-oscura-fuerte);
+  border-radius: 999px;
+  background: rgb(255 255 255 / 0.04);
+  font-size: 0.9375rem;
+  font-weight: 500;
+  line-height: 1.3;
+}
+
+.pildora svg {
+  width: 1.1em;
+  height: 1.1em;
+}
+
+.fondo-claro .pildora {
+  border-color: var(--linea-clara);
+  background: rgb(255 255 255 / 0.7);
+}
+
+.pildora-verificado {
+  color: var(--esmeralda-vivo);
+  border-color: rgb(47 209 154 / 0.35);
+  background: rgb(10 139 105 / 0.12);
+}
+
+.fondo-claro .pildora-verificado {
+  color: var(--esmeralda);
+  border-color: rgb(10 139 105 / 0.3);
+  background: rgb(10 139 105 / 0.08);
+}
+
+.pildora-ejemplo {
+  color: #f3c969;
+  border-color: rgb(243 201 105 / 0.35);
+  background: rgb(243 201 105 / 0.08);
+}
+
+.pildora-pronto {
+  color: var(--texto-tenue);
+  border-style: dashed;
+}
+
+/* ───────────── Movimiento ───────────── */
+
+/* Solo con JS (base.ts pone .js) y solo bajo el pliegue: el contenido nunca depende del script. */
+.js .revelar {
+  opacity: 0;
+  transform: translateY(20px);
+  transition:
+    opacity 0.8s var(--ease),
+    transform 0.8s var(--ease);
+}
+
+.js .revelar.es-visible {
+  opacity: 1;
+  transform: none;
+}
+
+.barra-progreso {
+  display: none;
+}
+
+.js .barra-progreso {
+  display: block;
+  position: fixed;
+  inset: 0 0 auto;
+  z-index: 70;
+  height: 3px;
+  transform-origin: 0 50%;
+  transform: scaleX(var(--progreso, 0));
+  background: linear-gradient(90deg, var(--azul), var(--azul-vivo));
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .js .revelar {
+    opacity: 1;
+    transform: none;
+  }
+
+  .js .barra-progreso {
+    display: none;
+  }
+}
+
+@media print {
+  body::before,
+  .barra-progreso {
+    display: none !important;
+  }
+}
+
+main:focus {
+  outline: none;
+}
