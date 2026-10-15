@@ -9,6 +9,24 @@ function esExterna(url: string, sitio: string): boolean {
   return /^(?:https?:)?\/\//i.test(url) && !url.startsWith(sitio);
 }
 
+/** Parámetros de rastreo que no deben viajar en enlaces salientes (UTM, ids de clic, `?s=` de X, `lipi=` de LinkedIn…). */
+const RASTREO = /[?&](?:utm_[a-z]+|fbclid|gclid|igsh|igshid|si|s|lipi|trk|ref_src)=/i;
+
+/** Enlaces salientes: deben abrir sin dar acceso a `window.opener` ni enviar Referer, y sin parámetros de rastreo. */
+function revisarEnlaces(html: string, sitio: string): string[] {
+  const problemas: string[] = [];
+  for (const m of html.matchAll(/<a\b[^>]*>/gi)) {
+    const tag = m[0];
+    const href = /\shref=(?:"([^"]*)"|'([^']*)'|([^\s>]+))/i.exec(tag);
+    const url = href?.[1] ?? href?.[2] ?? href?.[3] ?? '';
+    if (!/^https?:\/\//i.test(url) || !esExterna(url, sitio)) continue;
+    const rel = (/\srel=(?:"([^"]*)"|'([^']*)'|([^\s>]+))/i.exec(tag)?.slice(1).find((v) => v !== undefined) ?? '').split(/\s+/);
+    if (!rel.includes('noopener') || !rel.includes('noreferrer')) problemas.push(`enlace externo sin rel="noopener noreferrer": ${url}`);
+    if (RASTREO.test(url.replace(/&amp;/g, '&'))) problemas.push(`enlace externo con parámetros de rastreo: ${url}`);
+  }
+  return problemas;
+}
+
 export function revisarHtml(html: string, sitio: string): string[] {
   const problemas: string[] = [];
   if (/\sdata-resena-ejemplo\b/.test(html)) problemas.push('contiene reseñas de ejemplo (data-resena-ejemplo)');
@@ -37,6 +55,8 @@ export function revisarHtml(html: string, sitio: string): string[] {
     const href = /\shref=["']?([^"'\s>]+)/i.exec(tag)?.[1];
     if (href && LINK_CON_DESCARGA.test(tag) && esExterna(href, sitio)) problemas.push(`<link> de terceros: ${href}`);
   }
+
+  problemas.push(...revisarEnlaces(html, sitio));
 
   return [...new Set(problemas)];
 }

@@ -15,9 +15,11 @@ interface Props {
   borrador?: boolean;
   actualizado?: string;
   indexar?: boolean;
+  /** Contenido a lo ancho del sitio (rejillas, tarjetas) en lugar de la columna de lectura con estilos de prosa. */
+  amplio?: boolean;
 }
 
-const { titulo, descripcion, antetitulo, borrador = false, actualizado, indexar = true } = Astro.props;
+const { titulo, descripcion, antetitulo, borrador = false, actualizado, indexar = true, amplio = false } = Astro.props;
 const ruta = Astro.url.pathname.replace(/\.html$/, '').replace(/\/$/, '') || '/';
 ---
 
@@ -36,9 +38,17 @@ const ruta = Astro.url.pathname.replace(/\.html$/, '').replace(/\/$/, '') || '/'
       </div>
     </div>
   </header>
-  <article class="contenedor prosa">
-    <slot />
-  </article>
+  {
+    amplio ? (
+      <div class="contenedor pagina-amplia">
+        <slot />
+      </div>
+    ) : (
+      <article class="contenedor prosa">
+        <slot />
+      </article>
+    )
+  }
 </Base>
 
 <style>
@@ -133,6 +143,10 @@ const ruta = Astro.url.pathname.replace(/\.html$/, '').replace(/\/$/, '') || '/'
       opacity: 0;
       transform: translate3d(0, 420px, 0);
     }
+  }
+
+  .pagina-amplia {
+    padding-block: clamp(40px, 6vw, 80px) clamp(64px, 8vw, 120px);
   }
 
   /* ── Columna de texto ── */

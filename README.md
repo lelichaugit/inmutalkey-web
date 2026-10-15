@@ -17,6 +17,8 @@ Scroll: Lenis en escritorio, nativo en táctil, y un motor propio de escenas fij
 | `npm run activos` | `marca` + `capturas` |
 | `npm run marca` | Favicons, iconos de app, OG y versiones del render 3D desde `capturas/` |
 | `npm run capturas` | Capturas de `capturas/` → `public/capturas/` + `src/data/capturas.json` |
+| `npm run redes` | Logos de redes (simple-icons → SVGO) → `src/assets/redes/*.svg` |
+| `npm run qr` | QR propio del perfil de Instagram → `public/img/qr-instagram.svg` |
 | `npm run vectorizar` | Vectoriza el logo plano (requiere `pip install potracer pillow numpy`) |
 | `npm run vectorizar:llave` | Vectoriza el contorno de la llave 3D ("plano técnico") desde `capturas/logomain-contorno.png` |
 
@@ -29,9 +31,24 @@ terceros, `<script>` en línea o atributos `style=`.
 ## Estructura
 
 - `src/site.config.ts`: el único lugar con datos variables (`TODO_DEFINIR`).
+- `src/data/socials.ts`: redes sociales (única fuente de verdad) y el interruptor `WHATSAPP_ENABLED`.
 - `src/components/secciones/`: secciones de la portada. `Demo.astro` + `src/scripts/demo.ts` es el simulador.
 - `src/lib/`: reglas compartidas y probadas (semáforo NOM-004, IMC, CIE-10, reseñas, entorno, guardian).
 - `src/scripts/`: `base.ts` (todas las páginas) y módulos que se cargan solo al acercarse a su sección.
 - `docs/TRASPASO.md`: estado, decisiones y funciones verificadas contra el código de la app.
 
 Despliegue: ver [README_DEPLOY.md](README_DEPLOY.md).
+
+## Redes sociales y contacto
+
+- **Cambiar o agregar una red:** editar `REDES` en `src/data/socials.ts` (URL limpia, sin parámetros). Lo leen
+  `SocialLinks` (pie y `/contacto`), `Contacto`, el `<head>` (`<link rel="me">` y JSON-LD) y `npm run qr`. Si la red
+  es nueva, agregar su SVG a `scripts/optimizar-redes.mjs` y correr `npm run redes`.
+- **WhatsApp:** el número vive solo en `sitio.contacto.whatsapp` (`src/site.config.ts`, dígitos con lada 52). El botón
+  se muestra con `WHATSAPP_ENABLED = true` en `src/data/socials.ts`; con `false` (o con `TODO_DEFINIR`) no se imprime ni
+  el enlace ni el número en el HTML.
+- **QR de Instagram:** `/contacto` usa el nametag oficial si existe `public/img/qr-instagram.png` (o `public/`); si no,
+  el QR propio `public/img/qr-instagram.svg` (corrección H, zona silenciosa de 4 módulos, generado en local). Las
+  pruebas lo decodifican con jsQR y exigen la URL exacta del perfil.
+- **Privacidad:** solo enlaces estáticos (`rel="me noopener noreferrer"`); cero widgets, iframes, SDK o píxeles. El
+  guardian del build rechaza enlaces externos sin `noopener noreferrer` o con parámetros de rastreo.

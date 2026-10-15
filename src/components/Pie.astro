@@ -1,8 +1,10 @@
 ---
 // Pie de todas las páginas. Abre con un trazo de electrocardiograma que se dibuja al entrar en vista (clip-path) y
-// lleva el logo principal (la llave 3D blanca, Isotipo3D). Contacto desde Contacto.astro: solo lo que está definido.
+// lleva el logo principal (la llave 3D blanca, Isotipo3D). Contacto desde Contacto.astro (solo lo definido) y redes
+// desde SocialLinks (src/data/socials.ts).
 import Contacto from './Contacto.astro';
 import Isotipo3D from './Isotipo3D.astro';
+import SocialLinks from './SocialLinks.astro';
 
 const anio = new Date().getFullYear();
 ---
@@ -53,7 +55,9 @@ const anio = new Date().getFullYear();
 
     <div class="pie-col pie-contacto" data-animar="subir">
       <h2 class="pie-titulo">Contacto</h2>
-      <Contacto variante="lista" />
+      <Contacto variante="lista" incluir={['whatsapp', 'correo']} />
+      <SocialLinks variant="footer" />
+      <a class="pie-contacto-mas" href="/contacto">Todas las formas de contacto</a>
     </div>
   </div>
 
@@ -282,6 +286,21 @@ const anio = new Date().getFullYear();
     .pie-col li > a:hover::after {
       transform: scaleX(1);
     }
+  }
+
+  .pie-contacto-mas {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    margin-top: 0.5rem;
+    color: var(--texto-tenue);
+    font-size: 0.9375rem;
+    text-underline-offset: 3px;
+    transition: color 0.2s var(--ease);
+  }
+
+  .pie-contacto-mas:hover {
+    color: #fff;
   }
 
   .pie-legal {

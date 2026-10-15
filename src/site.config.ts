@@ -1,4 +1,5 @@
-// Único lugar con datos que cambian (precios, cupos, contacto, instalador, legal).
+// Único lugar con datos que cambian (precios, cupos, contacto, instalador, legal). Las redes sociales viven en
+// src/data/socials.ts.
 // Un valor `TODO_DEFINIR` se muestra con un texto neutro en el sitio y el build lo avisa;
 // en producción, la integración `guardian` (astro.config.mjs) detiene el build si falta el WhatsApp.
 
@@ -26,10 +27,6 @@ export interface ConfigSitio {
       readonly fundadores: string;
     };
     readonly correo: Valor<string>;
-  };
-  readonly redes: {
-    /** Usuario de Instagram, sin @. */
-    readonly instagram: Valor<string>;
   };
   /** Licencia digital. `publico` = precio posterior, para mostrar el ahorro. Con o sin IVA: indícalo en `notaPrecios`. */
   readonly precios: {
@@ -79,9 +76,6 @@ export const sitio: ConfigSitio = {
     },
     correo: 'contacto@inmutalkey.com',
   },
-  redes: {
-    instagram: 'inmutalkey',
-  },
   precios: {
     moneda: 'MXN',
     fundadores: TODO_DEFINIR,
@@ -111,13 +105,6 @@ export const sitio: ConfigSitio = {
     revisadoPorAbogado: false,
   },
 };
-
-/** Perfil de Instagram (o `null` si aún no está definido). */
-export function enlaceInstagram(usuario: Valor<string> = sitio.redes.instagram): string | null {
-  if (!estaDefinido(usuario)) return null;
-  const limpio = usuario.trim().replace(/^@/, '');
-  return /^[A-Za-z0-9._]{1,30}$/.test(limpio) ? `https://www.instagram.com/${limpio}/` : null;
-}
 
 /** Rutas (`precios.fundadores`, …) de los valores aún sin definir. */
 export function pendientes(valor: unknown = sitio, prefijo = ''): string[] {

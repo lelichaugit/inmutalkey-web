@@ -1,0 +1,44 @@
+---
+// Logos de marca (Instagram, X, LinkedIn, WhatsApp): SVG oficiales de simple-icons, optimizados con SVGO y versionados
+// en src/assets/redes/ (`npm run redes`). Se incrustan en línea (cero peticiones, cero CDNs) y toman `currentColor`.
+// Sin `titulo` son decorativos (el texto del enlace los nombra); con `titulo` llevan role="img" y <title>.
+
+const SVGS = import.meta.glob<string>('../assets/redes/*.svg', { query: '?raw', import: 'default', eager: true });
+
+interface Props {
+  nombre: 'instagram' | 'x' | 'linkedin' | 'whatsapp';
+  titulo?: string;
+  class?: string;
+}
+
+const { nombre, titulo, class: clase } = Astro.props;
+const fuente = SVGS[`../assets/redes/${nombre}.svg`];
+const trazo = fuente ? /\sd="([^"]+)"/.exec(fuente)?.[1] : undefined;
+const vista = (fuente ? /viewBox="([^"]+)"/.exec(fuente)?.[1] : undefined) ?? '0 0 24 24';
+if (!trazo) throw new Error(`IconoMarca: no se encontró el SVG de «${nombre}» en src/assets/redes/.`);
+---
+
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  viewBox={vista}
+  width="24"
+  height="24"
+  fill="currentColor"
+  class:list={['icono-marca', clase]}
+  role={titulo ? 'img' : undefined}
+  aria-hidden={titulo ? undefined : 'true'}
+  focusable="false"
+>
+  {titulo && <title>{titulo}</title>}
+  <path d={trazo}></path>
+</svg>
+
+<style>
+  .icono-marca {
+    display: block;
+    width: 1em;
+    height: 1em;
+    flex: none;
+    shape-rendering: geometricPrecision;
+  }
+</style>

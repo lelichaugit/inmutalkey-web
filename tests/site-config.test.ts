@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { enlaceInstagram, estaDefinido, pendientes, sitio, TODO_DEFINIR } from '../src/site.config';
+import { estaDefinido, pendientes, sitio, TODO_DEFINIR } from '../src/site.config';
 
 describe('site.config', () => {
   it('pendientes() lista rutas con TODO_DEFINIR', () => {
@@ -18,15 +18,7 @@ describe('site.config', () => {
     expect(sitio.url).toBe('https://inmutalkey.com');
   });
 
-  it('enlaceInstagram arma el perfil y rechaza lo que no es un usuario', () => {
-    expect(enlaceInstagram('inmutalkey')).toBe('https://www.instagram.com/inmutalkey/');
-    expect(enlaceInstagram('@inmutalkey')).toBe('https://www.instagram.com/inmutalkey/');
-    expect(enlaceInstagram('mal usuario/x')).toBeNull();
-    expect(enlaceInstagram(TODO_DEFINIR)).toBeNull();
-  });
-
-  it('contacto publicado: correo del dominio e Instagram', () => {
+  it('contacto publicado: correo del dominio', () => {
     expect(sitio.contacto.correo).toBe('contacto@inmutalkey.com');
-    expect(enlaceInstagram()).toBe('https://www.instagram.com/inmutalkey/');
   });
 });
