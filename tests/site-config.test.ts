@@ -22,3 +22,9 @@ describe('site.config', () => {
     expect(sitio.contacto.correo).toBe('contacto@inmutalkey.com');
   });
 });
+
+describe('título del sitio (marcadores y vista previa al compartir)', () => {
+  it('es exactamente «InmutalKey · Expediente Clínico Privado»', () => {
+    expect(sitio.titulo).toBe('InmutalKey · Expediente Clínico Privado');
+  });
+});

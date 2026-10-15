@@ -13,6 +13,8 @@ export function estaDefinido<T>(valor: Valor<T>): valor is T {
 
 export interface ConfigSitio {
   readonly nombre: string;
+  /** Título de la portada: es el que muestran los marcadores de Chrome y la vista previa al compartir el enlace. */
+  readonly titulo: string;
   readonly url: string;
   readonly idioma: string;
   readonly descripcion: string;
@@ -63,6 +65,7 @@ export interface ConfigSitio {
 
 export const sitio: ConfigSitio = {
   nombre: 'InmutalKey',
+  titulo: 'InmutalKey · Expediente Clínico Privado',
   url: 'https://inmutalkey.com',
   idioma: 'es-MX',
   descripcion:
