@@ -2,6 +2,7 @@
 import { enlaceWhatsApp } from '../lib/whatsapp';
 import { sitio } from '../site.config';
 import Compartir from './Compartir.astro';
+import Contacto from './Contacto.astro';
 import Icono from './Icono.astro';
 import Logo from './Logo.astro';
 
@@ -59,7 +60,7 @@ const ENLACES = [
         <Icono nombre="cerrar" class="nav-menu-cerrar" />
         <span class="visualmente-oculto">Menú</span>
       </summary>
-      <div class="nav-hoja">
+      <div class="nav-hoja" data-lenis-prevent>
         <nav aria-label="Menú">
           <ul>
             {ENLACES.map((e, i) => (
@@ -80,6 +81,7 @@ const ENLACES = [
           )
         }
         <Compartir variante="enlace" class="nav-hoja-compartir" />
+        <Contacto variante="fila" incluir={['correo', 'instagram']} class="nav-hoja-contacto" />
         <p class="nav-hoja-pie">Sin internet · Diseñado para la NOM-004 · Windows 10 y 11</p>
       </div>
     </details>
@@ -380,6 +382,27 @@ const ENLACES = [
 
   .nav-hoja :global(.nav-hoja-compartir) {
     align-self: center;
+  }
+
+  .nav-hoja :global(.nav-hoja-contacto) {
+    justify-content: center;
+  }
+
+  /* Celulares de pantalla baja: renglones más compactos para que botón, compartir y contacto quepan sin desplazar. */
+  @media (max-height: 820px) {
+    .nav-hoja {
+      gap: 18px;
+      padding-top: 12px;
+    }
+
+    .nav-hoja a[data-seccion] {
+      padding: 11px 0;
+      font-size: clamp(1.5rem, 6.4vw, 1.875rem);
+    }
+
+    .nav-hoja-pie {
+      display: none;
+    }
   }
 
   .nav-hoja-pie {

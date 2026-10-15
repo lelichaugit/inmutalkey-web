@@ -26,6 +26,8 @@ const nav = document.querySelector<HTMLElement>('[data-nav]');
 const arriba = document.querySelector<HTMLElement>('[data-arriba]');
 let ultimoY = window.scrollY;
 let progresoEscrito = '';
+// El botón flotante se retira donde ya hay datos de contacto a la vista (pie y cierre): no tapa texto ni se repite.
+let cercaDeContacto = false;
 
 const motor = iniciarScroll({
   movimiento: !movimientoReducido.matches,
@@ -49,10 +51,24 @@ const motor = iniciarScroll({
       if (nav.dataset['oculta'] !== oculta) nav.dataset['oculta'] = oculta;
       ultimoY = y;
     }
-    const visible = y > alto * 1.5 ? 'si' : 'no';
+    const visible = y > alto * 1.5 && !cercaDeContacto ? 'si' : 'no';
     if (arriba && arriba.dataset['visible'] !== visible) arriba.dataset['visible'] = visible;
   },
 });
+
+const zonasContacto = document.querySelectorAll('footer, [data-sin-flotante]');
+if (arriba && zonasContacto.length > 0 && 'IntersectionObserver' in window) {
+  const visibles = new Set<Element>();
+  const io = new IntersectionObserver((entradas) => {
+    for (const e of entradas) {
+      if (e.isIntersecting) visibles.add(e.target);
+      else visibles.delete(e.target);
+    }
+    cercaDeContacto = visibles.size > 0;
+    motor.pedirCuadro();
+  });
+  zonasContacto.forEach((z) => io.observe(z));
+}
 
 // Desplazamiento suave (Lenis) solo con ratón o trackpad: en iPhone, iPad y Android el scroll nativo ya es suave.
 let suave: Lenis | null = null;

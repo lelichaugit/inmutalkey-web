@@ -6,7 +6,7 @@ import Nav from '../components/Nav.astro';
 import Pie from '../components/Pie.astro';
 import Riel from '../components/Riel.astro';
 import { enlaceWhatsApp } from '../lib/whatsapp';
-import { sitio } from '../site.config';
+import { enlaceInstagram, estaDefinido, sitio } from '../site.config';
 
 interface Props {
   /** Título de la página (sin el sufijo de marca). En la portada se usa tal cual. */
@@ -39,6 +39,8 @@ const prueba = enlaceWhatsApp(sitio.contacto.whatsapp, sitio.contacto.mensajes.p
 const canonica = new URL(Astro.url.pathname.replace(/\.html$/, '').replace(/\/index$/, '/'), sitio.url).href;
 const og = new URL(imagenOg, sitio.url).href;
 
+const instagram = enlaceInstagram();
+
 // Sin precio ni calificaciones: no hay precios definitivos ni reseñas verificadas que lo respalden.
 const jsonLd = {
   '@context': 'https://schema.org',
@@ -50,7 +52,13 @@ const jsonLd = {
   operatingSystem: 'Windows 10, Windows 11',
   inLanguage: sitio.idioma,
   image: new URL('/brand/logo-solido.svg', sitio.url).href,
-  publisher: { '@type': 'Organization', name: sitio.nombre, url: sitio.url },
+  publisher: {
+    '@type': 'Organization',
+    name: sitio.nombre,
+    url: sitio.url,
+    ...(estaDefinido(sitio.contacto.correo) ? { email: sitio.contacto.correo } : {}),
+    ...(instagram ? { sameAs: [instagram] } : {}),
+  },
 };
 ---
 

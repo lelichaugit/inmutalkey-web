@@ -1,0 +1,188 @@
+---
+// Datos de contacto (WhatsApp, correo, Instagram) desde src/site.config.ts. Solo aparece lo que está definido.
+//   lista  · tipo + valor, uno por renglón (pie de página)
+//   fila   · píldoras en línea que se acomodan solas (cierre, menú del celular)
+import { enlaceWhatsApp, numeroVisible } from '../lib/whatsapp';
+import { enlaceInstagram, estaDefinido, sitio } from '../site.config';
+import Icono from './Icono.astro';
+
+interface Props {
+  variante?: 'lista' | 'fila';
+  /** Mensaje prellenado de WhatsApp: distinto por sección para saber de dónde escribió el médico. */
+  mensaje?: string;
+  /** Fondo sobre el que va (cambia los colores). */
+  tono?: 'oscuro' | 'claro';
+  /** Qué medios mostrar (por omisión, todos los definidos). */
+  incluir?: ReadonlyArray<'whatsapp' | 'correo' | 'instagram'>;
+  class?: string;
+}
+
+const {
+  variante = 'lista',
+  mensaje = sitio.contacto.mensajeWhatsApp,
+  tono = 'oscuro',
+  incluir = ['whatsapp', 'correo', 'instagram'],
+  class: clase,
+} = Astro.props;
+const whatsapp = incluir.includes('whatsapp') ? enlaceWhatsApp(sitio.contacto.whatsapp, mensaje) : null;
+const telefono = numeroVisible(sitio.contacto.whatsapp);
+const correo = incluir.includes('correo') && estaDefinido(sitio.contacto.correo) ? sitio.contacto.correo : null;
+const instagram = incluir.includes('instagram') ? enlaceInstagram() : null;
+const usuario = estaDefinido(sitio.redes.instagram) ? sitio.redes.instagram.replace(/^@/, '') : null;
+---
+
+<ul class:list={['contacto', `contacto-${variante}`, `contacto-${tono}`, clase]}>
+  {
+    whatsapp && telefono && (
+      <li>
+        <a href={whatsapp} target="_blank" rel="noopener noreferrer">
+          <Icono nombre="chat" />
+          <span class="contacto-texto">
+            <span class="contacto-tipo">WhatsApp</span>
+            <span class="contacto-valor sin-corte">{telefono}</span>
+          </span>
+        </a>
+      </li>
+    )
+  }
+  {
+    correo && (
+      <li>
+        <a href={`mailto:${correo}`}>
+          <Icono nombre="correo" />
+          <span class="contacto-texto">
+            <span class="contacto-tipo">Correo</span>
+            <span class="contacto-valor">{correo}</span>
+          </span>
+        </a>
+      </li>
+    )
+  }
+  {
+    instagram && usuario && (
+      <li>
+        <a href={instagram} target="_blank" rel="noopener noreferrer me">
+          <Icono nombre="instagram" />
+          <span class="contacto-texto">
+            <span class="contacto-tipo">Instagram</span>
+            <span class="contacto-valor">@{usuario}</span>
+          </span>
+        </a>
+      </li>
+    )
+  }
+</ul>
+
+<style>
+  .contacto {
+    --c-texto: var(--texto);
+    --c-tenue: var(--texto-tenue);
+    --c-linea: var(--linea-oscura-fuerte);
+    --c-fondo: rgb(255 255 255 / 0.04);
+    --c-hover: rgb(255 255 255 / 0.08);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .contacto-claro {
+    --c-texto: var(--tinta);
+    --c-tenue: var(--tinta-tenue);
+    --c-linea: var(--linea-clara);
+    --c-fondo: rgb(13 27 53 / 0.03);
+    --c-hover: rgb(13 27 53 / 0.06);
+  }
+
+  .contacto a {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 44px;
+    color: var(--c-texto);
+    text-decoration: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .contacto a :global(.icono) {
+    flex: none;
+    width: 22px;
+    height: 22px;
+    color: var(--azul-vivo);
+  }
+
+  .contacto-claro a :global(.icono) {
+    color: var(--azul);
+  }
+
+  .contacto-texto {
+    display: grid;
+    min-width: 0;
+  }
+
+  .contacto-tipo {
+    color: var(--c-tenue);
+    font-size: 0.8125rem;
+    letter-spacing: 0.02em;
+  }
+
+  .contacto-valor {
+    overflow-wrap: anywhere;
+  }
+
+  /* ── Lista (pie) ── */
+
+  .contacto-lista {
+    display: grid;
+    gap: 6px;
+  }
+
+  .contacto-lista a:hover .contacto-valor,
+  .contacto-lista a:focus-visible .contacto-valor {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  /* ── Fila (píldoras) ── */
+
+  .contacto-fila {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .contacto-fila a {
+    gap: 10px;
+    padding: 8px 18px 8px 14px;
+    border: 1px solid var(--c-linea);
+    border-radius: 999px;
+    background: var(--c-fondo);
+    transition:
+      background 0.25s var(--ease),
+      border-color 0.25s var(--ease),
+      transform 0.25s var(--ease);
+  }
+
+  .contacto-fila .contacto-texto {
+    display: block;
+  }
+
+  .contacto-fila .contacto-tipo {
+    display: none;
+  }
+
+  .contacto-fila a :global(.icono) {
+    width: 20px;
+    height: 20px;
+  }
+
+  @media (hover: hover) {
+    .contacto-fila a:hover {
+      background: var(--c-hover);
+      border-color: var(--azul-vivo);
+    }
+  }
+
+  .contacto-fila a:active {
+    transform: scale(0.97);
+  }
+</style>

@@ -27,6 +27,10 @@ export interface ConfigSitio {
     };
     readonly correo: Valor<string>;
   };
+  readonly redes: {
+    /** Usuario de Instagram, sin @. */
+    readonly instagram: Valor<string>;
+  };
   /** Licencia digital. `publico` = precio posterior, para mostrar el ahorro. Con o sin IVA: indícalo en `notaPrecios`. */
   readonly precios: {
     readonly moneda: 'MXN';
@@ -73,7 +77,10 @@ export const sitio: ConfigSitio = {
       prueba: 'Hola, vi InmutalKey en inmutalkey.com y quiero probarlo 30 días en mi consultorio.',
       fundadores: 'Hola, vi InmutalKey en inmutalkey.com y me interesa el programa Fundadores.',
     },
-    correo: TODO_DEFINIR,
+    correo: 'contacto@inmutalkey.com',
+  },
+  redes: {
+    instagram: 'inmutalkey',
   },
   precios: {
     moneda: 'MXN',
@@ -104,6 +111,13 @@ export const sitio: ConfigSitio = {
     revisadoPorAbogado: false,
   },
 };
+
+/** Perfil de Instagram (o `null` si aún no está definido). */
+export function enlaceInstagram(usuario: Valor<string> = sitio.redes.instagram): string | null {
+  if (!estaDefinido(usuario)) return null;
+  const limpio = usuario.trim().replace(/^@/, '');
+  return /^[A-Za-z0-9._]{1,30}$/.test(limpio) ? `https://www.instagram.com/${limpio}/` : null;
+}
 
 /** Rutas (`precios.fundadores`, …) de los valores aún sin definir. */
 export function pendientes(valor: unknown = sitio, prefijo = ''): string[] {
