@@ -1,6 +1,13 @@
 {
  "isotipo": {
-  "disponible": false
+  "disponible": true,
+  "ancho": 290,
+  "alto": 718,
+  "anchos": [
+   145,
+   258,
+   290
+  ]
  },
  "avatar": {
   "disponible": false

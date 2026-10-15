@@ -1,6 +1,7 @@
 ---
 import { enlaceWhatsApp } from '../lib/whatsapp';
 import { sitio } from '../site.config';
+import Compartir from './Compartir.astro';
 import Icono from './Icono.astro';
 import Logo from './Logo.astro';
 
@@ -28,12 +29,15 @@ const ENLACES = [
   <div class="contenedor nav-fila">
     <a class="nav-marca" href="/" aria-label="InmutalKey, ir al inicio">
       <Logo titulo={null} class="nav-isotipo" />
-      <span class="nav-nombre" aria-hidden="true">InmutalKey</span>
+      <span class="nav-titulos" aria-hidden="true">
+        <span class="nav-nombre">InmutalKey</span>
+        <span class="nav-capitulo" data-nav-capitulo></span>
+      </span>
     </a>
 
     <nav class="nav-enlaces" aria-label="Principal">
       <ul>
-        {ENLACES.map((e) => <li><a href={`/#${e.id}`} data-seccion={e.id}>{e.texto}</a></li>)}
+        {ENLACES.map((e) => <li><a href={`/#${e.id}`} data-seccion={e.id} data-etiqueta={e.texto}>{e.texto}</a></li>)}
       </ul>
       <span class="nav-indicador" data-nav-indicador aria-hidden="true"></span>
     </nav>
@@ -75,6 +79,7 @@ const ENLACES = [
             </a>
           )
         }
+        <Compartir variante="enlace" class="nav-hoja-compartir" />
         <p class="nav-hoja-pie">Sin internet · Diseñado para la NOM-004 · Windows 10 y 11</p>
       </div>
     </details>
@@ -144,11 +149,53 @@ const ENLACES = [
     border-radius: 8px;
   }
 
-  .nav-nombre {
+  /* Marca y título de sección comparten lugar: en móvil, dentro de una sección, se ve dónde estás. */
+  .nav-titulos {
+    display: grid;
+    align-items: center;
+  }
+
+  .nav-nombre,
+  .nav-capitulo {
+    grid-area: 1 / 1;
     font-family: var(--fuente-titulo);
     font-size: 1.3125rem;
     font-weight: 600;
     letter-spacing: -0.015em;
+    white-space: nowrap;
+    transition:
+      opacity 0.35s var(--ease),
+      transform 0.45s var(--ease);
+  }
+
+  .nav-capitulo {
+    color: var(--texto);
+    font-size: 1.125rem;
+    opacity: 0;
+    transform: translateY(60%);
+  }
+
+  @media (max-width: 1079px) {
+    :global(.js) .nav[data-capitulo='si'] .nav-nombre {
+      opacity: 0;
+      transform: translateY(-60%);
+    }
+
+    :global(.js) .nav[data-capitulo='si'] .nav-capitulo {
+      opacity: 1;
+      transform: none;
+    }
+
+    :global(.js) .nav-capitulo:global(.es-nuevo) {
+      animation: capitulo-entra 0.45s var(--ease);
+    }
+  }
+
+  @keyframes capitulo-entra {
+    from {
+      opacity: 0;
+      transform: translateY(60%);
+    }
   }
 
   .nav-marca :global(.nav-isotipo) {
@@ -331,6 +378,10 @@ const ENLACES = [
     align-self: stretch;
   }
 
+  .nav-hoja :global(.nav-hoja-compartir) {
+    align-self: center;
+  }
+
   .nav-hoja-pie {
     margin-top: auto;
     color: var(--texto-tenue);
@@ -346,6 +397,9 @@ const ENLACES = [
   @media (max-width: 380px) {
     .nav-nombre {
       font-size: 1.125rem;
+    }
+    .nav-capitulo {
+      font-size: 1rem;
     }
     .nav-cta {
       padding-inline: 0.9em;

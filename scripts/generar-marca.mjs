@@ -13,7 +13,7 @@
 // se funda sin borde con cualquier fondo oscuro del sitio (y con la luz azul de la tarjeta).
 
 import { existsSync } from 'node:fs';
-import { mkdir, readdir, readFile, writeFile } from 'node:fs/promises';
+import { mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 
 import opentype from 'opentype.js';
@@ -25,7 +25,8 @@ const AZUL_MARINO = '#0d1b35';
 const MEDIANOCHE = '#060b16';
 const TEXTO = '#eef3f9';
 const TEXTO_TENUE = '#a9b6c8';
-const ANCHOS_ISOTIPO = [480, 800, 1200];
+// El render se usa por ALTO (la llave es vertical): versiones a estos altos, o al alto real si es menor.
+const ALTOS_ISOTIPO = [360, 640, 960];
 
 const logo = JSON.parse(await readFile(raiz('src/data/logo.json'), 'utf8'));
 const [, , ANCHO_LOGO, ALTO_LOGO] = logo.viewBox.split(' ').map(Number);
@@ -138,6 +139,17 @@ async function renderLimpio(ruta) {
   return sharp(ruta).removeAlpha().toColourspace('srgb').linear(a, -negro * a);
 }
 
+/**
+ * Render limpio y RECORTADO a la llave (con un 4 % de aire): el original es un cuadrado con mucho negro alrededor y,
+ * sin recortar, la llave se vería diminuta al darle un alto en la página. Devuelve un PNG en memoria.
+ */
+async function renderRecortado(ruta) {
+  const limpio = await (await renderLimpio(ruta)).png().toBuffer();
+  const { data, info } = await sharp(limpio).trim({ background: '#000000', threshold: 24 }).png().toBuffer({ resolveWithObject: true });
+  const aire = Math.round(info.height * 0.04);
+  return sharp(data).extend({ top: aire, bottom: aire, left: aire, right: aire, background: '#000000' }).png().toBuffer();
+}
+
 async function main() {
   await mkdir(raiz('public/brand'), { recursive: true });
 
@@ -162,25 +174,31 @@ async function main() {
   // ── Render 3D (logo principal del hero) ──
   const render = await buscarRender();
   let datosIsotipo = { disponible: false };
+  for (const viejo of (await readdir(raiz('public/brand'))).filter((n) => /^isotipo-3d-\d+\.(avif|webp)$/.test(n))) {
+    await rm(raiz(`public/brand/${viejo}`));
+  }
   if (render) {
-    const meta = await sharp(render).metadata();
+    const recorte = await renderRecortado(render);
+    const meta = await sharp(recorte).metadata();
     const anchoOriginal = meta.width ?? 0;
     const altoOriginal = meta.height ?? 0;
-    const anchos = ANCHOS_ISOTIPO.filter((w) => w <= anchoOriginal);
-    if (anchos.length === 0) anchos.push(anchoOriginal);
-    for (const w of anchos) {
-      const base = (await renderLimpio(render)).resize({ width: w });
-      await base.clone().avif({ quality: 58, effort: 7 }).toFile(raiz(`public/brand/isotipo-3d-${w}.avif`));
-      await base.clone().webp({ quality: 82, effort: 6 }).toFile(raiz(`public/brand/isotipo-3d-${w}.webp`));
+    const altos = [...new Set([...ALTOS_ISOTIPO.filter((h) => h < altoOriginal), altoOriginal])].sort((a, b) => a - b);
+    const anchos = [];
+    for (const h of altos) {
+      const w = Math.round((h * anchoOriginal) / altoOriginal);
+      anchos.push(w);
+      const base = sharp(recorte).resize({ width: w, height: h });
+      await base.clone().avif({ quality: 60, effort: 7 }).toFile(raiz(`public/brand/isotipo-3d-${w}.avif`));
+      await base.clone().webp({ quality: 84, effort: 6 }).toFile(raiz(`public/brand/isotipo-3d-${w}.webp`));
     }
-    // Máscara alfa (blanco + alfa = luminancia) para recortar el brillo del hero a la silueta del render.
-    const gris = await (await renderLimpio(render)).resize({ width: 600 }).greyscale().raw().toBuffer({ resolveWithObject: true });
+    // Máscara alfa (blanco + alfa = luminancia) con la misma geometría, para recortar el brillo a la silueta.
+    const gris = await sharp(recorte).resize({ height: Math.min(640, altoOriginal) }).greyscale().raw().toBuffer({ resolveWithObject: true });
     await sharp({ create: { width: gris.info.width, height: gris.info.height, channels: 3, background: '#ffffff' } })
       .joinChannel(gris.data, { raw: { width: gris.info.width, height: gris.info.height, channels: 1 } })
       .webp({ quality: 80, alphaQuality: 80 })
       .toFile(raiz('public/brand/isotipo-3d-mascara.webp'));
     datosIsotipo = { disponible: true, ancho: anchoOriginal, alto: altoOriginal, anchos };
-    console.log(`isotipo 3D: ${anchos.join(', ')} px (AVIF + WebP)`);
+    console.log(`isotipo 3D recortado a ${anchoOriginal}×${altoOriginal}: anchos ${anchos.join(', ')} px (AVIF + WebP)`);
   } else {
     console.warn('isotipo 3D: falta capturas/logomainscroll.* (o public/brand/originales/isotipo-3d.*) — el hero usará el isotipo plano.');
   }
@@ -231,7 +249,7 @@ ${isotipoPlano}
   let lienzo = sharp(Buffer.from(og)).resize(W, H);
   if (render) {
     const alto = zonaIsotipo.alto;
-    const capa = await (await renderLimpio(render)).resize({ height: alto, width: zonaIsotipo.ancho, fit: 'inside' }).png().toBuffer();
+    const capa = await sharp(await renderRecortado(render)).resize({ height: alto, width: zonaIsotipo.ancho, fit: 'inside' }).png().toBuffer();
     const { width = 0 } = await sharp(capa).metadata();
     lienzo = sharp(await lienzo.png().toBuffer()).composite([
       { input: capa, left: Math.round(zonaIsotipo.x + (zonaIsotipo.ancho - width) / 2), top: zonaIsotipo.y, blend: 'screen' },

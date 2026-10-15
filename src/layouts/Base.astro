@@ -4,6 +4,7 @@ import '../styles/global.css';
 import Icono from '../components/Icono.astro';
 import Nav from '../components/Nav.astro';
 import Pie from '../components/Pie.astro';
+import Riel from '../components/Riel.astro';
 import { enlaceWhatsApp } from '../lib/whatsapp';
 import { sitio } from '../site.config';
 
@@ -19,6 +20,8 @@ interface Props {
   logoDiferido?: boolean;
   /** Portada: título sin el sufijo "· InmutalKey". */
   tituloCompleto?: boolean;
+  /** Portada: riel lateral de secciones (escritorio ancho) y título de sección en la barra del celular. */
+  riel?: boolean;
 }
 
 const {
@@ -28,6 +31,7 @@ const {
   imagenOg = '/og.png',
   logoDiferido = false,
   tituloCompleto = false,
+  riel = false,
 } = Astro.props;
 
 const tituloFinal = tituloCompleto ? titulo : `${titulo} · ${sitio.nombre}`;
@@ -80,8 +84,11 @@ const jsonLd = {
     <meta property="og:image" content={og} />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
+    <meta property="og:image:type" content="image/png" />
     <meta property="og:image:alt" content="InmutalKey: expediente clínico con notas selladas" />
     <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:image" content={og} />
+    <meta name="apple-mobile-web-app-title" content={sitio.nombre} />
 
     <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
     <slot name="head" />
@@ -90,6 +97,7 @@ const jsonLd = {
     <a class="saltar" href="#contenido">Saltar al contenido</a>
     <div class="barra-progreso" data-barra-progreso aria-hidden="true"></div>
     <Nav logoDiferido={logoDiferido} />
+    {riel && <Riel />}
     <main id="contenido" tabindex="-1">
       <slot />
     </main>

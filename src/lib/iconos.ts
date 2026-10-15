@@ -43,6 +43,7 @@ export const ICONOS = {
   microfono: '<rect x="9" y="3.25" width="6" height="11" rx="3"/><path d="M5.75 11.25a6.25 6.25 0 0 0 12.5 0M12 17.5v3.25"/>',
   usuario: '<circle cx="12" cy="8.25" r="3.75"/><path d="M4.75 20.25a7.25 7.25 0 0 1 14.5 0"/>',
   editar: '<path d="M4.25 19.75h3.5L18.6 8.9a2.25 2.25 0 0 0-3.2-3.2L4.25 16.6v3.15Z"/>',
+  compartir: '<circle cx="17.5" cy="5.75" r="2.5"/><circle cx="6.5" cy="12" r="2.5"/><circle cx="17.5" cy="18.25" r="2.5"/><path d="m8.7 10.75 6.6-3.75M8.7 13.25l6.6 3.75"/>',
   arriba: '<path d="m6 14.5 6-6 6 6"/>',
   alerta: '<path d="M10.3 4.3 2.9 17.1a2 2 0 0 0 1.7 3h14.8a2 2 0 0 0 1.7-3L13.7 4.3a2 2 0 0 0-3.4 0ZM12 9.5v4M12 16.75h.01"/>',
 } as const;
