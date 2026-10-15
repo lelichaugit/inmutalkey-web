@@ -64,7 +64,7 @@ const CHAT: readonly Mensaje[] = [
 ];
 ---
 
-<section class="seccion fondo-luz fondo-cuadricula fundadores" id="fundadores" aria-labelledby="fundadores-titulo" data-fundadores>
+<section class="seccion fondo-luz fondo-cuadricula fundadores" id="fundadores" aria-labelledby="fundadores-titulo" data-fundadores data-sin-flotante>
   <div class="fundadores-aura" data-parallax="medio" aria-hidden="true"></div>
 
   <div class="contenedor">
@@ -89,7 +89,7 @@ const CHAT: readonly Mensaje[] = [
               <header class="plan-cabecera">
                 <div class="plan-credencial">
                   <h3 class="plan-etiqueta" id="plan-titulo">Licencia de fundador</h3>
-                  <p class="plan-mono">Ed25519 · sin internet</p>
+                  <p class="plan-mono">Se activa sin internet</p>
                 </div>
                 <span class="plan-llave" aria-hidden="true">
                   <Isotipo3D sizes="48px" brillo />
@@ -102,7 +102,7 @@ const CHAT: readonly Mensaje[] = [
                         {publico && <s class="tenue">{publico}</s>}
                       </>
                     ) : (
-                      <strong class="plan-precio-consulta">Precio exclusivo por WhatsApp</strong>
+                      <strong class="plan-precio-consulta">Precio de fundador: pregúntalo por WhatsApp</strong>
                     )
                   }
                 </p>
@@ -158,7 +158,7 @@ const CHAT: readonly Mensaje[] = [
           qr && (
             <div class="qr" data-animar="subir">
               <span class="qr-marco">
-                <span class="qr-imagen" set:html={qr} />
+                <span class="qr-imagen" aria-hidden="true" set:html={qr} />
               </span>
               <span class="qr-texto">
                 <span class="plan-mono">QR · WhatsApp</span>
