@@ -14,6 +14,7 @@
     "check": "astro check",
     "test": "vitest run",
     "marca": "node scripts/generar-marca.mjs",
+    "vectorizar:llave": "python3 scripts/vectorizar-llave.py",
     "vectorizar": "python3 scripts/vectorizar-logo.py",
     "capturas": "node scripts/procesar-capturas.mjs",
     "activos": "npm run marca && npm run capturas",
@@ -21,6 +22,7 @@
   },
   "dependencies": {
     "astro": "5.18.2",
+    "lenis": "1.3.26",
     "qrcode": "1.5.4",
     "zod": "3.25.76"
   },

@@ -5,12 +5,13 @@
 // Salida en public/:
 //   favicon.svg · favicon.ico (PNG dentro de ICO, 16 y 32) · apple-touch-icon.png (180)
 //   icon-192.png · icon-512.png · icon-maskable-512.png · og.png (1200×630, texto convertido a trazos)
-//   brand/isotipo-3d-{480,800,1200}.{avif,webp}  ← render 3D: public/brand/originales/isotipo-3d.* o capturas/logomainscroll*
+//   brand/llave-3d-{152,304,456,608}.{avif,webp} + brand/llave-silueta.webp
+//                                                ← llave 3D con alfa: capturas/logomain-3d.png + logomain-silueta.png
 //   brand/avatar-chat-{96,192}.webp              ← avatar del chat simulado: capturas/*logowsp*
 // y src/data/marca.json (qué piezas existen y sus dimensiones; el sitio usa respaldos planos si faltan).
 //
-// El render 3D es blanco sobre negro: se "aplasta" el negro a 0 para que con `mix-blend-mode: screen`
-// se funda sin borde con cualquier fondo oscuro del sitio (y con la luz azul de la tarjeta).
+// La llave 3D sale con transparencia real (máscara de silueta), no con `mix-blend-mode`: la mezcla se rompe en cuanto
+// un ancestro tiene transform/opacity (el negro aparecía como un recuadro) y Safari la trata distinto.
 
 import { existsSync } from 'node:fs';
 import { mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promises';
@@ -25,8 +26,9 @@ const AZUL_MARINO = '#0d1b35';
 const MEDIANOCHE = '#060b16';
 const TEXTO = '#eef3f9';
 const TEXTO_TENUE = '#a9b6c8';
-// El render se usa por ALTO (la llave es vertical): versiones a estos altos, o al alto real si es menor.
-const ALTOS_ISOTIPO = [360, 640, 960];
+// La llave se usa por ALTO (es vertical). Mide 724 px en el marco original; 1086 y 1448 son ampliaciones Lanczos para
+// pantallas de alta densidad (si Alan sube un render más grande, basta con cambiar MARCO_LLAVE).
+const ALTOS_LLAVE = [362, 724, 1086, 1448];
 
 const logo = JSON.parse(await readFile(raiz('src/data/logo.json'), 'utf8'));
 const [, , ANCHO_LOGO, ALTO_LOGO] = logo.viewBox.split(' ').map(Number);
@@ -112,15 +114,22 @@ async function enCapturas(patron) {
   return nombre ? `${dir}/${nombre}` : null;
 }
 
-async function buscarRender() {
-  for (const ext of ['png', 'jpg', 'jpeg', 'webp']) {
-    const ruta = raiz(`public/brand/originales/isotipo-3d.${ext}`);
-    if (existsSync(ruta)) return ruta;
-  }
-  return enCapturas(/logomainscroll/i);
+/**
+ * Marco de la llave dentro del lienzo de 1024 px de `capturas/logomain-*.png` (los tres salen de
+ * capturas/cleanmainweblogo.svg y están alineados píxel a píxel). Igual que MARCO en scripts/vectorizar-llave.py:
+ * así el contorno vectorial y el render quedan superpuestos exactamente.
+ */
+const MARCO_LLAVE = { x: 360, y: 150, ancho: 304, alto: 724 };
+
+/** Primer archivo de `capturas/` con ese nombre exacto (sin importar mayúsculas). */
+async function archivoEnCapturas(nombre) {
+  const dir = raiz('capturas');
+  if (!existsSync(dir)) return null;
+  const real = (await readdir(dir)).find((n) => n.toLowerCase() === nombre);
+  return real ? `${dir}/${real}` : null;
 }
 
-/** Negro del fondo del render: mediana de luminancia en las cuatro esquinas. */
+/** Negro del fondo del render: percentil 90 de luminancia en las cuatro esquinas. */
 async function nivelDeNegro(ruta) {
   const { data, info } = await sharp(ruta).removeAlpha().greyscale().raw().toBuffer({ resolveWithObject: true });
   const m = Math.max(8, Math.round(Math.min(info.width, info.height) * 0.04));
@@ -132,22 +141,58 @@ async function nivelDeNegro(ruta) {
   return muestras[Math.floor(muestras.length * 0.9)] ?? 0;
 }
 
-/** Render con el negro llevado a 0 (para `mix-blend-mode: screen`). */
-async function renderLimpio(ruta) {
-  const negro = Math.min(await nivelDeNegro(ruta) + 4, 60);
-  const a = 255 / (255 - negro);
-  return sharp(ruta).removeAlpha().toColourspace('srgb').linear(a, -negro * a);
-}
-
 /**
- * Render limpio y RECORTADO a la llave (con un 4 % de aire): el original es un cuadrado con mucho negro alrededor y,
- * sin recortar, la llave se vería diminuta al darle un alto en la página. Devuelve un PNG en memoria.
+ * La llave 3D como PNG RGBA con transparencia real, recortada a MARCO_LLAVE.
+ *
+ * Fuente preferida: `logomain-3d.png` (render sobre negro) + `logomain-silueta.png` (máscara de la silueta, con bordes
+ * suaves). El render se compuso sobre negro, así que en el borde su color viene oscurecido en la misma proporción que
+ * la cobertura: se divide entre el alfa (des-premultiplicar) para que el filo no deje un halo oscuro sobre fondos claros.
+ *
+ * Respaldo: solo `logomainscroll.*` (render sobre negro, sin máscara) → alfa = brillo tras llevar el negro a 0.
  */
-async function renderRecortado(ruta) {
-  const limpio = await (await renderLimpio(ruta)).png().toBuffer();
-  const { data, info } = await sharp(limpio).trim({ background: '#000000', threshold: 24 }).png().toBuffer({ resolveWithObject: true });
-  const aire = Math.round(info.height * 0.04);
-  return sharp(data).extend({ top: aire, bottom: aire, left: aire, right: aire, background: '#000000' }).png().toBuffer();
+async function llaveConAlfa() {
+  const { x, y, ancho, alto } = MARCO_LLAVE;
+  const recorte = { left: x, top: y, width: ancho, height: alto };
+  const render = await archivoEnCapturas('logomain-3d.png');
+  const silueta = await archivoEnCapturas('logomain-silueta.png');
+  const respaldo = render ? null : await enCapturas(/logomainscroll/i);
+  const fuenteColor = render ?? respaldo;
+  if (!fuenteColor) return null;
+
+  const meta = await sharp(fuenteColor).metadata();
+  if (meta.width !== 1024 || meta.height !== 1024) {
+    throw new Error(`generar-marca: ${fuenteColor} debe medir 1024×1024 (MARCO_LLAVE está en esa escala).`);
+  }
+
+  let color = sharp(fuenteColor).removeAlpha().toColourspace('srgb');
+  if (!silueta) {
+    const negro = Math.min((await nivelDeNegro(fuenteColor)) + 4, 60);
+    const k = 255 / (255 - negro);
+    color = color.linear(k, -negro * k);
+  }
+  const rgb = await color.extract(recorte).raw().toBuffer();
+  const alfa = silueta
+    ? await sharp(silueta).removeAlpha().extract(recorte).toColourspace('b-w').raw().toBuffer()
+    : null;
+
+  const n = ancho * alto;
+  const rgba = Buffer.alloc(n * 4);
+  for (let i = 0; i < n; i++) {
+    const r = rgb[i * 3] ?? 0;
+    const g = rgb[i * 3 + 1] ?? 0;
+    const b = rgb[i * 3 + 2] ?? 0;
+    const a = alfa ? (alfa[i] ?? 0) : Math.max(r, g, b);
+    // Des-premultiplicar con piso: en el filo más fino (alfa muy bajo) no se inventa brillo.
+    const k = a > 0 ? 255 / Math.max(a, 96) : 0;
+    rgba[i * 4] = Math.min(255, Math.round(r * k));
+    rgba[i * 4 + 1] = Math.min(255, Math.round(g * k));
+    rgba[i * 4 + 2] = Math.min(255, Math.round(b * k));
+    rgba[i * 4 + 3] = a;
+  }
+  return {
+    png: await sharp(rgba, { raw: { width: ancho, height: alto, channels: 4 } }).png().toBuffer(),
+    fuente: silueta ? 'logomain-3d.png + logomain-silueta.png' : `${respaldo} (sin máscara: alfa por brillo)`,
+  };
 }
 
 async function main() {
@@ -171,36 +216,35 @@ async function main() {
   await png(iconoCuadrado({ lado: 512, proporcion: 0.78, radio: 108 }), 512, 'public/icon-512.png');
   await png(iconoCuadrado({ lado: 512, proporcion: 0.6 }), 512, 'public/icon-maskable-512.png');
 
-  // ── Render 3D (logo principal del hero) ──
-  const render = await buscarRender();
-  let datosIsotipo = { disponible: false };
-  for (const viejo of (await readdir(raiz('public/brand'))).filter((n) => /^isotipo-3d-\d+\.(avif|webp)$/.test(n))) {
+  // ── Llave 3D (logo principal) con transparencia real ──
+  const llave = await llaveConAlfa();
+  let datosLlave = { disponible: false };
+  for (const viejo of (await readdir(raiz('public/brand'))).filter((n) => /^(isotipo-3d-|llave-3d-|llave-silueta)/.test(n))) {
     await rm(raiz(`public/brand/${viejo}`));
   }
-  if (render) {
-    const recorte = await renderRecortado(render);
-    const meta = await sharp(recorte).metadata();
-    const anchoOriginal = meta.width ?? 0;
-    const altoOriginal = meta.height ?? 0;
-    const altos = [...new Set([...ALTOS_ISOTIPO.filter((h) => h < altoOriginal), altoOriginal])].sort((a, b) => a - b);
+  if (llave) {
+    const { ancho, alto } = MARCO_LLAVE;
     const anchos = [];
-    for (const h of altos) {
-      const w = Math.round((h * anchoOriginal) / altoOriginal);
+    for (const h of ALTOS_LLAVE) {
+      const w = Math.round((h * ancho) / alto);
       anchos.push(w);
-      const base = sharp(recorte).resize({ width: w, height: h });
-      await base.clone().avif({ quality: 60, effort: 7 }).toFile(raiz(`public/brand/isotipo-3d-${w}.avif`));
-      await base.clone().webp({ quality: 84, effort: 6 }).toFile(raiz(`public/brand/isotipo-3d-${w}.webp`));
+      let base = sharp(llave.png).resize({ width: w, height: h, kernel: 'lanczos3' });
+      // Las versiones ampliadas (más altas que el original) reciben un enfoque leve para no verse lavadas.
+      if (h > alto) base = base.sharpen({ sigma: 0.6 });
+      const lienzo = await base.png().toBuffer();
+      await sharp(lienzo).avif({ quality: 62, effort: 7 }).toFile(raiz(`public/brand/llave-3d-${w}.avif`));
+      await sharp(lienzo).webp({ quality: 86, alphaQuality: 90, effort: 6 }).toFile(raiz(`public/brand/llave-3d-${w}.webp`));
     }
-    // Máscara alfa (blanco + alfa = luminancia) con la misma geometría, para recortar el brillo a la silueta.
-    const gris = await sharp(recorte).resize({ height: Math.min(640, altoOriginal) }).greyscale().raw().toBuffer({ resolveWithObject: true });
-    await sharp({ create: { width: gris.info.width, height: gris.info.height, channels: 3, background: '#ffffff' } })
-      .joinChannel(gris.data, { raw: { width: gris.info.width, height: gris.info.height, channels: 1 } })
-      .webp({ quality: 80, alphaQuality: 80 })
-      .toFile(raiz('public/brand/isotipo-3d-mascara.webp'));
-    datosIsotipo = { disponible: true, ancho: anchoOriginal, alto: altoOriginal, anchos };
-    console.log(`isotipo 3D recortado a ${anchoOriginal}×${altoOriginal}: anchos ${anchos.join(', ')} px (AVIF + WebP)`);
+    // Silueta (blanco + alfa) para recortar brillos y escáner a la forma exacta de la llave.
+    const { data: alfa, info } = await sharp(llave.png).extractChannel(3).raw().toBuffer({ resolveWithObject: true });
+    await sharp({ create: { width: info.width, height: info.height, channels: 3, background: '#ffffff' } })
+      .joinChannel(alfa, { raw: { width: info.width, height: info.height, channels: 1 } })
+      .webp({ quality: 80, alphaQuality: 85 })
+      .toFile(raiz('public/brand/llave-silueta.webp'));
+    datosLlave = { disponible: true, ancho, alto, anchos };
+    console.log(`llave 3D (${llave.fuente}): ${ancho}×${alto}, anchos ${anchos.join(', ')} px (AVIF + WebP con alfa)`);
   } else {
-    console.warn('isotipo 3D: falta capturas/logomainscroll.* (o public/brand/originales/isotipo-3d.*) — el hero usará el isotipo plano.');
+    console.warn('llave 3D: faltan capturas/logomain-3d.png + logomain-silueta.png (o logomainscroll.*) — se usará el isotipo plano.');
   }
 
   // ── Avatar del chat simulado ──
@@ -213,7 +257,7 @@ async function main() {
     datosAvatar = { disponible: true };
     console.log('avatar del chat: 96 y 192 px');
   }
-  await writeFile(raiz('src/data/marca.json'), JSON.stringify({ isotipo: datosIsotipo, avatar: datosAvatar }, null, 1) + '\n');
+  await writeFile(raiz('src/data/marca.json'), JSON.stringify({ llave: datosLlave, avatar: datosAvatar }, null, 1) + '\n');
 
   // ── Imagen para redes (OG) ──
   const outfit = await fuente('scripts/assets/outfit-latin-600-normal.woff');
@@ -226,7 +270,7 @@ async function main() {
   for (let y = 0; y <= H; y += 56) lineasCuadricula.push(`<path d="M0 ${y}H${W}"/>`);
 
   const zonaIsotipo = { x: 860, y: 40, ancho: 300, alto: 550 };
-  const isotipoPlano = render
+  const isotipoPlano = llave
     ? ''
     : isotipo({ x: zonaIsotipo.x + (zonaIsotipo.ancho - (480 * ANCHO_LOGO) / ALTO_LOGO) / 2, y: 75, alto: 480 });
 
@@ -247,12 +291,12 @@ ${isotipoPlano}
 </svg>`;
 
   let lienzo = sharp(Buffer.from(og)).resize(W, H);
-  if (render) {
+  if (llave) {
     const alto = zonaIsotipo.alto;
-    const capa = await sharp(await renderRecortado(render)).resize({ height: alto, width: zonaIsotipo.ancho, fit: 'inside' }).png().toBuffer();
+    const capa = await sharp(llave.png).resize({ height: alto, width: zonaIsotipo.ancho, fit: 'inside', kernel: 'lanczos3' }).png().toBuffer();
     const { width = 0 } = await sharp(capa).metadata();
     lienzo = sharp(await lienzo.png().toBuffer()).composite([
-      { input: capa, left: Math.round(zonaIsotipo.x + (zonaIsotipo.ancho - width) / 2), top: zonaIsotipo.y, blend: 'screen' },
+      { input: capa, left: Math.round(zonaIsotipo.x + (zonaIsotipo.ancho - width) / 2), top: zonaIsotipo.y },
     ]);
   }
   await lienzo.png({ compressionLevel: 9, palette: false }).toFile(raiz('public/og.png'));

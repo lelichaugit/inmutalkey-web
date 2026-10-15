@@ -1,12 +1,13 @@
 {
- "isotipo": {
+ "llave": {
   "disponible": true,
-  "ancho": 290,
-  "alto": 718,
+  "ancho": 304,
+  "alto": 724,
   "anchos": [
-   145,
-   258,
-   290
+   152,
+   304,
+   456,
+   608
   ]
  },
  "avatar": {

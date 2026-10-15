@@ -1,88 +1,67 @@
 // Módulo base de todas las páginas. Todo es mejora progresiva: sin este script el sitio se lee completo.
-//  · `.js` en <html> (activa las animaciones y la barra de progreso)
-//  · barra de progreso de lectura
-//  · `--p` y `--salida` (0→1) en `[data-progreso-scroll]` y `[data-parallax]`: animaciones ligadas al scroll en CSS
+//  · `.js` en <html> (activa los revelados) y `.movimiento` si el sistema no pide reducir el movimiento (activa las
+//    escenas fijadas, el parallax y el texto que se ilumina)
+//  · desplazamiento suave con Lenis en escritorio (rueda y trackpad); en pantallas táctiles, el scroll nativo
+//  · motor de scroll (scroll.ts): escenas `[data-escena]`, `[data-progreso-scroll]`, `[data-parallax]`,
+//    `[data-texto-luz]` y la barra de progreso de lectura, en una sola pasada por cuadro
 //  · revelado al entrar en vista: `.revelar`, `[data-animar]` (titulares palabra por palabra), `[data-escalonar]`
 //    y contadores `[data-contar]` — API en docs/ANIMACIONES.md
 //  · navegación: fondo al hacer scroll, isotipo que se "acomoda", sección activa (barra, riel y título en móvil),
 //    foco accesible al saltar a una sección y botón de compartir
 //  · carga diferida de los módulos de cada sección (escenas, simulador, signos, chats)
 
+import type Lenis from 'lenis';
+import { iniciarScroll } from './scroll';
+
 const raiz = document.documentElement;
 raiz.classList.add('js');
 
 const movimientoReducido = window.matchMedia('(prefers-reduced-motion: reduce)');
+if (!movimientoReducido.matches) raiz.classList.add('movimiento');
 
-// ───────────── Scroll: barra de progreso y progreso por elemento ─────────────
+// ───────────── Scroll ─────────────
 
 const barra = document.querySelector<HTMLElement>('[data-barra-progreso]');
 const nav = document.querySelector<HTMLElement>('[data-nav]');
 const arriba = document.querySelector<HTMLElement>('[data-arriba]');
 let ultimoY = window.scrollY;
-const conProgreso = new Set<HTMLElement>();
-let pendiente = false;
+let progresoEscrito = '';
 
-function limitar(v: number): number {
-  return v < 0 ? 0 : v > 1 ? 1 : v;
-}
-
-function pintar(): void {
-  pendiente = false;
-  const y = window.scrollY;
-  const alto = window.innerHeight;
-
-  if (barra) {
-    const total = raiz.scrollHeight - alto;
-    barra.style.setProperty('--progreso', total > 0 ? limitar(y / total).toFixed(4) : '0');
-  }
-  nav?.setAttribute('data-scroll', y > 8 ? 'si' : 'no');
-
-  // La barra se esconde al bajar (pasado el primer pantallazo) y vuelve en cuanto se sube.
-  const delta = y - ultimoY;
-  if (nav && Math.abs(delta) > 6) {
-    const ocupada = nav.matches(':focus-within') || Boolean(nav.querySelector('details[open]'));
-    nav.dataset['oculta'] = delta > 0 && y > alto * 0.9 && !ocupada ? 'si' : 'no';
-    ultimoY = y;
-  }
-  if (arriba) arriba.dataset['visible'] = y > alto * 1.5 ? 'si' : 'no';
-
-  // --p: 0 cuando el borde superior del elemento toca el borde inferior de la ventana; 1 cuando su borde inferior sale por arriba.
-  // --salida: 0 con el elemento alineado arriba de la ventana; 1 cuando ya salió por completo hacia arriba.
-  for (const el of conProgreso) {
-    const r = el.getBoundingClientRect();
-    el.style.setProperty('--p', limitar((alto - r.top) / (alto + r.height)).toFixed(4));
-    el.style.setProperty('--salida', limitar(-r.top / Math.max(r.height, 1)).toFixed(4));
-  }
-}
-
-function alHacerScroll(): void {
-  if (pendiente) return;
-  pendiente = true;
-  window.requestAnimationFrame(pintar);
-}
-
-const elementosProgreso = movimientoReducido.matches
-  ? document.querySelectorAll<HTMLElement>('[data-progreso-scroll]')
-  : document.querySelectorAll<HTMLElement>('[data-progreso-scroll], [data-parallax]');
-if (elementosProgreso.length > 0 && 'IntersectionObserver' in window) {
-  // Solo se calculan los que están cerca de la vista.
-  const io = new IntersectionObserver(
-    (entradas) => {
-      for (const e of entradas) {
-        const el = e.target as HTMLElement;
-        if (e.isIntersecting) conProgreso.add(el);
-        else conProgreso.delete(el);
+const motor = iniciarScroll({
+  movimiento: !movimientoReducido.matches,
+  alCuadro(y, alto) {
+    if (barra) {
+      const total = raiz.scrollHeight - alto;
+      const progreso = total > 0 ? Math.min(Math.max(y / total, 0), 1).toFixed(4) : '0';
+      if (progreso !== progresoEscrito) {
+        progresoEscrito = progreso;
+        barra.style.setProperty('--progreso', progreso);
       }
-      alHacerScroll();
-    },
-    { rootMargin: '25% 0px' },
-  );
-  elementosProgreso.forEach((el) => io.observe(el));
-}
+    }
+    const conScroll = y > 8 ? 'si' : 'no';
+    if (nav && nav.dataset['scroll'] !== conScroll) nav.dataset['scroll'] = conScroll;
 
-window.addEventListener('scroll', alHacerScroll, { passive: true });
-window.addEventListener('resize', alHacerScroll, { passive: true });
-pintar();
+    // La barra se esconde al bajar (pasado el primer pantallazo) y vuelve en cuanto se sube.
+    const delta = y - ultimoY;
+    if (nav && Math.abs(delta) > 6) {
+      const ocupada = nav.matches(':focus-within') || Boolean(nav.querySelector('details[open]'));
+      const oculta = delta > 0 && y > alto * 0.9 && !ocupada ? 'si' : 'no';
+      if (nav.dataset['oculta'] !== oculta) nav.dataset['oculta'] = oculta;
+      ultimoY = y;
+    }
+    const visible = y > alto * 1.5 ? 'si' : 'no';
+    if (arriba && arriba.dataset['visible'] !== visible) arriba.dataset['visible'] = visible;
+  },
+});
+
+// Desplazamiento suave (Lenis) solo con ratón o trackpad: en iPhone, iPad y Android el scroll nativo ya es suave.
+let suave: Lenis | null = null;
+if (!movimientoReducido.matches && window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
+  void import('./suave').then((m) => {
+    suave = m.iniciarSuave();
+    if (raiz.classList.contains('menu-abierto')) suave.stop();
+  });
+}
 
 // ───────────── Revelado ─────────────
 
@@ -250,7 +229,11 @@ if (secciones.length > 0 && 'IntersectionObserver' in window) {
 // al tocar fuera o con Escape.
 const menu = document.querySelector<HTMLDetailsElement>('[data-nav-menu]');
 if (menu) {
-  menu.addEventListener('toggle', () => raiz.classList.toggle('menu-abierto', menu.open));
+  menu.addEventListener('toggle', () => {
+    raiz.classList.toggle('menu-abierto', menu.open);
+    if (menu.open) suave?.stop();
+    else suave?.start();
+  });
   menu.addEventListener('click', (ev) => {
     if (ev.target instanceof Element && ev.target.closest('a')) menu.open = false;
   });
@@ -266,18 +249,33 @@ if (menu) {
 }
 
 // Al saltar a una sección (enlace interno), el foco va a ella para que lectores de pantalla y teclado sigan ahí.
-function enfocarDestino(hash: string): void {
-  const destino = hash.length > 1 ? document.getElementById(decodeURIComponent(hash.slice(1))) : null;
-  if (!destino) return;
+// Con Lenis el salto es suyo (misma curva que la rueda); sin Lenis, lo hace el navegador (`scroll-behavior: smooth`).
+function enfocarDestino(destino: HTMLElement): void {
   if (!destino.hasAttribute('tabindex')) destino.setAttribute('tabindex', '-1');
   destino.focus({ preventScroll: true });
 }
 
 document.addEventListener('click', (ev) => {
+  if (ev.defaultPrevented || ev.button !== 0 || ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey) return;
   const a = ev.target instanceof Element ? ev.target.closest<HTMLAnchorElement>('a[href*="#"]') : null;
-  if (!a || a.origin !== location.origin || a.pathname !== location.pathname || !a.hash) return;
-  if ('onscrollend' in window) window.addEventListener('scrollend', () => enfocarDestino(a.hash), { once: true });
-  else setTimeout(() => enfocarDestino(a.hash), 700);
+  if (!a || a.origin !== location.origin || a.pathname !== location.pathname || a.hash.length < 2) return;
+  const destino = document.getElementById(decodeURIComponent(a.hash.slice(1)));
+  if (!destino) return;
+  if (suave) {
+    ev.preventDefault();
+    // El menú del celular se cierra en este mismo clic: se libera el scroll antes de saltar.
+    raiz.classList.remove('menu-abierto');
+    suave.start();
+    if (location.hash !== a.hash) history.pushState(null, '', a.hash);
+    // Destino calculado con la posición real de la ventana (no con el estado interno de Lenis, que puede ir un cuadro
+    // atrás si la página se movió justo antes del clic), menos el `scroll-padding-top` de la barra.
+    const margen = Number.parseFloat(getComputedStyle(raiz).scrollPaddingTop) || 0;
+    const y = destino.getBoundingClientRect().top + window.scrollY - margen;
+    suave.scrollTo(y, { force: true, onComplete: () => enfocarDestino(destino) });
+    return;
+  }
+  if ('onscrollend' in window) window.addEventListener('scrollend', () => enfocarDestino(destino), { once: true });
+  else setTimeout(() => enfocarDestino(destino), 700);
 });
 
 // Compartir con un colega: hoja nativa del teléfono si existe; si no, el enlace de WhatsApp que trae el HTML.
@@ -314,9 +312,10 @@ function cargarCerca(selector: string, cargar: () => Promise<void>, margen = '60
   document.querySelectorAll(selector).forEach((el) => io.observe(el));
 }
 
+// Al iniciar, un módulo puede cambiar alturas: se vuelve a medir para que las escenas de abajo no se desfasen.
 if (!movimientoReducido.matches) {
-  cargarCerca('[data-escena]', () => import('./escenas').then((m) => m.iniciarEscenas(document)), '400px 0px');
+  cargarCerca('[data-historia]', () => import('./escenas').then((m) => m.iniciarEscenas(document)).then(motor.medir), '400px 0px');
 }
-cargarCerca('[data-demo]', () => import('./demo').then((m) => m.iniciarDemo(document)));
-cargarCerca('[data-signos]', () => import('./signos').then((m) => m.iniciarSignos(document)));
-cargarCerca('[data-chat]', () => import('./chat').then((m) => m.iniciarChats(document)));
+cargarCerca('[data-demo]', () => import('./demo').then((m) => m.iniciarDemo(document)).then(motor.medir));
+cargarCerca('[data-signos]', () => import('./signos').then((m) => m.iniciarSignos(document)).then(motor.medir));
+cargarCerca('[data-chat]', () => import('./chat').then((m) => m.iniciarChats(document)).then(motor.medir));

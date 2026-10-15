@@ -2,6 +2,7 @@
 
 Sitio público de **InmutalKey**, el expediente clínico para consultorio privado con notas selladas.
 Astro 5 estático publicado como Worker con Static Assets en Cloudflare; JavaScript mínimo y diferido; CSP estricta sin `unsafe-inline`.
+Scroll: Lenis en escritorio, nativo en táctil, y un motor propio de escenas fijadas (`docs/ANIMACIONES.md`).
 
 ## Comandos
 
@@ -17,6 +18,7 @@ Astro 5 estático publicado como Worker con Static Assets en Cloudflare; JavaScr
 | `npm run marca` | Favicons, iconos de app, OG y versiones del render 3D desde `capturas/` |
 | `npm run capturas` | Capturas de `capturas/` → `public/capturas/` + `src/data/capturas.json` |
 | `npm run vectorizar` | Vectoriza el logo plano (requiere `pip install potracer pillow numpy`) |
+| `npm run vectorizar:llave` | Vectoriza el contorno de la llave 3D ("plano técnico") desde `capturas/logomain-contorno.png` |
 
 ## Entornos
 

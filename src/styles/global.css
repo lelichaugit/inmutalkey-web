@@ -515,10 +515,26 @@ textarea {
    data-animar="subir | aparecer | escala | izquierda | derecha | desenfoque | cortina | titulo"
    data-escalonar          en un contenedor: sus hijos animados entran en cascada (base.ts pone --i)
    data-retraso="1..6"     retraso extra en pasos de 100 ms
-   data-parallax="suave | medio | fuerte | inverso"   desplazamiento ligado al scroll (base.ts pone --p)
+   data-parallax="suave | medio | fuerte | inverso"   desplazamiento ligado al scroll (scroll.ts pone --p)
+   data-escena + data-escenario   escena fijada estilo Apple: --p, --e, --s, data-paso (ver abajo)
+   data-texto-luz          párrafo que se ilumina palabra por palabra al leerlo (scroll.ts pone --lectura)
    data-contar="N"         el número cuenta hasta N al entrar en vista (el HTML ya trae N)
    .revelar                alias histórico de data-animar="subir"
+   .movimiento             en <html> con JS y sin "reducir movimiento": solo ahí se fijan escenas y hay parallax
 */
+
+/* Propiedades animables con @keyframes (Safari 16.4+, Chrome 85+, Firefox 128+; antes saltan al valor final). */
+@property --materia {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 1;
+}
+
+@property --brillo {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 1;
+}
 
 .js [data-animar],
 .js .revelar {
@@ -603,9 +619,64 @@ textarea {
 [data-parallax='fuerte'] { --rango: 160px; }
 [data-parallax='inverso'] { --rango: -72px; }
 
-.js [data-parallax] {
+.movimiento [data-parallax] {
   transform: translate3d(0, calc((var(--p, 0.5) - 0.5) * var(--rango)), 0);
   will-change: transform;
+}
+
+/* ── Escenas fijadas (estilo Apple) ──
+   <section data-escena data-escena-marcas="0.2 0.5 0.8">  con .movimiento mide --largo × el alto de la ventana
+     <div data-escenario>…</div>                           se queda fijo arriba mientras la escena avanza
+   </section>
+   scroll.ts pone en la sección --p (0 → 1 mientras el escenario está fijo), --e (entrada: de abajo a fijarse),
+   --s (salida) y, con marcas, data-paso="n" + .alcanzo-1…n (y el evento `escena:paso`).
+   Reglas: usar siempre `var(--p, 1)` (sin JS o con movimiento reducido la escena NO se fija y se ve en su estado
+   final); no poner `overflow` en la sección (rompe `sticky`), sí en el escenario; `--largo` corto en celular (≈2). */
+.movimiento [data-escena] {
+  position: relative;
+  height: calc(var(--largo, 3) * 100vh);
+  height: calc(var(--largo, 3) * 100svh);
+}
+
+.movimiento [data-escenario] {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  height: 100svh;
+  overflow: hidden;
+  overflow: clip;
+}
+
+/* Texto que se ilumina al leerlo (cada palabra pasa de tenue a plena, en orden). */
+.movimiento [data-texto-luz] .luz-palabra {
+  opacity: clamp(0.16, calc(var(--lectura, 1) * (var(--n, 1) + 2) - var(--w, 0) - 1), 1);
+}
+
+/* Lenis (desplazamiento suave en escritorio): CSS recomendado por darkroomengineering/lenis. Mientras Lenis está
+   activo, el navegador no suma su propio suavizado. */
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+
+html.lenis {
+  scroll-behavior: auto;
+}
+
+.lenis:not(.lenis-autoToggle).lenis-stopped {
+  overflow: clip;
+}
+
+.lenis [data-lenis-prevent],
+.lenis [data-lenis-prevent-wheel],
+.lenis [data-lenis-prevent-touch],
+.lenis [data-lenis-prevent-vertical],
+.lenis [data-lenis-prevent-horizontal] {
+  overscroll-behavior: contain;
+}
+
+.lenis.lenis-smooth iframe {
+  pointer-events: none;
 }
 
 /* Contadores: cifras tabulares para que no "bailen" al contar. */
@@ -649,6 +720,10 @@ textarea {
 
   .js [data-parallax] {
     transform: none;
+  }
+
+  .js [data-texto-luz] .luz-palabra {
+    opacity: 1;
   }
 
   .js .barra-progreso {
