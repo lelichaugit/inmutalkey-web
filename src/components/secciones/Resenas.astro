@@ -16,12 +16,16 @@ const filas: Resena[][] = resenas.length > 4 ? [resenas.slice(0, mitad), resenas
 {
   resenas.length > 0 && (
     <section class="seccion fondo-oscuro resenas" aria-labelledby="resenas-titulo">
-      <div class="contenedor entrada revelar">
-        <h2 id="resenas-titulo">Lo que dicen los médicos fundadores</h2>
+      <div class="contenedor entrada">
+        <h2 id="resenas-titulo" data-animar="titulo">Lo que dicen los médicos fundadores</h2>
       </div>
-      <div class="resenas-filas">
+      <div class="resenas-filas" data-escalonar>
         {filas.map((fila, f) => (
-          <div class:list={['resenas-fila', { 'es-inversa': f === 1 }]}>
+          <div
+            class:list={['resenas-fila', { 'es-inversa': f === 1 }]}
+            data-animar={f === 1 ? 'izquierda' : 'derecha'}
+            data-retraso="2"
+          >
             <ul class="resenas-pista">
               {[...fila, ...fila].map((r, i) => (
                 <li
@@ -60,6 +64,7 @@ const filas: Resena[][] = resenas.length > 4 ? [resenas.slice(0, mitad), resenas
     overflow: hidden;
   }
 
+  /* Cada fila entra desde el lado hacia el que corre (data-animar derecha / izquierda). */
   .resenas-filas {
     display: grid;
     gap: 16px;
@@ -68,23 +73,38 @@ const filas: Resena[][] = resenas.length > 4 ? [resenas.slice(0, mitad), resenas
     mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
   }
 
+  /* Velocidad: ~25 px/s en escritorio y ~16 px/s en celular, para leer una tarjeta antes de que salga. */
   .resenas-pista {
+    --duracion: 80s;
     display: flex;
     gap: 16px;
     width: max-content;
     margin: 0;
     padding: 0;
     list-style: none;
-    animation: carrusel 70s linear infinite;
+    animation: carrusel var(--duracion) linear infinite;
   }
 
   .es-inversa .resenas-pista {
+    --duracion: 92s;
     animation-direction: reverse;
-    animation-duration: 80s;
   }
 
-  .resenas-filas:hover .resenas-pista {
+  /* Se detiene al pasar el cursor, al tocarla (el toque deja :hover en celulares) o al recorrerla con el teclado. */
+  .resenas-fila:hover .resenas-pista,
+  .resenas-fila:active .resenas-pista,
+  .resenas-fila:focus-within .resenas-pista {
     animation-play-state: paused;
+  }
+
+  @media (max-width: 640px) {
+    .resenas-pista {
+      --duracion: 110s;
+    }
+
+    .es-inversa .resenas-pista {
+      --duracion: 126s;
+    }
   }
 
   @keyframes carrusel {
@@ -97,7 +117,7 @@ const filas: Resena[][] = resenas.length > 4 ? [resenas.slice(0, mitad), resenas
     display: grid;
     align-content: start;
     gap: 10px;
-    width: min(380px, 80vw);
+    width: min(380px, 84vw);
     padding: 20px 22px;
     border: 1px solid var(--linea-oscura);
     border-radius: var(--radio);
@@ -126,7 +146,7 @@ const filas: Resena[][] = resenas.length > 4 ? [resenas.slice(0, mitad), resenas
 
   .resena-autor {
     color: var(--texto-tenue);
-    font-size: 0.95rem;
+    font-size: 1rem;
   }
 
   @media (prefers-reduced-motion: reduce) {

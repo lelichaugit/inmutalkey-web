@@ -8,3 +8,6 @@ dist/
 *.log
 .DS_Store
 __pycache__/
+
+# Worktrees locales de agentes
+.claude/

@@ -22,35 +22,45 @@ const PROBLEMAS = [
 
 <section class="seccion fondo-claro problema" aria-labelledby="problema-titulo">
   <div class="contenedor problema-rejilla">
-    <div class="entrada revelar">
-      <h2 id="problema-titulo">Tus expedientes merecen algo más firme que un documento editable</h2>
-      <p class="texto-grande tenue">
-        La NOM-004 pide notas sin enmendaduras ni tachaduras. Con las herramientas de siempre, cumplirlo depende de la buena fe.
+    <div class="entrada">
+      <h2 id="problema-titulo" data-animar="titulo">
+        Tus expedientes merecen algo más firme que un documento editable
+      </h2>
+      <p class="texto-grande tenue" data-animar="subir" data-retraso="3">
+        La <span class="sin-corte">NOM-004</span> pide notas sin enmendaduras ni tachaduras. Con las herramientas de
+        siempre, cumplirlo depende de la buena fe.
       </p>
     </div>
 
-    <div class="comparacion revelar" aria-hidden="true">
-      <div class="doc doc-editable">
-        <p class="doc-titulo"><Icono nombre="nota" /> nota_paciente_final_v3.docx</p>
-        <p class="doc-linea">Dx: Faringitis aguda</p>
-        <p class="doc-linea">
-          Tx: <span class="doc-cambio"><span>Paracetamol 500 mg</span><span>Ibuprofeno 400 mg</span></span>
-        </p>
-        <p class="doc-pie">Modificado hoy 23:41 · sin aviso</p>
-      </div>
-      <div class="doc doc-sellada">
-        <p class="doc-titulo"><Icono nombre="sello" /> Nota de evolución n.º 12</p>
-        <p class="doc-linea">Dx: J02.9 Faringitis aguda</p>
-        <p class="doc-linea">Tx: Paracetamol 500 mg</p>
-        <p class="doc-pie doc-pie-sello"><Icono nombre="check" /> Sellada 10:14 · no se puede modificar</p>
+    {/* Profundidad: el aro de fondo se desplaza más que los documentos (dos velocidades de parallax). Los documentos
+        entran desde lados opuestos y el sello aparece cuando la nota sellada ya llegó. */}
+    <div class="comparacion" aria-hidden="true">
+      <div class="comparacion-fondo" data-parallax="medio"></div>
+      <div class="comparacion-docs" data-parallax="suave">
+        <div class="doc doc-editable" data-animar="izquierda">
+          <p class="doc-titulo"><Icono nombre="nota" /> nota_paciente_final_v3.docx</p>
+          <p class="doc-linea">Dx: Faringitis aguda</p>
+          <p class="doc-linea">
+            Tx: <span class="doc-cambio"><span>Paracetamol 500 mg</span><span>Ibuprofeno 400 mg</span></span>
+          </p>
+          <p class="doc-pie">Modificado hoy 23:41 · sin aviso</p>
+        </div>
+        <div class="doc doc-sellada" data-animar="derecha" data-retraso="2">
+          <p class="doc-titulo"><Icono nombre="sello" /> Nota de evolución n.º 12</p>
+          <p class="doc-linea">Dx: J02.9 Faringitis aguda</p>
+          <p class="doc-linea">Tx: Paracetamol 500 mg</p>
+          <p class="doc-pie doc-pie-sello" data-animar="escala" data-retraso="6">
+            <Icono nombre="check" /> Sellada 10:14 · no se puede modificar
+          </p>
+        </div>
       </div>
     </div>
   </div>
 
-  <ul class="contenedor problemas">
+  <ul class="contenedor problemas" data-escalonar>
     {
       PROBLEMAS.map((p) => (
-        <li class="revelar">
+        <li data-animar="subir">
           <Icono nombre={p.icono} />
           <h3>{p.titulo}</h3>
           <p class="tenue">{p.texto}</p>
@@ -61,6 +71,11 @@ const PROBLEMAS = [
 </section>
 
 <style>
+  /* Recorta lo que entra desde los lados (y el aro de fondo) sin crear desplazamiento horizontal. */
+  .problema {
+    overflow-x: clip;
+  }
+
   .problema-rejilla {
     display: grid;
     gap: clamp(32px, 5vw, 56px);
@@ -75,8 +90,37 @@ const PROBLEMAS = [
 
   .comparacion {
     position: relative;
+    isolation: isolate;
+  }
+
+  .comparacion-docs {
     display: grid;
     gap: 14px;
+  }
+
+  /* Aro de luz detrás de los documentos (decorativo, azul: el esmeralda queda solo para lo sellado). */
+  .comparacion-fondo {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    z-index: -1;
+    width: min(132%, 600px);
+    aspect-ratio: 1;
+    /* Centrado con `translate` (propiedad propia): el parallax usa `transform`. */
+    translate: -50% -50%;
+    border: 1px solid rgb(1 120 176 / 0.14);
+    border-radius: 50%;
+    background:
+      radial-gradient(closest-side, rgb(46 159 224 / 0.16), rgb(46 159 224 / 0.05) 60%, transparent 72%);
+    pointer-events: none;
+  }
+
+  .comparacion-fondo::after {
+    content: '';
+    position: absolute;
+    inset: 16%;
+    border: 1px dashed rgb(1 120 176 / 0.14);
+    border-radius: 50%;
   }
 
   .doc {
@@ -93,7 +137,8 @@ const PROBLEMAS = [
     gap: 0.5em;
     margin-bottom: 10px;
     font-weight: 600;
-    font-size: 0.975rem;
+    font-size: 1rem;
+    overflow-wrap: anywhere;
   }
 
   .doc-titulo :global(.icono) {
@@ -103,7 +148,7 @@ const PROBLEMAS = [
 
   .doc-linea {
     margin: 4px 0 0;
-    font-size: 0.975rem;
+    font-size: 1rem;
   }
 
   .doc-pie {
@@ -115,8 +160,10 @@ const PROBLEMAS = [
     color: var(--tinta-tenue);
   }
 
+  /* Inclinación con `rotate`/`translate` (propiedades propias): así se suma al `transform` del revelado. */
   .doc-editable {
-    transform: rotate(-1.5deg) translateX(-8px);
+    rotate: -1.5deg;
+    translate: -8px 0;
   }
 
   .doc-editable .doc-pie {
@@ -128,7 +175,8 @@ const PROBLEMAS = [
     box-shadow:
       0 0 0 4px rgb(10 139 105 / 0.08),
       0 20px 40px -24px rgb(13 27 53 / 0.35);
-    transform: rotate(1deg) translateX(10px);
+    rotate: 1deg;
+    translate: 10px 0;
   }
 
   .doc-sellada .doc-titulo :global(.icono),
@@ -203,14 +251,6 @@ const PROBLEMAS = [
 
   .problemas p {
     margin-top: 8px;
-  }
-
-  .problemas li:nth-child(2) {
-    transition-delay: 0.1s;
-  }
-
-  .problemas li:nth-child(3) {
-    transition-delay: 0.2s;
   }
 
   @media (prefers-reduced-motion: reduce) {
