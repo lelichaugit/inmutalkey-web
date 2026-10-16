@@ -1,19 +1,25 @@
 ---
 // El problema: un documento editable frente a una nota sellada. Escena fijada corta (motor de scroll, --p): el .docx
 // se modifica solo ante tus ojos —se selecciona, se tacha y se reescribe el tratamiento, "Modificado hoy 23:41 · sin
-// aviso"— mientras la nota sellada rechaza el mismo intento (rebota y muestra el candado). Sin JS o con movimiento
+// aviso"— mientras la nota sellada rechaza el mismo intento (rebota y muestra el candado). Cierre: en la editable,
+// "¿Quién lo cambió? No hay forma de saberlo" en rojo; en la sellada, "Coincide" late en verde. Sin JS o con movimiento
 // reducido, var(--p, 1) deja ambos documentos en su estado final y la escena no se fija.
 //
-// Tramos de --p:  selección 0.05–0.15 · tachado 0.15–0.23 · reescritura 0.24–0.39 · "modificado" 0.40–0.45
-//                 intento sobre la sellada 0.46–0.56 · marca 0.6 (.alcanzo-1): rechazo, rebote y candado
+// Tramos de --p:  selección 0.05–0.12 · tachado 0.12–0.18 · escritura 0.18–0.30 · "Modificado" 0.30–0.34
+//                 intento sobre la sellada 0.36–0.46 · marca 0.5 (.alcanzo-1): rechazo, rebote y candado
+//                 cierre: duda en rojo 0.54–0.64 · "Coincide" 0.64–0.72 + marca 0.68 (.alcanzo-2): late
+// Rendimiento: el motor escribe --p solo en los [data-p] (cuadrícula, tratamiento, pies, intento); cada uno declara sus
+// tramos. Los documentos entran con data-animar (por tiempo), no con --e: así su subárbol no se recalcula cada cuadro.
+// Lámina: cuando sigue directo al hero, la sección sube sobre su final (ver Hero.astro).
+// Datos de ejemplo: los mismos del simulador (María Fernanda López, EXP-2026-000128, nota n.º 12, huella 9f2c41e8…b07a).
 // Lo visual es decorativo (aria-hidden); el mensaje vive en el titular, el párrafo que se ilumina y la lista.
 import Icono from '../Icono.astro';
 
 const PROBLEMAS = [
   {
     icono: 'editar',
-    titulo: 'Un archivo de Word se puede cambiar después.',
-    texto: 'Y nadie se entera. Una nota que cualquiera puede editar pierde valor como registro.',
+    titulo: 'Corregir a mano deja tachaduras.',
+    texto: 'Un tachón o una capa de corrector dejan la nota en duda, y lo que decía antes ya no se puede leer.',
   },
   {
     icono: 'nota',
@@ -38,10 +44,13 @@ const PROBLEMAS = [
     </div>
   </div>
 
-  <div class="duelo" data-escena data-escena-marcas="0.6">
+  <div class="duelo" data-escena data-escena-marcas="0.5 0.68">
     <div class="duelo-escenario" data-escenario>
+      <span class="duelo-cuadricula" data-p aria-hidden="true"></span>
       <div class="contenedor duelo-rejilla" aria-hidden="true">
-        <figure class="lado lado-editable">
+        <p class="duelo-rotulo">Mismo intento, dos resultados</p>
+
+        <figure class="lado lado-editable" data-animar="aparecer">
           <figcaption class="lado-titulo"><Icono nombre="editar" /> Archivo editable</figcaption>
           <div class="doc doc-editable">
             <div class="doc-barra">
@@ -49,11 +58,11 @@ const PROBLEMAS = [
               <span class="doc-archivo">nota_paciente_final_v3.docx</span>
             </div>
             <div class="doc-cuerpo">
-              <p class="doc-linea"><span class="doc-campo">Paciente</span>Ejemplo · 15/10/2026</p>
-              <p class="doc-linea"><span class="doc-campo">Dx</span>Faringitis aguda</p>
+              <p class="doc-linea"><span class="doc-campo">Paciente</span>María Fernanda López</p>
+              <p class="doc-linea"><span class="doc-campo">Dx</span>J02.9 Faringitis aguda</p>
               <p class="doc-linea">
                 <span class="doc-campo">Tx</span>
-                <span class="tx">
+                <span class="tx" data-p>
                   <span class="tx-viejo">
                     <span class="tx-seleccion"></span>
                     <span class="tx-texto">Paracetamol 500 mg</span>
@@ -66,15 +75,16 @@ const PROBLEMAS = [
                 </span>
               </p>
             </div>
-            <p class="doc-pie">
+            <p class="doc-pie doc-pie-editable" data-p>
               <span class="pie-antes">Guardado hoy 10:14</span>
               <span class="pie-despues"><Icono nombre="alerta" /> Modificado hoy 23:41 · sin aviso</span>
             </p>
+            <p class="doc-duda" data-p>¿Quién lo cambió? No hay forma de saberlo.</p>
           </div>
           <p class="lado-nota">Cualquiera que lo abra puede cambiarlo.</p>
         </figure>
 
-        <figure class="lado lado-sellado">
+        <figure class="lado lado-sellado" data-animar="aparecer" data-retraso="1">
           <figcaption class="lado-titulo"><Icono nombre="sello" /> Nota sellada en InmutalKey</figcaption>
           <div class="doc doc-sellada">
             <div class="sellada-cabecera">
@@ -82,11 +92,12 @@ const PROBLEMAS = [
               <span class="sellada-chip"><Icono nombre="candado" /> Sellada 10:14</span>
             </div>
             <div class="doc-cuerpo">
-              <p class="doc-linea"><span class="doc-campo">Paciente</span>Ejemplo · Exp. 0042</p>
+              <p class="doc-linea"><span class="doc-campo">Paciente</span>María Fernanda López</p>
+              <p class="doc-linea"><span class="doc-campo">Exp.</span>EXP-2026-000128</p>
               <p class="doc-linea"><span class="doc-campo">Dx</span>J02.9 Faringitis aguda</p>
               <p class="doc-linea">
                 <span class="doc-campo">Tx</span>
-                <span class="intento">
+                <span class="intento" data-p>
                   <span class="intento-seleccion"></span>
                   <span class="intento-texto">Paracetamol 500 mg</span>
                   <span class="intento-cursor"></span>
@@ -97,8 +108,8 @@ const PROBLEMAS = [
               </p>
             </div>
             <p class="doc-pie doc-pie-sello">
-              <span class="pie-hash">SHA-256 b31c88b0…25eae6</span>
-              <span class="pie-coincide"><Icono nombre="check" /> Coincide</span>
+              <span class="pie-hash"><b>Huella</b> 9f2c41e8…b07a</span>
+              <span class="pie-coincide" data-p><Icono nombre="check" /> Coincide</span>
             </p>
           </div>
           <p class="lado-nota">Firmada, ya no se puede modificar.</p>
@@ -133,27 +144,44 @@ const PROBLEMAS = [
   .problema {
     --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
     --ambar: #b45309;
+    --rojo: #c0262d;
+  }
+
+  /* ── Lámina: cuando sigue directo al hero (en producción Reseñas no renderiza nada), la sección es una hoja clara
+     con las esquinas superiores redondas que sube sobre el final del hero (patrón apple.com/iphone). Con la escena del
+     hero, además se encima a sus últimos 22svh: la llave termina de irse debajo de ella y nunca queda un cuadro vacío.
+     Sin escena (sin JS o movimiento reducido) no se encima: el hero no se fija y taparía su frase.
+     Entre los dos puede quedar el <script> del hero (Astro lo deja junto a su componente). ── */
+  :global(#inicio) + .problema,
+  :global(#inicio) + :global(script) + .problema {
+    z-index: 2;
+    /* Menos aire arriba: el titular asoma en cuanto la lámina sube. */
+    padding-top: clamp(56px, 4vw + 32px, 96px);
+    border-radius: 28px 28px 0 0;
+    box-shadow:
+      0 -1px 0 rgb(255 255 255 / 0.55),
+      0 -22px 48px -18px rgb(0 0 0 / 0.75);
+  }
+
+  :global(.movimiento) :global(#inicio) + .problema,
+  :global(.movimiento) :global(#inicio) + :global(script) + .problema {
+    margin-top: -22vh;
+    margin-top: -22svh;
   }
 
   /* ── El duelo: estado final por omisión (var(--p, 1)); con movimiento, escena fijada corta ── */
   .duelo {
-    --t-entra: clamp(0, (var(--e, 1) - 0.2) / 0.6, 1);
-    --t-sel: clamp(0, (var(--p, 1) - 0.05) / 0.1, 1);
-    --t-tacha: clamp(0, (var(--p, 1) - 0.15) / 0.08, 1);
-    --t-escribe: clamp(0, (var(--p, 1) - 0.24) / 0.15, 1);
-    --t-pie: clamp(0, (var(--p, 1) - 0.4) / 0.05, 1);
-    --t-intento: clamp(0, (var(--p, 1) - 0.46) / 0.1, 1);
     margin-top: clamp(40px, 6vw, 64px);
   }
 
   :global(.movimiento) .duelo {
-    --largo: 1.9;
+    --largo: 1.8;
     margin-top: 0;
   }
 
   @media (min-width: 860px) {
     :global(.movimiento) .duelo {
-      --largo: 2.3;
+      --largo: 2.1;
     }
   }
 
@@ -171,14 +199,13 @@ const PROBLEMAS = [
     }
   }
 
-  /* Cuadrícula de instrumento detrás de los documentos; se desliza más lento que ellos (profundidad). */
   .duelo-escenario {
     position: relative;
     isolation: isolate;
   }
 
-  .duelo-escenario::before {
-    content: '';
+  /* Cuadrícula de instrumento detrás de los documentos; se desliza más lento que ellos (profundidad). */
+  .duelo-cuadricula {
     position: absolute;
     inset: -60px 0;
     z-index: -1;
@@ -192,6 +219,40 @@ const PROBLEMAS = [
     opacity: 0.7;
     transform: translate3d(0, calc((0.5 - var(--p, 0.5)) * 48px), 0);
     pointer-events: none;
+  }
+
+  /* Rótulo sobre los dos documentos (en celular ocupa el hueco bajo la barra). */
+  .duelo-rotulo {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin: 0 0 2px;
+    color: var(--tinta-tenue);
+    font-family: var(--fuente-titulo);
+    font-size: 1.0625rem;
+    font-weight: 600;
+    letter-spacing: -0.005em;
+    white-space: nowrap;
+  }
+
+  .duelo-rotulo::before,
+  .duelo-rotulo::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgb(13 27 53 / 0.2));
+  }
+
+  .duelo-rotulo::after {
+    background: linear-gradient(90deg, rgb(13 27 53 / 0.2), transparent);
+  }
+
+  @media (min-width: 860px) {
+    .duelo-rotulo {
+      margin-bottom: 6px;
+      font-size: 1.1875rem;
+    }
   }
 
   .duelo-rejilla {
@@ -216,17 +277,54 @@ const PROBLEMAS = [
     .duelo-rejilla {
       position: relative;
       grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: clamp(40px, 5vw, 72px);
+      gap: 20px clamp(40px, 5vw, 72px);
     }
 
     .duelo-rejilla::before {
       content: '';
       position: absolute;
       left: 50%;
-      top: 8%;
+      top: 18%;
       bottom: 8%;
       width: 1px;
       background: linear-gradient(transparent, rgb(13 27 53 / 0.18), transparent);
+    }
+  }
+
+  /* Celular y tableta bajos (la escena fija): el rótulo solo va donde sobra alto; en los más bajos (Safari con sus
+     barras, 390 × 664) los documentos se compactan para caber entre la barra y la franja del botón flotante. */
+  @media (max-width: 859px) and (max-height: 760px) {
+    :global(.movimiento) .duelo-rotulo {
+      display: none;
+    }
+  }
+
+  @media (max-width: 859px) and (max-height: 700px) {
+    :global(.movimiento) .duelo-rejilla {
+      gap: 10px;
+    }
+
+    :global(.movimiento) .duelo .lado-titulo {
+      margin-bottom: 5px;
+    }
+
+    :global(.movimiento) .duelo .doc {
+      line-height: 1.4;
+    }
+
+    :global(.movimiento) .duelo .doc-cuerpo {
+      gap: 2px;
+      padding: 8px 14px 6px;
+    }
+
+    :global(.movimiento) .duelo .doc-barra,
+    :global(.movimiento) .duelo .sellada-cabecera,
+    :global(.movimiento) .duelo .doc-pie {
+      padding-block: 6px;
+    }
+
+    :global(.movimiento) .duelo .doc-duda {
+      padding-block: 5px 6px;
     }
   }
 
@@ -260,17 +358,17 @@ const PROBLEMAS = [
     min-width: 0;
   }
 
-  /* Entrada desde lados opuestos mientras la escena asoma (--e): llegan girados en perspectiva y se aplanan. */
-  .lado-editable {
-    transform: perspective(1400px) translate3d(calc((1 - var(--t-entra)) * -56px), 0, 0)
-      rotateY(calc((1 - var(--t-entra)) * 16deg));
-    opacity: calc(0.2 + var(--t-entra) * 0.8);
-  }
+  /* Entrada desde lados opuestos al asomar (data-animar="aparecer", por tiempo): llegan girados en perspectiva y se
+     aplanan. Antes iba ligada a --e, pero eso obligaba a recalcular todo el documento en cada cuadro. */
+  @media (prefers-reduced-motion: no-preference) {
+    :global(.js) .lado-editable:not(.es-visible) {
+      transform: perspective(1400px) translate3d(-56px, 0, 0) rotateY(16deg);
+    }
 
-  .lado-sellado {
-    transform: perspective(1400px) translate3d(calc((1 - var(--t-entra)) * 56px), 0, 0)
-      rotateY(calc((1 - var(--t-entra)) * -16deg));
-    opacity: calc(0.2 + var(--t-entra) * 0.8);
+    :global(.js) .lado-sellado:not(.es-visible) {
+      transform: perspective(1400px) translate3d(56px, 0, 0) rotateY(-16deg);
+    }
+
   }
 
   .lado-titulo {
@@ -279,7 +377,7 @@ const PROBLEMAS = [
     gap: 0.5em;
     margin-bottom: 10px;
     color: var(--tinta-tenue);
-    font-size: 0.9375rem;
+    font-size: 1rem;
     font-weight: 600;
   }
 
@@ -409,6 +507,9 @@ const PROBLEMAS = [
 
   /* La línea que se modifica: selección → tachado → reescritura (todo con transform, opacity y clip-path). */
   .tx {
+    --t-sel: clamp(0, (var(--p, 1) - 0.05) / 0.07, 1);
+    --t-tacha: clamp(0, (var(--p, 1) - 0.12) / 0.06, 1);
+    --t-escribe: clamp(0, (var(--p, 1) - 0.18) / 0.12, 1);
     display: inline-flex;
     flex-wrap: wrap;
     column-gap: 0.5em;
@@ -491,6 +592,10 @@ const PROBLEMAS = [
     background: var(--tinta);
   }
 
+  .doc-pie-editable {
+    --t-pie: clamp(0, (var(--p, 1) - 0.3) / 0.04, 1);
+  }
+
   .doc-pie > span {
     grid-area: 1 / 1;
     display: inline-flex;
@@ -570,6 +675,10 @@ const PROBLEMAS = [
     opacity: 0;
   }
 
+  .intento {
+    --t-intento: clamp(0, (var(--p, 1) - 0.36) / 0.1, 1);
+  }
+
   .intento-seleccion {
     transform: scaleX(var(--t-intento));
     opacity: var(--t-intento);
@@ -598,9 +707,59 @@ const PROBLEMAS = [
     color: var(--tinta-tenue);
   }
 
+  .pie-hash b {
+    font-family: var(--fuente-texto);
+    font-weight: 600;
+  }
+
+  /* Cierre de la sellada: "Coincide" se enciende en verde (tramo) y late con la marca 0.68 (.alcanzo-2). */
   .pie-coincide {
+    --t-coincide: clamp(0, (var(--p, 1) - 0.64) / 0.08, 1);
+    position: relative;
+    padding: 0.1em 0.6em 0.1em 0.45em;
     color: var(--esmeralda);
     font-weight: 600;
+  }
+
+  .pie-coincide::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: 999px;
+    background: rgb(10 139 105 / 0.12);
+    box-shadow: 0 0 0 1px rgb(10 139 105 / 0.3);
+    opacity: var(--t-coincide);
+  }
+
+  .pie-coincide::after {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    border: 2px solid var(--esmeralda);
+    border-radius: 999px;
+    opacity: 0;
+  }
+
+  .doc-pie-sello {
+    position: relative;
+    isolation: isolate;
+  }
+
+  /* Cierre de la editable: la duda, en rojo, bajo el pie (su lugar está reservado: nada se mueve). */
+  .doc-duda {
+    --t-duda: clamp(0, (var(--p, 1) - 0.54) / 0.1, 1);
+    margin: 0;
+    padding: 8px 16px 9px;
+    border-top: 1px solid rgb(192 38 45 / 0.25);
+    border-radius: 0 0 var(--radio) var(--radio);
+    background: rgb(192 38 45 / 0.07);
+    color: var(--rojo);
+    font-size: 0.85em;
+    font-weight: 600;
+    line-height: 1.35;
+    opacity: var(--t-duda);
+    transform: translate3d(0, calc((1 - var(--t-duda)) * 6px), 0);
   }
 
   /* El aviso del rechazo: un mensaje del sistema bajo la línea del tratamiento (su lugar ya está reservado). */
@@ -658,6 +817,11 @@ const PROBLEMAS = [
     animation: pulso 0.9s 0.1s var(--ease);
   }
 
+  /* "Coincide" late tres veces (solo transform y opacity: no recalcula nada más). */
+  :global(.movimiento) .duelo.alcanzo-2 .pie-coincide::after {
+    animation: late 1.1s var(--ease) 3;
+  }
+
   /* Sin escena (sin JS o movimiento reducido) el intento nunca ocurrió y no hay cursores (fuera del escenario, que
      recorta, su pista desplazada ensancharía la página). */
   :global(html:not(.movimiento)) .intento-seleccion,
@@ -675,6 +839,17 @@ const PROBLEMAS = [
     }
     70% {
       transform: translate3d(-2px, 0, 0);
+    }
+  }
+
+  @keyframes late {
+    from {
+      opacity: 0.85;
+      transform: scale(1);
+    }
+    to {
+      opacity: 0;
+      transform: scale(1.25, 1.7);
     }
   }
 

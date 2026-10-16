@@ -2,6 +2,8 @@
 // Cierre: la llave vuelve (sujetalibros del relato que abre el hero). Al entrar en vista se materializa con el escáner
 // (plano técnico → render sólido → brillo); mientras cruza la ventana, sube un poco y sus aros se abren
 // (data-progreso-scroll). Sin JS o con movimiento reducido: la llave sólida y quieta.
+// Rendimiento: el motor escribe --p solo en .cta-llave-flota ([data-p]), no en toda la sección. El contacto ya no va
+// aquí (lo trae el pie).
 import { enlaceWhatsApp } from '../../lib/whatsapp';
 import { sitio } from '../../site.config';
 import Icono from '../Icono.astro';
@@ -16,7 +18,7 @@ const dias = sitio.licencia.diasPrueba;
 
   <div class="contenedor cta-caja">
     <div class="cta-llave" data-animar="aparecer" aria-hidden="true">
-      <div class="cta-llave-flota">
+      <div class="cta-llave-flota" data-p>
         <span class="cta-foco"></span>
         <span class="cta-aros">
           <svg viewBox="0 0 200 200" fill="none" focusable="false">
@@ -31,8 +33,8 @@ const dias = sitio.licencia.diasPrueba;
           <Isotipo3D sizes="(min-width: 768px) 140px, 110px" brillo plano reflejo class="cta-isotipo" />
         </div>
         <span class="cta-visor">
-          <span class="cta-etiqueta cta-etiqueta-a">Ed25519</span>
-          <span class="cta-etiqueta cta-etiqueta-b">SHA-256</span>
+          <span class="cta-etiqueta cta-etiqueta-a"><b>Firma</b> · Ed25519</span>
+          <span class="cta-etiqueta cta-etiqueta-b"><b>Sello</b> · SHA-256</span>
         </span>
       </div>
     </div>
@@ -224,6 +226,12 @@ const dias = sitio.licencia.diasPrueba;
     line-height: 1.3;
     white-space: nowrap;
     color: var(--azul-vivo);
+  }
+
+  .cta-etiqueta b {
+    color: var(--texto-tenue);
+    font-weight: 500;
+    text-transform: uppercase;
   }
 
   .cta-etiqueta-a {
