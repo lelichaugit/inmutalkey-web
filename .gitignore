@@ -11,3 +11,5 @@ __pycache__/
 
 # Worktrees locales de agentes
 .claude/
+# Capturas de npm run revisar -- --capturas
+capturas-revision/

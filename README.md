@@ -13,6 +13,7 @@ Scroll: Lenis en escritorio, nativo en táctil, y un motor propio de escenas fij
 | `npm run build:cloudflare` | `activos` + `build` (el que usa Cloudflare) |
 | `npx wrangler dev` | Sirve `dist/` con el mismo motor de Cloudflare, encabezados incluidos |
 | `npm run check` | Tipos estrictos de Astro y TypeScript |
+| `npm run revisar` | Revisión multi-dispositivo con Playwright (desbordes, errores, CSP, CLS, escenas) contra `npx wrangler dev` o una URL |
 | `npm test` | Pruebas Vitest |
 | `npm run activos` | `marca` + `capturas` |
 | `npm run marca` | Favicons, iconos de app, OG y versiones del render 3D desde `capturas/` |
@@ -36,6 +37,7 @@ terceros, `<script>` en línea o atributos `style=`.
 - `src/lib/`: reglas compartidas y probadas (semáforo NOM-004, IMC, CIE-10, reseñas, entorno, guardian).
 - `src/scripts/`: `base.ts` (todas las páginas) y módulos que se cargan solo al acercarse a su sección.
 - `docs/TRASPASO.md`: estado, decisiones y funciones verificadas contra el código de la app.
+- `GEMINI.md` / `AGENTS.md`: contexto para asistentes de código; `docs/MIGRACION_GEMINI.md`: cómo seguir con Gemini.
 
 Despliegue: ver [README_DEPLOY.md](README_DEPLOY.md).
 
