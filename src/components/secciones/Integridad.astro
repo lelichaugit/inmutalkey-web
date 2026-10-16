@@ -3,8 +3,11 @@
 // scroll (data-escena + --p). La ilustración vive en EscenaIntegridad.astro; aquí, el escenario, el visor y el texto
 // real de cada paso (contenido accesible: sin JS o con movimiento reducido se ve como lista + estado final).
 //
-// Marcas de la escena (data-paso 0–5) → paso del relato:
-//   0 escribir · 1 semáforo · 2 firmar · 3 sellada (la huella se decodifica) · 4 alteración · 5 addendum
+// Marcas de la escena (data-paso 0–7) → paso del relato:
+//   0 escribir · 1 semáforo · 2 firmar · 3 sellada (la huella se decodifica) · 4 alguien altera la nota por fuera ·
+//   5 la revisión de integridad lo detecta (lupa de la huella) · 6 todo vuelve y la nota sube · 7 addendum
+// El motor escribe --p solo en los `[data-p]` (aquí, la barra de progreso; en la maqueta, lo que se mueve): lo que
+// cambia por pasos usa data-paso / .alcanzo-N en .historia, con transición.
 // Celular: el visor arriba y el paso en curso abajo, dentro del mismo marco, sin tapar la nota; queda libre la franja
 // del botón flotante de WhatsApp. Escritorio e iPad horizontal: el texto a la izquierda y el visor a la derecha.
 import Icono from '../Icono.astro';
@@ -26,13 +29,13 @@ const PASOS = [
     corto: 'Firmar',
     titulo: 'Al firmar, la llave la sella.',
     texto:
-      'InmutalKey le saca una huella única, la encadena con la nota anterior y la firma con una llave que solo vive en tu computadora. Ya no se puede modificar ni borrar.',
+      'InmutalKey calcula una huella única, la encadena con la nota anterior y la firma con una llave que solo vive en tu computadora. Ya no se puede modificar ni borrar.',
   },
   {
-    corto: 'Alterar',
+    corto: 'Detectar',
     titulo: 'Si alguien la altera, se nota.',
     texto:
-      'Si alguien cambiara el archivo de la base por fuera del programa, la huella ya no coincidiría y la auditoría de integridad lo señalaría.',
+      'Si alguien cambiara la nota por fuera de InmutalKey, la huella dejaría de coincidir y la revisión de integridad lo marcaría.',
   },
   {
     corto: 'Corregir',
@@ -42,7 +45,15 @@ const PASOS = [
   },
 ] as const;
 
-const ESTADOS = ['Borrador', 'Revisión NOM-004', 'Firmando', 'Sellada', 'Alteración detectada', 'Addendum sellado'] as const;
+// Estado del visor por paso (data-paso 0–7): "Sellada" en el 3, el 4 (el cursor se acerca) y el 6 (todo vuelve).
+const ESTADOS = [
+  { texto: 'Borrador' },
+  { texto: 'Revisión NOM-004' },
+  { texto: 'Firmando' },
+  { texto: 'Sellada' },
+  { texto: 'Alteración', extra: ' detectada' },
+  { texto: 'Addendum sellado' },
+] as const;
 ---
 
 <section class="seccion fondo-negro integridad" id="integridad" aria-labelledby="integridad-titulo">
@@ -55,7 +66,7 @@ const ESTADOS = ['Borrador', 'Revisión NOM-004', 'Firmando', 'Sellada', 'Altera
     </div>
   </div>
 
-  <div class="historia" data-escena data-escena-marcas="0.18 0.38 0.55 0.62 0.8" data-historia>
+  <div class="historia" data-escena data-escena-marcas="0.18 0.38 0.565 0.62 0.71 0.8 0.86" data-historia>
     <div class="escenario" data-escenario>
       <div class="contenedor rejilla">
         <div class="visor-marco" aria-hidden="true">
@@ -69,16 +80,17 @@ const ESTADOS = ['Borrador', 'Revisión NOM-004', 'Firmando', 'Sellada', 'Altera
                 ESTADOS.map((e, i) => (
                   <span class:list={['estado', `estado-${i}`]}>
                     <i />
-                    {e}
+                    {e.texto}
+                    {'extra' in e && <span class="estado-extra">{e.extra}</span>}
                   </span>
                 ))
               }
             </span>
-            <span class="hud-exp">Exp. 0042<span class="hud-exp-nota"> · Nota 12</span></span>
+            <span class="hud-exp"><span class="hud-exp-pre">Exp. </span>EXP-2026-000128<span class="hud-exp-nota"> · Nota 12</span></span>
           </div>
           <div class="hud hud-abajo">
-            <span>SHA-256 · encadenado por paciente</span>
-            <span class="hud-bloqueo">Ed25519 · UPDATE ✕ · DELETE ✕</span>
+            <span>Huellas encadenadas · SHA-256</span>
+            <span class="hud-bloqueo">Ni editar ni borrar · Ed25519</span>
           </div>
         </div>
 
@@ -91,11 +103,11 @@ const ESTADOS = ['Borrador', 'Revisión NOM-004', 'Firmando', 'Sellada', 'Altera
             {
               PASOS.map((p) => (
                 <span class="segmento">
-                  <i />
                   <b>{p.corto}</b>
                 </span>
               ))
             }
+            <i class="progreso-luz" data-p></i>
           </div>
           <ol class="pasos">
             {
@@ -228,18 +240,17 @@ const ESTADOS = ['Borrador', 'Revisión NOM-004', 'Firmando', 'Sellada', 'Altera
     }
   }
 
-  /* El expediente cede su lugar a la llave mientras baja, sella y se retira (marcas 2 y 3). */
-  .hud-exp {
-    transition: opacity 0.35s var(--ease);
-  }
-
-  .historia[data-paso='2'] .hud-exp,
-  .historia[data-paso='3'] .hud-exp {
-    opacity: 0;
-  }
-
-  @media (max-width: 419px) {
+  /* En celular, solo el número de expediente (la nota y el paciente ya están en la tarjeta). */
+  @media (max-width: 599px) {
+    .hud-exp-pre,
     .hud-exp-nota {
+      display: none;
+    }
+  }
+
+  /* 360 px: "Alteración detectada" + el expediente no caben juntos en la barra del visor. */
+  @media (max-width: 379px) {
+    .estado-extra {
       display: none;
     }
   }
@@ -287,14 +298,21 @@ const ESTADOS = ['Borrador', 'Revisión NOM-004', 'Firmando', 'Sellada', 'Altera
   .historia[data-paso='1'] .estado-1,
   .historia[data-paso='2'] .estado-2,
   .historia[data-paso='3'] .estado-3,
-  .historia[data-paso='4'] .estado-4,
-  .historia[data-paso='5'] .estado-5 {
+  .historia[data-paso='4'] .estado-3,
+  .historia[data-paso='5'] .estado-4,
+  .historia[data-paso='6'] .estado-3,
+  .historia[data-paso='7'] .estado-5 {
     opacity: 1;
   }
 
+  /* "Ni editar ni borrar" se enciende al quedar sellada (paso 3). */
   .hud-bloqueo {
     color: var(--esmeralda-vivo);
-    opacity: clamp(0, (var(--p, 1) - 0.54) / 0.03, 1);
+    transition: opacity 0.35s var(--ease);
+  }
+
+  :global(.movimiento) .historia:not(.alcanzo-3) .hud-bloqueo {
+    opacity: 0;
   }
 
   /* El área de la maqueta: su tamaño decide la escala de toda la ilustración (container queries). */
@@ -308,6 +326,15 @@ const ESTADOS = ['Borrador', 'Revisión NOM-004', 'Firmando', 'Sellada', 'Altera
     /* La llave entra desde fuera del visor: se recorta en su borde. */
     overflow: hidden;
     overflow: clip;
+  }
+
+  /* Celular sin escena (sin JS o movimiento reducido): el visor con la proporción de la maqueta angosta, para que su
+     letra quede en ~14 px como en la escena. */
+  @media (max-width: 599px) {
+    .visor-area {
+      aspect-ratio: 1;
+      padding: 44px 4px 12px;
+    }
   }
 
   /* ── El relato: los 5 pasos ── */
@@ -385,6 +412,14 @@ const ESTADOS = ['Borrador', 'Revisión NOM-004', 'Firmando', 'Sellada', 'Altera
     padding: 40px 8px 4px;
   }
 
+  /* Celular: la maqueta casi de borde a borde del visor (la tarjeta queda a ~12 px del marco) para que su letra base
+     llegue a ~14–15 px. */
+  @media (max-width: 599px) {
+    :global(.movimiento) .visor-area {
+      padding-inline: 4px;
+    }
+  }
+
   :global(.movimiento) .hud-abajo {
     display: none;
   }
@@ -396,45 +431,54 @@ const ESTADOS = ['Borrador', 'Revisión NOM-004', 'Firmando', 'Sellada', 'Altera
     border-top: 1px solid var(--linea-oscura);
   }
 
-  /* Progreso: un segmento por paso, lleno según --p. */
+  /* Progreso: un segmento por paso. Una sola barra (el único destino del motor aquí) recortada en 5 tramos con una
+     máscara; cada segmento se llena en su tramo de --p (0–0.18, –0.38, –0.62, –0.8, –1). */
   :global(.movimiento) .progreso {
+    position: relative;
     display: flex;
     gap: 6px;
   }
 
+  @property --ig-progreso {
+    syntax: '<number>';
+    inherits: false;
+    initial-value: 1;
+  }
+
   .segmento {
-    --t: clamp(0, (var(--p, 1) - var(--a)) / (var(--b) - var(--a)), 1);
-    position: relative;
     flex: 1;
     display: grid;
     gap: 8px;
   }
 
-  .segmento:nth-child(1) { --a: 0; --b: 0.18; }
-  .segmento:nth-child(2) { --a: 0.18; --b: 0.38; }
-  .segmento:nth-child(3) { --a: 0.38; --b: 0.62; }
-  .segmento:nth-child(4) { --a: 0.62; --b: 0.8; }
-  .segmento:nth-child(5) { --a: 0.8; --b: 1; }
-
-  .segmento::before,
-  .segmento i {
-    grid-area: 1 / 1;
-    height: 2px;
-    border-radius: 2px;
-  }
-
   .segmento::before {
     content: '';
+    height: 2px;
+    border-radius: 2px;
     background: var(--linea-oscura-fuerte);
   }
 
-  .segmento i {
+  .progreso-luz {
+    --ig-progreso: calc(
+      (
+          clamp(0, var(--p, 1) / 0.18, 1) + clamp(0, (var(--p, 1) - 0.18) / 0.2, 1) +
+            clamp(0, (var(--p, 1) - 0.38) / 0.24, 1) + clamp(0, (var(--p, 1) - 0.62) / 0.18, 1) +
+            clamp(0, (var(--p, 1) - 0.8) / 0.2, 1)
+        ) / 5
+    );
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
     background: var(--azul-vivo);
-    box-shadow: 0 0 8px rgb(46 159 224 / 0.6);
-    transform-origin: 0 50%;
-    transform: scaleX(var(--t));
+    /* Cada mosaico mide (ancho + 6 px) / 5: segmento opaco y 6 px de hueco transparente. */
+    -webkit-mask: linear-gradient(90deg, #000 calc(100% - 6px), transparent 0) 0 0 / calc((100% + 6px) / 5) 100% repeat-x;
+    mask: linear-gradient(90deg, #000 calc(100% - 6px), transparent 0) 0 0 / calc((100% + 6px) / 5) 100% repeat-x;
+    clip-path: inset(0 calc((1 - var(--ig-progreso)) * 100%) 0 0);
   }
 
+  /* La etiqueta se enciende al llegar a su paso (marcas 0.18, 0.38, 0.62 y 0.8 → alcanzo-1, -2, -4 y -6). */
   .segmento b {
     display: none;
     font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
@@ -442,7 +486,16 @@ const ESTADOS = ['Borrador', 'Revisión NOM-004', 'Firmando', 'Sellada', 'Altera
     font-weight: 500;
     letter-spacing: 0.04em;
     color: var(--texto-tenue);
-    opacity: calc(0.45 + min(var(--t) * 20, 1) * 0.55);
+    opacity: 0.45;
+    transition: opacity 0.35s var(--ease);
+  }
+
+  .segmento:nth-child(1) b,
+  .historia.alcanzo-1 .segmento:nth-child(2) b,
+  .historia.alcanzo-2 .segmento:nth-child(3) b,
+  .historia.alcanzo-4 .segmento:nth-child(4) b,
+  .historia.alcanzo-6 .segmento:nth-child(5) b {
+    opacity: 1;
   }
 
   /* Los 5 textos ocupan la misma celda (el alto no salta) y solo se ve el del paso en curso. */
@@ -467,7 +520,9 @@ const ESTADOS = ['Borrador', 'Revisión NOM-004', 'Firmando', 'Sellada', 'Altera
   :global(.movimiento) .historia[data-paso='2'] .paso:nth-child(3),
   :global(.movimiento) .historia[data-paso='3'] .paso:nth-child(3),
   :global(.movimiento) .historia[data-paso='4'] .paso:nth-child(4),
-  :global(.movimiento) .historia[data-paso='5'] .paso:nth-child(5) {
+  :global(.movimiento) .historia[data-paso='5'] .paso:nth-child(4),
+  :global(.movimiento) .historia[data-paso='6'] .paso:nth-child(5),
+  :global(.movimiento) .historia[data-paso='7'] .paso:nth-child(5) {
     opacity: 1;
     transform: none;
     transition-delay: 0.15s;

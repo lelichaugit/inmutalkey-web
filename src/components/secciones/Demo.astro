@@ -16,7 +16,7 @@ const CAPITULOS = [
   { id: 'receta', titulo: 'Receta lista', sub: 'Carta o media carta' },
   { id: 'correccion', titulo: 'Corrige sin borrar', sub: 'Addendum con motivo' },
   { id: 'auditoria', titulo: 'Verifica tu archivo', sub: 'Auditoría de integridad' },
-  { id: 'respaldo', titulo: 'Respalda a tu USB', sub: 'Copia verificada' },
+  { id: 'respaldo', titulo: 'Respalda con un clic', sub: 'Copia comprobada' },
 ] as const;
 
 const PACIENTES = [
@@ -58,8 +58,8 @@ const MOTIVOS_ADDENDUM = [
     <p class="demo-etiqueta" data-animar="aparecer"><span aria-hidden="true"></span>Simulador · datos de ejemplo</p>
     <h2 id="demo-titulo" data-animar="titulo">Pruébalo aquí mismo: una consulta completa en un minuto</h2>
     <p class="texto-grande tenue" data-animar="subir" data-retraso="2">
-      Es una simulación con datos de ejemplo. Deja que corra sola o toca cualquier paso. En la consulta puedes escribir:
-      el semáforo, el IMC y la búsqueda de diagnósticos responden como en el programa.
+      Es una simulación con datos de ejemplo. Deja que corra sola o toca cualquier paso. En la consulta puedes escribir de
+      verdad: el semáforo, el IMC y la búsqueda de diagnósticos responden como en el programa.
     </p>
   </div>
 
@@ -87,10 +87,11 @@ const MOTIVOS_ADDENDUM = [
            completo, y su pantalla se enciende. Ligada al --p de este envoltorio (scroll.ts); el simulador no se fija
            porque es interactivo. Sin JS o con movimiento reducido se ve plano y encendido desde el principio.
            data-progreso-hasta: la presentación termina en --p 0.45 (--t y --luz ya valen 1); pasado ese punto no se
-           escribe más y los ~430 elementos del simulador no se recalculan en cada cuadro de scroll. -->
+           escribe más. Destinos [data-p] (scroll.ts escribe --p solo en ellos): el halo y el dispositivo; dentro de
+           .app la variable se corta (ver CSS), así que los ~360 elementos del simulador no se recalculan por cuadro. -->
       <div class="presentacion" data-progreso-scroll data-progreso-hasta="0.45">
-        <span class="presentacion-halo" aria-hidden="true"></span>
-        <div class="dispositivo">
+        <span class="presentacion-halo" aria-hidden="true" data-p></span>
+        <div class="dispositivo" data-p>
           <span class="visor" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
           <p class="hud" aria-hidden="true">
             <span class="hud-estado" data-hud-estado="ejemplo"><i></i><span data-hud-texto>Consulta de ejemplo</span></span>
@@ -142,7 +143,7 @@ const MOTIVOS_ADDENDUM = [
                 <!-- ── Agenda ── -->
                 <div class="pantalla" data-pantalla-id="agenda">
                   <div class="pantalla-cabecera">
-                    <h3>Citas de hoy</h3>
+                    <h3 tabindex="-1">Citas de hoy</h3>
                     <span class="tenue-app">Jueves 15 de octubre</span>
                   </div>
                   <ul class="citas">
@@ -173,7 +174,7 @@ const MOTIVOS_ADDENDUM = [
                 <!-- ── Consulta (nota de evolución) ── -->
                 <form class="pantalla nota-form" data-pantalla-id="consulta" data-nota novalidate>
                   <div class="pantalla-cabecera">
-                    <h3>Nota de evolución · María Fernanda López</h3>
+                    <h3 tabindex="-1">Nota de evolución · María Fernanda López</h3>
                     <span class="borrador" data-borrador><Icono nombre="reloj" /> Borrador guardado</span>
                   </div>
 
@@ -238,7 +239,7 @@ const MOTIVOS_ADDENDUM = [
                 <!-- ── Expediente: nota sellada y addendum ── -->
                 <div class="pantalla" data-pantalla-id="expediente">
                   <div class="pantalla-cabecera">
-                    <h3>Expediente · María Fernanda López</h3>
+                    <h3 tabindex="-1">Expediente · María Fernanda López</h3>
                     <span class="badge badge-info" data-con-addendums hidden>Con addendums (1)</span>
                   </div>
                   <article class="nota-sellada" data-nota-sellada>
@@ -288,7 +289,7 @@ const MOTIVOS_ADDENDUM = [
                 <!-- ── Receta ── -->
                 <div class="pantalla pantalla-receta" data-pantalla-id="receta">
                   <div class="pantalla-cabecera">
-                    <h3>Receta médica</h3>
+                    <h3 tabindex="-1">Receta médica</h3>
                     <span class="formato" role="group" aria-label="Formato">
                       <button type="button" class="formato-btn" data-formato="carta" aria-pressed="false" tabindex="-1">Carta</button>
                       <button type="button" class="formato-btn" data-formato="media" aria-pressed="true" tabindex="-1">Media carta</button>
@@ -420,7 +421,7 @@ const MOTIVOS_ADDENDUM = [
         <div data-animar="subir"><dt>Semáforo</dt><dd>7 requisitos <span class="sin-corte">NOM-004</span></dd></div>
         <div data-animar="subir"><dt>CIE-10</dt><dd>Diagnósticos frecuentes</dd></div>
         <div data-animar="subir"><dt>Borrador</dt><dd>Se guarda cada 3 s</dd></div>
-        <div data-animar="subir"><dt>Sello</dt><dd><span class="sin-corte">SHA-256</span> + <span class="sin-corte">Ed25519</span></dd></div>
+        <div data-animar="subir"><dt>Sello</dt><dd>Huella + firma de tu llave <small class="demo-datos-tec">SHA-256 · Ed25519</small></dd></div>
       </dl>
     </div>
   </div>
@@ -430,7 +431,7 @@ const MOTIVOS_ADDENDUM = [
       <div class="contenedor demo-cta revelar">
         <p>¿Te imaginas tu consulta así? Pruébalo {sitio.licencia.diasPrueba} días en tu consultorio.</p>
         <a class="boton boton-primario" href={prueba} target="_blank" rel="noopener noreferrer">
-          <Icono nombre="chat" /> Pide tu prueba por WhatsApp
+          <Icono nombre="chat" /> <span class="cta-largo">Pide tu prueba por WhatsApp</span><span class="cta-corto">Escríbenos por WhatsApp</span>
         </a>
       </div>
     )
@@ -496,12 +497,17 @@ const MOTIVOS_ADDENDUM = [
   }
 
   /* ── Capítulos ── */
+  /* overflow-y: hidden: con `overflow-x: auto` el eje vertical también se vuelve desplazable (los revelados con
+     translateY desbordan unos píxeles) y el dedo que baja sobre la tira la movía a ella, no a la página: el primer
+     deslizamiento se perdía. Sin desplazamiento vertical propio, el gesto pasa directo a la página. El relleno de
+     arriba y abajo deja ver el anillo de foco. */
   .demo-capitulos {
     display: flex;
     gap: 8px;
-    margin: 0 calc(-1 * var(--margen));
-    padding: 0 var(--margen) 6px;
+    margin: -6px calc(-1 * var(--margen)) 0;
+    padding: 6px var(--margen);
     overflow-x: auto;
+    overflow-y: hidden;
     list-style: none;
     scrollbar-width: none;
     scroll-snap-type: x proximity;
@@ -635,12 +641,17 @@ const MOTIVOS_ADDENDUM = [
   }
 
   /* ═════════════ Presentación del dispositivo ═════════════
-     --p (scroll.ts) en .presentacion: 0 cuando asoma por abajo, 0.5 centrada, 1 cuando sale por arriba.
-     Tramos: --t (inclinada → plana, 0.05–0.45) y --luz (pantalla apagada → encendida, 0.15–0.42). Solo con
-     .movimiento: con movimiento reducido scroll.ts también escribe --p, pero aquí no se usa. */
-  .presentacion {
+     --p (scroll.ts) de .presentacion: 0 cuando asoma por abajo, 0.5 centrada, 1 cuando sale por arriba. Se escribe
+     solo en sus destinos [data-p] (.presentacion-halo y .dispositivo), que declaran ahí sus tramos: --t (inclinada →
+     plana, 0.05–0.45) y --luz (pantalla apagada → encendida, 0.15–0.42). Solo con .movimiento: con movimiento
+     reducido scroll.ts también escribe --p, pero aquí no se usa. */
+  .presentacion-halo,
+  .dispositivo {
     --t: clamp(0, (var(--p, 1) - 0.05) / 0.4, 1);
     --luz: clamp(0, (var(--p, 1) - 0.15) / 0.27, 1);
+  }
+
+  .presentacion {
     --giro: 14deg;
     --escala-min: 0.88;
     --bajada: 56px;
@@ -654,9 +665,13 @@ const MOTIVOS_ADDENDUM = [
 
   /* Celular: el mismo gesto, más corto y más plano. */
   @media (max-width: 759px) {
-    .presentacion {
+    .presentacion-halo,
+    .dispositivo {
       --t: clamp(0, (var(--p, 1) - 0.03) / 0.35, 1);
       --luz: clamp(0, (var(--p, 1) - 0.1) / 0.26, 1);
+    }
+
+    .presentacion {
       --giro: 8deg;
       --escala-min: 0.94;
       --bajada: 24px;
@@ -695,6 +710,15 @@ const MOTIVOS_ADDENDUM = [
   :global(.movimiento) .app,
   :global(.movimiento) .pantalla-luz {
     clip-path: inset(0 round calc(14px + (1 - var(--t)) * var(--radio-extra)));
+  }
+
+  /* Corte de la herencia: .app usa --t (sus esquinas), pero nada de adentro usa --p, --t ni --luz. Sin esto, cada
+     escritura de --p en .dispositivo recalcularía el estilo de los ~360 elementos del simulador; así el recálculo se
+     detiene en los hijos directos de .app (su valor no cambia). */
+  .app > * {
+    --p: initial;
+    --t: initial;
+    --luz: initial;
   }
 
   /* Luz azul bajo la ventana: crece al encenderse. */
@@ -898,6 +922,17 @@ const MOTIVOS_ADDENDUM = [
     font-size: 1rem;
   }
 
+  /* Nombre técnico, solo como etiqueta secundaria junto al de consultorio. */
+  .demo-datos-tec {
+    display: block;
+    margin-top: 2px;
+    color: var(--texto-tenue);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.75rem;
+    letter-spacing: 0.03em;
+    white-space: nowrap;
+  }
+
   @media (min-width: 760px) {
     .demo-datos {
       grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -934,12 +969,13 @@ const MOTIVOS_ADDENDUM = [
     display: inline-flex;
   }
 
-  .si-pausa,
-  [data-control='pausa'][aria-pressed='true'] .si-reproduce {
+  /* El SVG de Icono no lleva el atributo de alcance de este componente: :global para las clases del icono. */
+  [data-control='pausa'] :global(.si-pausa),
+  [data-control='pausa'][aria-pressed='true'] :global(.si-reproduce) {
     display: none;
   }
 
-  [data-control='pausa'][aria-pressed='true'] .si-pausa {
+  [data-control='pausa'][aria-pressed='true'] :global(.si-pausa) {
     display: block;
   }
 
@@ -989,6 +1025,43 @@ const MOTIVOS_ADDENDUM = [
     font-family: var(--fuente-titulo);
     font-size: clamp(1.2rem, 1rem + 0.8vw, 1.5rem);
     font-weight: 600;
+  }
+
+  .demo-cta .boton {
+    white-space: nowrap;
+  }
+
+  .cta-corto {
+    display: none;
+  }
+
+  /* Celular: el botón a todo el ancho y en un solo renglón (texto corto donde el largo no cabe). */
+  @media (max-width: 759px) {
+    .demo-cta {
+      padding: 20px 16px;
+    }
+
+    .demo-cta .boton {
+      width: 100%;
+      padding-inline: 1em;
+    }
+  }
+
+  @media (max-width: 379px) {
+    .cta-largo {
+      display: none;
+    }
+
+    .cta-corto {
+      display: inline;
+    }
+  }
+
+  /* Pantallas de menos de 340 px: mejor dos renglones que texto recortado. */
+  @media (max-width: 339px) {
+    .demo-cta .boton {
+      white-space: normal;
+    }
   }
 
   /* ═════════════ La app (réplica de clinica-nom004/src/App.css) ═════════════ */
@@ -2456,6 +2529,76 @@ const MOTIVOS_ADDENDUM = [
     .cie10-lista :global(button) {
       min-height: 44px;
       align-items: center;
+    }
+  }
+
+  /* Celular táctil: la ventana mide lo que su pantalla más alta y no tiene scroll propio. Con el dedo encima, la página se
+     desplaza siempre (antes, la zona con scroll interno atrapaba el gesto y la reproducción lo regresaba). `clip` en
+     lugar de `hidden`: no crea contenedor de scroll, así el diálogo y los avisos se quedan a la vista (sticky) aunque
+     la ventana sea más alta que la pantalla. */
+  @media (pointer: coarse) and (max-width: 759px) {
+    .app {
+      height: auto;
+      overflow: clip;
+    }
+
+    .app-cuerpo {
+      flex: none;
+    }
+
+    /* Todas las pantallas en la misma celda: la ventana mide lo que la más alta (la consulta) y no cambia de alto al
+       pasar de una a otra (sin saltos de la página: CLS). Las ocultas no se ven, no reciben foco ni las lee el lector. */
+    .app .app-principal {
+      display: grid;
+      overflow: visible;
+    }
+
+    .pantalla {
+      display: block;
+      grid-area: 1 / 1;
+      min-width: 0;
+      visibility: hidden;
+    }
+
+    .app[data-pantalla='agenda'] [data-pantalla-id='agenda'],
+    .app[data-pantalla='consulta'] [data-pantalla-id='consulta'],
+    .app[data-pantalla='expediente'] [data-pantalla-id='expediente'],
+    .app[data-pantalla='receta'] [data-pantalla-id='receta'] {
+      visibility: visible;
+    }
+
+    /* El semáforo se queda a la vista bajo la barra del sitio (antes, pegado al borde del scroll interno). */
+    .semaforo {
+      top: var(--altura-nav);
+    }
+
+    /* Las notas crecen con su texto: un área de texto con scroll propio también atraparía el dedo. */
+    @supports (field-sizing: content) {
+      .app textarea {
+        field-sizing: content;
+        min-height: calc(2lh + 20px);
+      }
+    }
+
+    .modal {
+      align-items: start;
+    }
+
+    .modal-caja {
+      position: sticky;
+      top: calc(var(--altura-nav) + 16px);
+    }
+
+    .toasts {
+      position: sticky;
+      right: auto;
+      bottom: 16px;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      align-self: flex-end;
+      height: 0;
+      margin-right: 12px;
     }
   }
 

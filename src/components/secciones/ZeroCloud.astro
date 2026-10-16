@@ -1,10 +1,15 @@
 ---
-// La bóveda: escena fijada negra (estilo página de privacidad de Apple). Tres actos ligados a --p:
-//   1 · la nota entra a clinica.db y se cifra ante tus ojos (la clave sale de tu contraseña con Argon2id)
+// La bóveda: escena fijada negra (estilo página de privacidad de Apple). Tres actos:
+//   1 · la nota entra a clinica.db y se cifra ante tus ojos (la clave sale de tu contraseña)
 //   2 · las líneas hacia la nube se cortan y el Wi‑Fi se apaga, pero el programa sigue sellando notas
-//   3 · la ventana se retira y aparece la llave: "Tú tienes la llave"
+//   3 · la ventana se atenúa y llega la llave, opaca: "Tú tienes la llave"
 // Sin JS o con movimiento reducido no se fija: los tres actos se leen apilados y el visual queda en su estado final.
-// Debajo, una ficha corta con lo verificable (respaldo incluido). Verdad: no hay recuperación de contraseña.
+// Debajo, una ficha corta con lo verificable. Verdad: no hay recuperación de contraseña, y el respaldo sirve para
+// recuperar la base en la MISMA computadora (docs/TRASPASO.md §3).
+//
+// Rendimiento: el motor escribe --p/--e/--s solo en los [data-p] (los tres actos, las capas del cifrado, la clave y la
+// llave), no en toda la escena; cada uno declara sus tramos. Lo que ocurre de golpe (candado, corte de la nube, aviso,
+// atenuar la ventana) va con data-escena-marcas → .alcanzo-N en la raíz y una transición: cambia pocas veces.
 import Icono from '../Icono.astro';
 import Isotipo3D from '../Isotipo3D.astro';
 import type { NombreIcono } from '../../lib/iconos';
@@ -32,53 +37,63 @@ function cifrado(texto: string, semilla: number): string {
 }
 const CIFRA = NOTA.map((renglon, i) => cifrado(renglon + renglon, 7919 * (i + 3)));
 
-const FICHA: readonly { icono: NombreIcono; titulo: string; texto: string; dato: string }[] = [
+// Cada capa es un solo bloque de texto (renglones separados por \n, white-space: pre): 2 elementos en vez de 12 que
+// recalcular en cada cuadro del barrido.
+const PLANO = NOTA.join('\n');
+const CIFRADO = CIFRA.join('\n');
+
+/** `dato`: en lenguaje de consultorio. `tecnico` (opcional): el nombre técnico, solo como etiqueta secundaria. */
+const FICHA: readonly { icono: NombreIcono; titulo: string; texto: string; dato: string; tecnico?: string }[] = [
   {
     icono: 'candado',
-    titulo: 'Cifrado en tu equipo',
-    texto: 'Tus expedientes viven cifrados en tu computadora y solo se abren con tu contraseña.',
-    dato: 'AES-256 · SQLCipher · Argon2id',
+    titulo: 'Ilegible sin tu contraseña',
+    texto: 'Aunque alguien copie el archivo o se lleve tu computadora, sin tu contraseña no puede leer tus expedientes.',
+    dato: 'Cifrada en tu equipo · se abre solo con tu contraseña',
+    tecnico: 'AES-256 · SQLCipher · Argon2id',
   },
   {
     icono: 'sin-wifi',
     titulo: 'Funciona sin internet',
     texto: 'Firmas, imprimes, buscas y respaldas igual con el Wi‑Fi apagado.',
-    dato: 'Sin servidores',
+    dato: 'Sin servidores ni cuentas en línea',
   },
   {
     icono: 'ojo',
-    titulo: 'Sin telemetría',
+    titulo: 'Nada sale de tu computadora',
     texto: 'InmutalKey no envía datos a nadie. Ni siquiera a nosotros.',
-    dato: 'Telemetría: ninguna',
+    dato: 'Sin rastreo ni estadísticas de uso',
+    tecnico: 'Telemetría: ninguna',
   },
   {
-    icono: 'usb',
-    titulo: 'Respaldos donde tú decidas',
-    texto: 'Copia tu base a la USB o disco que elijas, y el programa comprueba que la copia quedó idéntica.',
-    dato: 'Copia verificada · SHA-256',
+    icono: 'respaldo',
+    titulo: 'Respaldo comprobado',
+    texto:
+      'Con un clic copias tu base (y, si quieres, también a una USB) y el programa comprueba que la copia quedó idéntica. Hoy sirve para recuperarla en esta misma computadora.',
+    dato: 'Copia comprobada · para esta computadora',
+    tecnico: 'SHA-256',
   },
 ];
 ---
 
 <section class="zero fondo-negro" aria-labelledby="zero-titulo">
-  <div class="zero-escena" data-escena>
+  <div class="zero-escena" data-escena data-escena-marcas="0.32 0.42 0.56 0.62">
     <div class="zero-escenario" data-escenario>
       <div class="contenedor zero-rejilla">
         <div class="zero-actos">
-          <div class="zero-acto acto-1">
+          <div class="zero-acto acto-1" data-p>
             <h2 id="zero-titulo">Tus expedientes no se van a ninguna nube.</h2>
             <p class="texto-grande tenue">
               Se guardan cifrados en tu computadora. Sin tu contraseña, lo que escribiste es ilegible.
             </p>
           </div>
-          <div class="zero-acto acto-2">
-            <p class="zero-titular">Sin internet. <span class="sin-corte">Sin telemetría.</span></p>
+          <div class="zero-acto acto-2" data-p>
+            <p class="zero-titular">Sin internet. Nada sale de tu computadora.</p>
             <p class="texto-grande tenue">
               InmutalKey no envía datos a nadie, ni siquiera a nosotros. Con el Wi‑Fi apagado firmas, imprimes y
               respaldas igual.
             </p>
           </div>
-          <div class="zero-acto acto-3">
+          <div class="zero-acto acto-3" data-p>
             <p class="zero-titular zero-luz"><span>Tú</span> <span>tienes</span> <span>la</span> <span>llave.</span></p>
             <p class="texto-grande tenue">
               Solo tu contraseña abre tus expedientes. Nadie más la tiene, ni nosotros: guárdala bien.
@@ -87,17 +102,17 @@ const FICHA: readonly { icono: NombreIcono; titulo: string; texto: string; dato:
         </div>
 
         <div class="zero-lienzo" aria-hidden="true">
-          <div class="zv">
+          <div class="zv" data-animar="escala">
             <div class="zv-entrada">
               <span class="zv-halo"></span>
 
-              <!-- La nube y las líneas que se cortan -->
+              <!-- La nube y las líneas que se cortan (paso 2) -->
               <div class="zv-nube">
                 <svg viewBox="0 0 24 24" class="zv-nube-icono">
                   <path d="M7.25 18.25h10.5a3.75 3.75 0 0 0 .7-7.43 6 6 0 0 0-11.5-1.3A4.4 4.4 0 0 0 7.25 18.25Z"></path>
                   <path class="zv-nube-tacha" d="M3.5 3.5l17 17"></path>
                 </svg>
-                <span class="zv-etiqueta zv-nube-estado">
+                <span class="zv-etiqueta zv-relevo zv-nube-estado">
                   <span class="zv-e1">Nube</span>
                   <span class="zv-e2">Sin conexión</span>
                 </span>
@@ -132,13 +147,9 @@ const FICHA: readonly { icono: NombreIcono; titulo: string; texto: string; dato:
                 </div>
 
                 <div class="zv-nota">
-                  <div class="zv-capa zv-plano">
-                    {NOTA.map((r) => <span>{r}</span>)}
-                  </div>
-                  <div class="zv-capa zv-cifra">
-                    {CIFRA.map((r) => <span>{r}</span>)}
-                  </div>
-                  <span class="zv-barrido"><i></i></span>
+                  <div class="zv-capa zv-plano" data-p>{PLANO}</div>
+                  <div class="zv-capa zv-cifra" data-p>{CIFRADO}</div>
+                  <span class="zv-barrido" data-p><i></i></span>
                   <span class="zv-aviso">
                     <span class="zv-aviso-aro"><Icono nombre="check" /></span>
                     <span>
@@ -149,18 +160,18 @@ const FICHA: readonly { icono: NombreIcono; titulo: string; texto: string; dato:
                 </div>
 
                 <div class="zv-pie">
-                  <span class="zv-etiqueta">AES-256 · SQLCipher</span>
-                  <span class="zv-avance"><i></i></span>
-                  <span class="zv-etiqueta zv-pie-estado">
+                  <span class="zv-etiqueta zv-tecnico">AES-256</span>
+                  <span class="zv-avance"><i data-p></i></span>
+                  <span class="zv-etiqueta zv-relevo zv-pie-estado">
                     <span class="zv-e1">Cifrando…</span>
-                    <span class="zv-e2">Cifrada</span>
+                    <span class="zv-e2">Cifrada en tu equipo</span>
                   </span>
                 </div>
               </div>
 
-              <!-- De dónde sale la clave -->
-              <div class="zv-clave">
-                <span class="zv-ficha"><span class="zv-puntos">••••••••</span></span>
+              <!-- De dónde sale la clave: de tu contraseña (Argon2id, como etiqueta secundaria) -->
+              <div class="zv-clave" data-p>
+                <span class="zv-ficha"><span class="zv-puntos">••••</span> contraseña</span>
                 <span class="zv-flecha"></span>
                 <span class="zv-ficha zv-ficha-proceso">Argon2id</span>
                 <span class="zv-flecha"></span>
@@ -168,9 +179,9 @@ const FICHA: readonly { icono: NombreIcono; titulo: string; texto: string; dato:
               </div>
 
               <!-- Acto 3: la llave -->
-              <div class="zv-llave">
+              <div class="zv-llave" data-p>
                 <div class="zv-llave-mover">
-                  <Isotipo3D sizes="(min-width: 960px) 180px, 120px" brillo />
+                  <Isotipo3D sizes="(min-width: 600px) 210px, 130px" brillo />
                 </div>
                 <span class="zv-etiqueta zv-llave-pie">clinica.db · en tu computadora</span>
               </div>
@@ -190,7 +201,10 @@ const FICHA: readonly { icono: NombreIcono; titulo: string; texto: string; dato:
           <Icono nombre={f.icono} />
           <h3>{f.titulo}</h3>
           <p class="tenue">{f.texto}</p>
-          <span class="ficha-dato">{f.dato}</span>
+          <span class="ficha-dato">
+            {f.dato}
+            {f.tecnico && <span class="ficha-tecnico">{f.tecnico}</span>}
+          </span>
         </div>
       ))
     }
@@ -199,13 +213,18 @@ const FICHA: readonly { icono: NombreIcono; titulo: string; texto: string; dato:
 
 <style>
   /*
-   * Tramos (todos con var(--p, 1): sin JS o con movimiento reducido se ve el estado final)
+   * Continuo, ligado a --p (cada [data-p] declara el suyo, siempre con var(--p, 1): sin JS o con movimiento reducido
+   * se ve el estado final):
    *   --t0  0.00–0.07  aparece la derivación de la clave (contraseña → Argon2id → clave)
    *   --t1  0.06–0.32  barrido de cifrado (texto legible → cifrado)
-   *   --t2  0.38–0.56  se cortan las líneas a la nube y se apaga el Wi‑Fi
-   *   --t4  0.54–0.62  aviso "Nota sellada · sin conexión": el programa sigue trabajando
-   *   --t3  0.68–0.86  la ventana se retira y llega la llave
-   *   --tl  0.74–0.94  "Tú tienes la llave" se ilumina palabra por palabra
+   *   --t3  0.66–0.86  llega la llave, OPACA, creciendo; la clave se apaga en su primer 40 % (0.66–0.74) y el pie
+   *                    "clinica.db · en tu computadora" aparece en su segunda mitad (0.76–0.86): nunca se enciman
+   *   --tl  0.72–0.90  "Tú tienes la llave" se ilumina palabra por palabra
+   * Discreto (data-escena-marcas → .alcanzo-N, con transición):
+   *   1 · 0.32  el candado se cierra: "Cifrada en tu equipo"
+   *   2 · 0.42  se cortan las líneas a la nube y se apaga el Wi‑Fi
+   *   3 · 0.56  aviso "Nota sellada · sin conexión": el programa sigue trabajando
+   *   4 · 0.62  la ventana, la nube y las líneas se atenúan ANTES de que llegue la llave
    * Un transform por elemento: los efectos que se combinan van en envoltorios anidados.
    */
   .zero {
@@ -216,23 +235,19 @@ const FICHA: readonly { icono: NombreIcono; titulo: string; texto: string; dato:
 
   /* ───────────── Escena ───────────── */
 
-  /* Los tramos se calculan aquí: --p vive en el elemento [data-escena]. */
   .zero-escena {
     --largo: 2.2;
-    --p0: var(--p, 1);
-    --t0: clamp(0, var(--p0) / 0.07, 1);
-    --t1: clamp(0, (var(--p0) - 0.06) / 0.26, 1);
-    --t2: clamp(0, (var(--p0) - 0.38) / 0.18, 1);
-    --t4: clamp(0, (var(--p0) - 0.54) / 0.08, 1);
-    --t3: clamp(0, (var(--p0) - 0.68) / 0.18, 1);
-    --tl: clamp(0, (var(--p0) - 0.72) / 0.18, 1);
-    --cerrado: clamp(0, (var(--p0) - 0.3) / 0.04, 1);
   }
 
   @media (min-width: 960px) {
     .zero-escena {
       --largo: 2.6;
     }
+  }
+
+  /* Cada destino del motor parte de su propio --p. */
+  .zero [data-p] {
+    --p0: var(--p, 1);
   }
 
   /* Sin fijar (sin JS / movimiento reducido): flujo normal con aire arriba. */
@@ -352,18 +367,22 @@ const FICHA: readonly { icono: NombreIcono; titulo: string; texto: string; dato:
 
   :global(.movimiento) .acto-2 {
     --entra: clamp(0, (var(--p0) - 0.35) / 0.06, 1);
-    --sale: clamp(0, (var(--p0) - 0.63) / 0.06, 1);
+    --sale: clamp(0, (var(--p0) - 0.61) / 0.06, 1);
     opacity: calc(var(--entra) - var(--sale));
     transform: translate3d(0, calc((1 - var(--entra)) * 22px - var(--sale) * 18px), 0);
   }
 
+  .acto-3 {
+    --tl: clamp(0, (var(--p0) - 0.72) / 0.18, 1);
+  }
+
   :global(.movimiento) .acto-3 {
-    --a: clamp(0, (var(--p0) - 0.69) / 0.06, 1);
+    --a: clamp(0, (var(--p0) - 0.68) / 0.06, 1);
     opacity: var(--a);
     transform: translate3d(0, calc((1 - var(--a)) * 22px), 0);
   }
 
-  /* "Tú tienes la llave": cada palabra pasa de tenue a plena, en orden. */
+  /* "Tú tienes la llave": cada palabra pasa de tenue a plena, en orden (--tl viene de .acto-3). */
   .zero-luz span:nth-child(1) { --w: 0; }
   .zero-luz span:nth-child(2) { --w: 1; }
   .zero-luz span:nth-child(3) { --w: 2; }
@@ -417,12 +436,6 @@ const FICHA: readonly { icono: NombreIcono; titulo: string; texto: string; dato:
     line-height: 1.35;
   }
 
-  /* Al asomar la escena, el visual sube y crece un poco (--e: 0 → 1 hasta fijarse). */
-  :global(.movimiento) .zv-entrada {
-    opacity: calc(0.25 + var(--e, 1) * 0.75);
-    transform: translate3d(0, calc((1 - var(--e, 1)) * 48px), 0) scale(calc(0.94 + var(--e, 1) * 0.06));
-  }
-
   .zv-halo {
     position: absolute;
     inset: 4% 0 0;
@@ -470,8 +483,7 @@ const FICHA: readonly { icono: NombreIcono; titulo: string; texto: string; dato:
   }
 
   /* Etiquetas que cambian de texto: las dos versiones en la misma celda. */
-  .zv-nube-estado,
-  .zv-pie-estado {
+  .zv-relevo {
     display: inline-grid;
     justify-items: center;
   }
@@ -485,6 +497,19 @@ const FICHA: readonly { icono: NombreIcono; titulo: string; texto: string; dato:
     grid-area: 1 / 1;
   }
 
+  /* Estado final (sin JS, movimiento reducido o ya alcanzado el paso): se lee la segunda versión. */
+  .zv-e1 {
+    opacity: 0;
+  }
+
+  .zv-nube-estado .zv-e2 {
+    color: var(--texto);
+  }
+
+  .zv-pie-estado .zv-e2 {
+    color: var(--azul-vivo);
+  }
+
   /* ── Nube y enlaces ── */
 
   .zv-nube {
@@ -493,7 +518,7 @@ const FICHA: readonly { icono: NombreIcono; titulo: string; texto: string; dato:
     display: grid;
     justify-items: center;
     gap: 0.2em;
-    opacity: calc(1 - var(--t2) * 0.55 - var(--t3) * 0.3);
+    opacity: 0.15;
   }
 
   .zv-nube-icono {
@@ -511,17 +536,6 @@ const FICHA: readonly { icono: NombreIcono; titulo: string; texto: string; dato:
     stroke-linecap: round;
     transform-box: view-box;
     transform-origin: 3.5px 3.5px;
-    transform: scale(var(--t2));
-  }
-
-  /* Relevo sin encimarse: una se va antes de que llegue la otra. */
-  .zv-nube-estado .zv-e1 {
-    opacity: calc(1 - clamp(0, var(--t2) * 3, 1));
-  }
-
-  .zv-nube-estado .zv-e2 {
-    opacity: clamp(0, var(--t2) * 3 - 1.4, 1);
-    color: var(--texto);
   }
 
   .zv-enlaces {
@@ -530,6 +544,7 @@ const FICHA: readonly { icono: NombreIcono; titulo: string; texto: string; dato:
     margin-top: 0.5em;
     display: flex;
     justify-content: space-between;
+    opacity: 0.35;
   }
 
   .zv-enlace {
@@ -542,24 +557,20 @@ const FICHA: readonly { icono: NombreIcono; titulo: string; texto: string; dato:
   .zv-enlace i {
     background: repeating-linear-gradient(var(--azul-vivo) 0 3px, transparent 3px 7px);
     opacity: 0.75;
+    transform: scaleY(0.18);
   }
 
   .zv-enlace i:first-child {
     transform-origin: 50% 0;
-    transform: scaleY(calc(1 - var(--t2) * 0.82));
   }
 
   .zv-enlace i:last-child {
     transform-origin: 50% 100%;
-    transform: scaleY(calc(1 - var(--t2) * 0.82));
   }
 
-  .zv-enlace:nth-child(1) {
-    opacity: calc(1 - var(--t2) * 0.6);
-  }
-
+  .zv-enlace:nth-child(1),
   .zv-enlace:nth-child(3) {
-    opacity: calc(1 - var(--t2) * 0.6);
+    opacity: 0.4;
   }
 
   /* ── Ventana clinica.db ── */
@@ -578,12 +589,9 @@ const FICHA: readonly { icono: NombreIcono; titulo: string; texto: string; dato:
       0 30px 60px -30px rgb(0 0 0 / 0.9),
       0 0 60px -20px rgb(46 159 224 / 0.25);
     overflow: hidden;
-  }
-
-  /* Acto 3: la ventana se retira para dejar paso a la llave (sin movimiento se ve así, el cuadro final). */
-  .zv-ventana {
-    opacity: calc(1 - var(--t3) * 0.78);
-    transform: scale(calc(1 - var(--t3) * 0.06));
+    /* Estado final: atenuada y un poco atrás, para dejar paso a la llave. */
+    opacity: 0.16;
+    transform: scale(0.94);
   }
 
   .zv-barra {
@@ -633,37 +641,23 @@ const FICHA: readonly { icono: NombreIcono; titulo: string; texto: string; dato:
     color: var(--texto);
   }
 
-  /* El Wi‑Fi se apaga de afuera hacia adentro y queda tachado. */
-  .zv-arco-3 {
-    opacity: calc(1 - clamp(0, var(--t2) * 3, 1) * 0.82);
-  }
-
-  .zv-arco-2 {
-    opacity: calc(1 - clamp(0, var(--t2) * 3 - 0.7, 1) * 0.82);
-  }
-
-  .zv-arco-1 {
-    opacity: calc(1 - clamp(0, var(--t2) * 3 - 1.4, 1) * 0.82);
+  /* El Wi‑Fi apagado y tachado (estado final). */
+  .zv-arco {
+    opacity: 0.18;
   }
 
   .zv-arco-punto {
     stroke-width: 2.4;
-    opacity: calc(1 - var(--t2) * 0.8);
+    opacity: 0.2;
   }
 
   .zv-wifi-tacha {
     transform-box: view-box;
     transform-origin: 4px 4px;
-    transform: scale(clamp(0, var(--t2) * 2.2 - 1.2, 1));
   }
 
-  /* El candado se cierra al terminar el barrido. */
   .zv-candado {
     color: var(--azul-vivo);
-  }
-
-  .zv-arco-candado {
-    transform: translate3d(0, calc((1 - var(--cerrado)) * -2.6px), 0);
   }
 
   /* ── La nota: legible a la derecha del barrido, cifrada a la izquierda ── */
@@ -675,16 +669,18 @@ const FICHA: readonly { icono: NombreIcono; titulo: string; texto: string; dato:
     min-height: 0;
   }
 
+  /* Un bloque de texto por capa: renglón de 1.3 + 0.5 de separación = 1.8. */
   .zv-capa {
     grid-area: 1 / 1;
-    display: grid;
-    gap: 0.5em;
+    overflow: hidden;
+    white-space: pre;
+    line-height: 1.8;
   }
 
-  .zv-capa span {
-    overflow: hidden;
-    white-space: nowrap;
-    line-height: 1.3;
+  .zv-capa,
+  .zv-barrido,
+  .zv-avance i {
+    --t1: clamp(0, (var(--p0) - 0.06) / 0.26, 1);
   }
 
   .zv-plano {
@@ -692,21 +688,18 @@ const FICHA: readonly { icono: NombreIcono; titulo: string; texto: string; dato:
     clip-path: inset(0 0 0 calc(var(--t1) * 100%));
   }
 
-  .zv-plano span:first-child {
+  .zv-plano::first-line {
     font-weight: 600;
   }
 
+  /* El renglón cifrado (mono, un poco más chico) ocupa el mismo alto que el legible: 1.8 / 0.92. */
   .zv-cifra {
     font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.92em;
+    line-height: 1.9565;
     color: rgb(46 159 224 / 0.85);
     letter-spacing: 0.04em;
     clip-path: inset(0 calc((1 - var(--t1)) * 100%) 0 0);
-  }
-
-  /* El renglón cifrado (mono, un poco más chico) ocupa el mismo alto que el legible: 1.3 / 0.92. */
-  .zv-cifra span {
-    font-size: 0.92em;
-    line-height: 1.413;
   }
 
   .zv-barrido {
@@ -743,8 +736,6 @@ const FICHA: readonly { icono: NombreIcono; titulo: string; texto: string; dato:
     border-radius: 0.8em;
     background: rgb(6 22 20 / 0.92);
     box-shadow: 0 12px 30px -12px rgb(0 0 0 / 0.9);
-    opacity: var(--t4);
-    transform: translate3d(0, calc((1 - var(--t4)) * 0.8em), 0);
   }
 
   .zv-aviso-aro {
@@ -787,6 +778,11 @@ const FICHA: readonly { icono: NombreIcono; titulo: string; texto: string; dato:
     border-top: 1px solid var(--linea-oscura);
   }
 
+  /* El nombre técnico, secundario junto a "Cifrada en tu equipo". */
+  .zv-tecnico {
+    opacity: 0.75;
+  }
+
   .zv-avance {
     height: 2px;
     border-radius: 2px;
@@ -802,26 +798,19 @@ const FICHA: readonly { icono: NombreIcono; titulo: string; texto: string; dato:
     transform: scaleX(var(--t1));
   }
 
-  .zv-pie-estado .zv-e1 {
-    opacity: calc(1 - clamp(0, var(--cerrado) * 2, 1));
-  }
-
-  .zv-pie-estado .zv-e2 {
-    opacity: clamp(0, var(--cerrado) * 2 - 1, 1);
-    color: var(--azul-vivo);
-  }
-
-  /* ── Derivación de la clave ── */
+  /* ── Derivación de la clave: aparece al fijarse y se apaga en el primer 40 % del tramo de la llave ── */
 
   .zv-clave {
+    --t0: clamp(0, var(--p0) / 0.07, 1);
+    --fuera: clamp(0, (var(--p0) - 0.66) / 0.08, 1);
     margin-top: 1.5em;
     display: flex;
     justify-content: center;
     align-items: center;
     gap: 0.45em;
     white-space: nowrap;
-    opacity: calc(var(--t0) * (1 - var(--t3)));
-    transform: translate3d(0, calc((1 - var(--t0)) * 0.6em), 0);
+    opacity: calc(var(--t0) * (1 - var(--fuera)));
+    transform: translate3d(0, calc((1 - var(--t0)) * 0.6em + var(--fuera) * 0.5em), 0);
   }
 
   .zv-ficha {
@@ -857,6 +846,7 @@ const FICHA: readonly { icono: NombreIcono; titulo: string; texto: string; dato:
     position: relative;
     width: 1.4em;
     height: 1px;
+    flex: none;
     background: var(--linea-oscura-fuerte);
   }
 
@@ -872,17 +862,22 @@ const FICHA: readonly { icono: NombreIcono; titulo: string; texto: string; dato:
     transform: rotate(45deg);
   }
 
-  /* ── Acto 3: la llave ── */
+  /* ── Acto 3: la llave ──
+     Entra OPACA (opacidad plena en el primer 4 % del tramo, ≈ 8 px de scroll) y crece de 60 % a 100 %: nunca se ve
+     translúcida ni gris sobre el texto cifrado. */
 
   .zv-llave {
+    --t3: clamp(0, (var(--p0) - 0.66) / 0.2, 1);
+    --e3: calc(1 - (1 - var(--t3)) * (1 - var(--t3)));
+    --pie: clamp(0, (var(--t3) - 0.5) * 2, 1);
+    --brillo: clamp(0, (var(--p0) - 0.76) / 0.22, 1);
     position: absolute;
     inset: 8% 0 4%;
     display: grid;
     grid-template-rows: minmax(0, 1fr) auto;
     justify-items: center;
     gap: 0.6em;
-    opacity: var(--t3);
-    --brillo: clamp(0, (var(--p0) - 0.76) / 0.22, 1);
+    opacity: clamp(0, var(--t3) * 25, 1);
     pointer-events: none;
   }
 
@@ -891,7 +886,7 @@ const FICHA: readonly { icono: NombreIcono; titulo: string; texto: string; dato:
     height: 100%;
     min-height: 0;
     aspect-ratio: 304 / 724;
-    transform: translate3d(0, calc((1 - var(--t3)) * 9%), 0) scale(calc(0.9 + var(--t3) * 0.1));
+    transform: translate3d(0, calc((1 - var(--e3)) * 6%), 0) scale(calc(0.6 + var(--e3) * 0.4));
     will-change: transform;
   }
 
@@ -917,17 +912,129 @@ const FICHA: readonly { icono: NombreIcono; titulo: string; texto: string; dato:
     background: radial-gradient(closest-side, rgb(0 0 0 / 0.75), transparent);
   }
 
-  /* position: relative la pinta después de .zv-llave-mover (capa de posicionados), encima de su sombra ::after. */
+  /* position: relative la pinta después de .zv-llave-mover (capa de posicionados), encima de su sombra ::after. Llega
+     en la segunda mitad del tramo, cuando la fila de la clave ya se apagó. */
   .zv-llave-pie {
     position: relative;
     color: var(--texto);
+    opacity: var(--pie);
+    transform: translate3d(0, calc((1 - var(--pie)) * 0.5em), 0);
+  }
+
+  /* ── Pasos discretos: estado previo mientras no se alcanza la marca, con transición al cambiar ──
+     Solo con la escena fijada (con movimiento y pantalla de más de 520 px de alto); si no, se ve el estado final. */
+
+  :global(.movimiento) .zv-e1,
+  :global(.movimiento) .zv-e2,
+  :global(.movimiento) .zv-arco,
+  :global(.movimiento) .zv-arco-punto {
+    transition: opacity 0.3s var(--ease);
+  }
+
+  :global(.movimiento) .zv-nube,
+  :global(.movimiento) .zv-enlaces,
+  :global(.movimiento) .zv-enlace,
+  :global(.movimiento) .zv-aviso {
+    transition:
+      opacity 0.45s var(--ease),
+      transform 0.5s var(--ease);
+  }
+
+  :global(.movimiento) .zv-nube-tacha,
+  :global(.movimiento) .zv-wifi-tacha,
+  :global(.movimiento) .zv-arco-candado,
+  :global(.movimiento) .zv-enlace i {
+    transition: transform 0.45s var(--ease);
+  }
+
+  :global(.movimiento) .zv-ventana {
+    transition:
+      opacity 0.6s var(--ease),
+      transform 0.7s var(--ease);
+  }
+
+  /* Relevo de etiquetas sin encimarse: la que se va sale primero (el retraso es el del estado al que se llega). */
+  :global(.movimiento) .zv-e2 {
+    transition-delay: 0.18s;
+  }
+
+  /* Al apagarse, el Wi‑Fi se va de afuera hacia adentro y queda tachado. */
+  :global(.movimiento) .zv-arco-2 { transition-delay: 0.1s; }
+  :global(.movimiento) .zv-arco-1 { transition-delay: 0.2s; }
+  :global(.movimiento) .zv-arco-punto { transition-delay: 0.25s; }
+  :global(.movimiento) .zv-wifi-tacha { transition-delay: 0.3s; }
+  :global(.movimiento) .zv-nube-tacha { transition-delay: 0.1s; }
+
+  @media (min-height: 521px) {
+    /* 1 · antes de terminar el barrido: candado abierto, "Cifrando…" */
+    :global(.movimiento) .zero-escena:not(.alcanzo-1) .zv-arco-candado {
+      transform: translate3d(0, -2.6px, 0);
+    }
+
+    :global(.movimiento) .zero-escena:not(.alcanzo-1) .zv-pie-estado .zv-e1,
+    :global(.movimiento) .zero-escena:not(.alcanzo-2) .zv-nube-estado .zv-e1 {
+      opacity: 1;
+      transition-delay: 0.18s;
+    }
+
+    :global(.movimiento) .zero-escena:not(.alcanzo-1) .zv-pie-estado .zv-e2,
+    :global(.movimiento) .zero-escena:not(.alcanzo-2) .zv-nube-estado .zv-e2 {
+      opacity: 0;
+      transition-delay: 0s;
+    }
+
+    /* 2 · antes del corte: nube conectada, líneas completas, Wi‑Fi encendido */
+    :global(.movimiento) .zero-escena:not(.alcanzo-2) .zv-nube {
+      opacity: 1;
+    }
+
+    :global(.movimiento) .zero-escena.alcanzo-2:not(.alcanzo-4) .zv-nube {
+      opacity: 0.45;
+    }
+
+    :global(.movimiento) .zero-escena:not(.alcanzo-2) .zv-nube-tacha,
+    :global(.movimiento) .zero-escena:not(.alcanzo-2) .zv-wifi-tacha {
+      transform: scale(0);
+      transition-delay: 0s;
+    }
+
+    :global(.movimiento) .zero-escena:not(.alcanzo-2) .zv-enlace i {
+      transform: none;
+    }
+
+    :global(.movimiento) .zero-escena:not(.alcanzo-2) .zv-enlace,
+    :global(.movimiento) .zero-escena:not(.alcanzo-2) .zv-arco,
+    :global(.movimiento) .zero-escena:not(.alcanzo-2) .zv-arco-punto {
+      opacity: 1;
+      transition-delay: 0s;
+    }
+
+    /* 3 · antes del aviso */
+    :global(.movimiento) .zero-escena:not(.alcanzo-3) .zv-aviso {
+      opacity: 0;
+      transform: translate3d(0, 0.8em, 0);
+    }
+
+    /* 4 · antes de atenuarse para la llave */
+    :global(.movimiento) .zero-escena:not(.alcanzo-4) .zv-ventana {
+      opacity: 1;
+      transform: none;
+    }
+
+    :global(.movimiento) .zero-escena:not(.alcanzo-4) .zv-enlaces {
+      opacity: 1;
+    }
   }
 
   /* Pantallas muy bajas (teléfono acostado): no se fija; se ve el estado final. */
   @media (max-height: 520px) {
     :global(.movimiento) .zero-escena {
-      --p: 1 !important;
       height: auto;
+    }
+
+    /* El motor escribe --p en cada [data-p]; !important gana al estilo en línea. */
+    :global(.movimiento) .zero [data-p] {
+      --p: 1 !important;
     }
 
     :global(.movimiento) .zero-escenario {
@@ -1020,10 +1127,21 @@ const FICHA: readonly { icono: NombreIcono; titulo: string; texto: string; dato:
     line-height: 1.55;
   }
 
+  /* Lo verificable, en palabras de consultorio; debajo, el nombre técnico como etiqueta secundaria. */
   .ficha-dato {
+    display: grid;
+    gap: 0.2rem;
     margin-top: 0.35rem;
+    color: var(--texto);
+    font-size: 0.875rem;
+    font-weight: 500;
+    line-height: 1.4;
+  }
+
+  .ficha-tecnico {
     font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-    font-size: 0.8125rem;
+    font-size: 0.75rem;
+    font-weight: 400;
     letter-spacing: 0.02em;
     color: var(--texto-tenue);
   }

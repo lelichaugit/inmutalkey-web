@@ -1,5 +1,8 @@
-// Chats simulados (ChatSimulado.astro): cuando el teléfono entra en vista, la conversación se reproduce una vez.
-//  · mensajes del médico: se teclean en la barra de abajo (el micrófono cambia a "enviar"), se envían con una
+// Chats simulados (ChatSimulado.astro): cuando el teléfono asoma (20 % a la vista), la conversación se reproduce una
+// vez, sin espera inicial.
+//  · el primer mensaje del médico (.ya-enviado) ya está enviado desde el inicio: se ve con dos palomitas grises y pasa
+//    a azules cuando InmutalKey responde; así el teléfono nunca se ve vacío
+//  · los demás mensajes del médico: se teclean en la barra de abajo (el micrófono cambia a "enviar"), se envían con una
 //    palomita, pasan a dos grises (entregado) y a azules (leído)
 //  · mensajes de InmutalKey: "escribiendo…" en la cabecera y la burbuja de tres puntos antes de llegar
 // Con movimiento reducido no se reproduce: todo queda visible y leído, igual que sin JS.
@@ -28,8 +31,12 @@ async function reproducir(chat: HTMLElement): Promise<void> {
   const campo = chat.querySelector<HTMLElement>('[data-chat-escrito]');
   let pendientesDeLeer: HTMLElement[] = [];
 
-  await espera(500);
   for (const m of mensajes) {
+    if (m.classList.contains('ya-enviado')) {
+      m.classList.add('es-entregado');
+      pendientesDeLeer.push(m);
+      continue;
+    }
     const deInmutalKey = m.classList.contains('de-inmutalkey');
     const texto = m.querySelector('.burbuja-texto')?.textContent?.trim() ?? '';
 
@@ -83,7 +90,7 @@ export function iniciarChats(raiz: ParentNode): void {
         void reproducir(e.target as HTMLElement);
       }
     },
-    { threshold: 0.45 },
+    { threshold: 0.2 },
   );
   chats.forEach((c) => io.observe(c));
 }

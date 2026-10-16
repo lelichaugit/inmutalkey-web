@@ -24,6 +24,9 @@ interface Pista {
   alto: number;
   /** Alto del escenario fijo (solo escenas). */
   escenario: number;
+  /** ¿El escenario está fijo (sticky) a este ancho? Una escena que el CSS no fija (p. ej. "Qué incluye" en celular)
+   *  no recibe variables: se queda en su estado final y no recalcula estilos en cada cuadro. */
+  fija: boolean;
   /** Umbrales de --p que cuentan como pasos (solo escenas con data-escena-marcas). */
   marcas: number[];
   /** Tope de --p (`data-progreso-hasta`): pasado ese punto ya no se escribe y el subárbol no se recalcula. */
@@ -107,6 +110,7 @@ export function iniciarScroll({ movimiento, alCuadro }: OpcionesScroll): MotorSc
         top: 0,
         alto: 0,
         escenario: 0,
+        fija: true,
         marcas,
         paso: -1,
         escritos: new Map(),
@@ -170,6 +174,7 @@ export function iniciarScroll({ movimiento, alCuadro }: OpcionesScroll): MotorSc
     for (const p of pistas) {
       switch (p.tipo) {
         case 'escena': {
+          if (!p.fija) break;
           // --p: avance mientras el escenario está fijo. --e: entrada (borde superior de la ventana inferior a la
           // superior). --s: salida (borde inferior de la escena de la ventana inferior a la superior).
           const avance = limitar((y - p.top) / Math.max(p.alto - p.escenario, 1));
@@ -205,7 +210,18 @@ export function iniciarScroll({ movimiento, alCuadro }: OpcionesScroll): MotorSc
     for (const p of pistas) {
       p.top = topDocumento(p.el);
       p.alto = p.el.offsetHeight;
-      if (p.tipo === 'escena') p.escenario = p.el.querySelector<HTMLElement>('[data-escenario]')?.offsetHeight ?? altoVentana;
+      if (p.tipo === 'escena') {
+        const escenario = p.el.querySelector<HTMLElement>('[data-escenario]');
+        p.escenario = escenario?.offsetHeight ?? altoVentana;
+        const fija = !escenario || getComputedStyle(escenario).position === 'sticky';
+        if (!fija && p.fija) {
+          // Deja de fijarse (cambió el ancho): fuera variables, todos los pasos alcanzados = estado final.
+          for (const nombre of p.escritos.keys()) for (const d of p.destinos) d.style.removeProperty(nombre);
+          p.escritos.clear();
+          marcarPaso(p, 1);
+        }
+        p.fija = fija;
+      }
     }
     pedirCuadro();
   }

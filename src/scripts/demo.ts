@@ -4,6 +4,11 @@
 //
 // La ventana llega inclinada y escalada (presentación ligada al scroll en Demo.astro): las medidas en pantalla se
 // convierten a las coordenadas propias de la ventana antes de mover el cursor simulado o el scroll interno.
+//
+// Celular táctil: la ventana no tiene scroll propio (Demo.astro), así que nunca se desplaza nada por dentro y el dedo
+// siempre mueve la página. Tocar la ventana pausa la reproducción; si el foco del teclado entra en ella, la
+// reproducción se detiene (o ya no arranca) y, si una pantalla se oculta con el foco dentro, este pasa al encabezado
+// de la nueva.
 
 import { buscarCie10, type Diagnostico } from '../lib/cie10';
 import { calcularImc, clasificarImc, errorSpo2, ETIQUETA_IMC, leerNumero } from '../lib/imc';
@@ -45,9 +50,13 @@ class Demo {
   private visible = false;
   private reproduciendo = false;
   private iniciado = false;
+  /** ¿Ya se reprodujo alguna vez? (el botón dice "Reproducir" o "Ver de nuevo"). */
+  private reprodujo = false;
   private actual: IdCapitulo = 'consulta';
   /** Última vez que el visitante tocó la tira de capítulos (no se la movemos mientras la usa). */
   private tiraTocada = 0;
+  /** Última vez que tocó la ventana o giró la rueda sobre ella (no le movemos el scroll interno mientras la usa). */
+  private appTocada = 0;
 
   constructor(private readonly seccion: HTMLElement) {
     const q = <T extends Element>(sel: string): T => {
@@ -70,6 +79,12 @@ class Demo {
     for (const nombre of [...CAMPOS_NOTA, 'buscarCie10']) {
       const c = this.campo(nombre);
       if (c) this.finales.set(c, c.value);
+    }
+
+    // Celular táctil (sin scroll interno): las notas crecen con su texto (field-sizing en Demo.astro) y el alto del
+    // ejemplo completo queda como su mínimo, para que la ventana no cambie de alto al vaciarlas y volver a escribirlas.
+    if (!this.hayScrollInterno()) {
+      this.form.querySelectorAll<HTMLTextAreaElement>('textarea').forEach((t) => t.style.setProperty('min-height', `${t.offsetHeight}px`));
     }
 
     this.enlazar();
@@ -110,10 +125,38 @@ class Demo {
   }
 
   private mostrar(p: Pantalla): void {
-    if (this.app.dataset['pantalla'] !== p) {
-      this.app.dataset['pantalla'] = p;
+    const antes = this.app.dataset['pantalla'];
+    if (antes === p) return;
+    const saliente = this.app.querySelector(`[data-pantalla-id="${antes ?? ''}"]`);
+    const barra = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--altura-nav')) || 0;
+    const arribaAntes = this.app.getBoundingClientRect().top;
+    this.app.dataset['pantalla'] = p;
+    if (this.hayScrollInterno()) {
       this.principal.scrollTop = 0;
+    } else if (arribaAntes < barra && performance.now() - this.appTocada < 8000) {
+      // Celular: la ventana mide lo que la consulta (la pantalla más larga) y el contenido de la nueva puede ser mucho
+      // más corto. Si el médico la estaba usando con el borde de arriba fuera de vista (p. ej. tocó "Firmar nota" al
+      // final de la nota), la página sube hasta el inicio de la nueva pantalla. La reproducción sola nunca mueve la página.
+      const arriba = this.app.getBoundingClientRect().top;
+      window.scrollBy({ top: arriba - barra - 12, behavior: this.reducido ? 'auto' : 'smooth' });
     }
+    // Si el foco estaba en la pantalla que se oculta, caería al <body>: pasa al encabezado de la nueva.
+    if (saliente) this.rescatarFoco(saliente);
+  }
+
+  /** Si el foco está dentro de `contenedor` (que se va a ocultar o ya se ocultó), lo lleva al encabezado visible. */
+  private rescatarFoco(contenedor: Element): void {
+    const activo = document.activeElement;
+    if (!activo || activo === document.body || !contenedor.contains(activo)) return;
+    const titulo = this.app.querySelector<HTMLElement>(`[data-pantalla-id="${this.app.dataset['pantalla'] ?? ''}"] h3`);
+    const destino = titulo ?? this.narracion;
+    if (!destino) return;
+    if (!destino.hasAttribute('tabindex')) destino.tabIndex = -1;
+    destino.focus({ preventScroll: true });
+  }
+
+  private hayScrollInterno(): boolean {
+    return this.principal.scrollHeight > this.principal.clientHeight + 1;
   }
 
   private toast(texto: string, tipo: 'exito' | 'alerta' | 'info' = 'info'): void {
@@ -134,9 +177,13 @@ class Demo {
     };
   }
 
-  /** Scroll interno de la ventana (nunca el de la página). */
+  /**
+   * Scroll interno de la ventana (nunca el de la página). No hace nada si la ventana no tiene scroll propio (celular
+   * táctil) ni durante unos segundos después de que el visitante la tocó o giró la rueda encima: no se le pelea el gesto.
+   */
   private desplazarA(el: Element): void {
-    if (!this.principal.contains(el)) return;
+    if (!this.principal.contains(el) || !this.hayScrollInterno()) return;
+    if (performance.now() - this.appTocada < 4000) return;
     const caja = this.principal.getBoundingClientRect();
     const r = el.getBoundingClientRect();
     const destino = this.principal.scrollTop + (r.top - caja.top) * this.escala().y - this.principal.clientHeight * 0.32;
@@ -186,11 +233,17 @@ class Demo {
   }
 
   private abrirModal(nombre: string): void {
-    this.app.querySelectorAll<HTMLElement>('[data-modal]').forEach((m) => (m.hidden = m.dataset['modal'] !== nombre));
+    this.app.querySelectorAll<HTMLElement>('[data-modal]').forEach((m) => {
+      m.hidden = m.dataset['modal'] !== nombre;
+      if (m.hidden) this.rescatarFoco(m);
+    });
   }
 
   private cerrarModales(): void {
-    this.app.querySelectorAll<HTMLElement>('[data-modal]').forEach((m) => (m.hidden = true));
+    this.app.querySelectorAll<HTMLElement>('[data-modal]').forEach((m) => {
+      m.hidden = true;
+      this.rescatarFoco(m);
+    });
   }
 
   // ───────────── Nota en vivo ─────────────
@@ -507,7 +560,7 @@ class Demo {
         return;
       }
       case 'respaldo': {
-        this.narrar('Respalda con un clic. Puedes elegir tu USB y la copia se compara con el original.');
+        this.narrar('Respalda con un clic: una copia en Documentos y, si quieres, otra en tu USB. Cada copia se compara con el original.');
         await this.esperar(900, t);
         await this.clic(this.el('[data-accion="respaldar"]'), t);
         this.abrirModal('respaldo');
@@ -525,8 +578,8 @@ class Demo {
         }
         const r = this.el('[data-respaldo-resultado]');
         if (r) r.hidden = false;
-        this.toast('Respaldo guardado y verificado en 2 ubicaciones', 'exito');
-        this.narrar('Listo: así de simple es un día con InmutalKey. ¿Lo probamos en tu consultorio?');
+        this.toast('Respaldo guardado y comprobado en 2 ubicaciones', 'exito');
+        this.narrar('Copia comprobada: con ella recuperas tu base en esta misma computadora. Así de simple es un día con InmutalKey.');
         this.avance(1);
         await this.esperar(3000, t);
         this.cerrarModales();
@@ -619,18 +672,28 @@ class Demo {
     if (texto) texto.textContent = TEXTO_HUD[estado];
   }
 
+  /** Corta la reproducción en curso (el capítulo queda donde iba). */
+  private detener(): void {
+    if (!this.reproduciendo) return;
+    this.token++;
+    this.reproduciendo = false;
+    this.app.classList.remove('con-cursor');
+    this.ponerPausa(true);
+  }
+
   private ponerPausa(pausado: boolean): void {
     this.pausado = pausado;
     this.hud(pausado ? 'pausa' : 'vivo');
     if (!this.pausa) return;
     this.pausa.setAttribute('aria-pressed', String(pausado));
     const texto = this.pausa.querySelector('[data-control-texto]');
-    if (texto) texto.textContent = pausado ? (this.reproduciendo ? 'Reanudar' : 'Ver de nuevo') : 'Pausar';
+    if (texto) texto.textContent = pausado ? (this.reproduciendo ? 'Reanudar' : this.reprodujo ? 'Ver de nuevo' : 'Reproducir') : 'Pausar';
   }
 
   private async reproducirDesde(id: IdCapitulo, opciones: { preparar?: boolean; soloUno?: boolean } = {}): Promise<void> {
     const t = ++this.token;
     this.iniciado = true;
+    this.reprodujo = true;
     this.reproduciendo = true;
     this.ponerPausa(false);
     try {
@@ -690,17 +753,28 @@ class Demo {
       this.marcarBorrador();
     });
 
-    this.form.addEventListener('focusin', (ev) => {
-      if (!(ev.target instanceof HTMLElement) || !ev.target.matches('input, textarea')) return;
-      if (this.reproduciendo) {
-        this.token++;
-        this.reproduciendo = false;
-        this.app.classList.remove('con-cursor');
-        this.ponerPausa(true);
-      }
+    // Foco dentro de la ventana (teclado o clic): la reproducción se detiene, o ya no arranca, para que no cambie de
+    // pantalla bajo el cursor de texto. Los encabezados que recibe el foco al cambiar de pantalla no cuentan.
+    this.app.addEventListener('focusin', (ev) => {
+      const objetivo = ev.target;
+      if (!(objetivo instanceof HTMLElement) || objetivo.matches('h3')) return;
+      this.iniciado = true;
+      if (this.reproduciendo) this.detener();
+      else if (!this.pausado) this.ponerPausa(true);
+      if (!this.form.contains(objetivo) || !objetivo.matches('input, textarea')) return;
       this.hud('turno');
       this.narrar('Tu turno: borra o cambia algo y mira cómo responden el semáforo, el IMC y la búsqueda CIE-10.');
     });
+
+    // Tocar la ventana la pausa (Reanudar la sigue) y, un rato, nada se desplaza por dentro.
+    const tocarApp = (): void => {
+      this.appTocada = performance.now();
+    };
+    this.app.addEventListener('pointerdown', () => {
+      tocarApp();
+      if (this.reproduciendo && !this.pausado) this.ponerPausa(true);
+    }, { passive: true });
+    this.app.addEventListener('wheel', tocarApp, { passive: true });
 
     const tocarTira = (): void => {
       this.tiraTocada = performance.now();
@@ -748,7 +822,7 @@ class Demo {
       ([e]) => {
         const razon = e?.isIntersecting ? e.intersectionRatio : 0;
         this.visible = razon >= 0.14;
-        if (razon >= 0.49 && !this.iniciado && !this.reducido) void this.reproducirDesde('agenda');
+        if (razon >= 0.49 && !this.iniciado && !this.reducido && !this.app.contains(document.activeElement)) void this.reproducirDesde('agenda');
       },
       { threshold: [0, 0.15, 0.5] },
     );

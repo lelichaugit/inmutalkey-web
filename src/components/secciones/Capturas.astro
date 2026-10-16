@@ -8,7 +8,7 @@
 // (la sección de arriba): sin capturas no se descarga nada. Sin JS no aparecen y el carril sigue funcionando.
 //
 // Movimiento (solo con .movimiento): la fila entra con escala y desplazamiento ligados al scroll (--p de
-// .galeria) y, donde el navegador tiene scroll-driven animations, la captura del centro se ve plena y las de los
+// .galeria, escrito solo en cada .captura [data-p] y con tope en 0.34, cuando la entrada ya terminó) y, donde el navegador tiene scroll-driven animations, la captura del centro se ve plena y las de los
 // lados más chicas y tenues.
 import capturas from '../../data/capturas.json';
 import Icono from '../Icono.astro';
@@ -42,10 +42,10 @@ const dos = (n: number) => String(n).padStart(2, '0');
         </p>
       </div>
 
-      <div class="galeria" data-galeria data-progreso-scroll>
+      <div class="galeria" data-galeria data-progreso-scroll data-progreso-hasta="0.34">
         <ul class="carril" tabindex="0" aria-label="Capturas del programa" data-carril data-lenis-prevent-horizontal>
           {lista.map((c, i) => (
-            <li class="captura" data-captura>
+            <li class="captura" data-captura data-p>
               <figure>
                 <div class="marco">
                   <div class="marco-pantalla">
@@ -123,8 +123,6 @@ const dos = (n: number) => String(n).padStart(2, '0');
 
   /* ── Carril: scroll horizontal propio con snap; los bordes se desvanecen ── */
   .galeria {
-    /* Entrada ligada al scroll (0 al asomar, 0.5 centrada): de 0.04 a 0.34. */
-    --t: clamp(0, (var(--p, 1) - 0.04) / 0.3, 1);
     margin-top: clamp(32px, 5vw, 56px);
   }
 
@@ -303,6 +301,11 @@ const dos = (n: number) => String(n).padStart(2, '0');
   }
 
   /* ── Movimiento ── */
+  /* Destinos [data-p] de .galeria: entrada ligada al scroll (0 al asomar, 0.5 centrada), de 0.04 a 0.34. */
+  .captura {
+    --t: clamp(0, (var(--p, 1) - 0.04) / 0.3, 1);
+  }
+
   :global(.movimiento) .captura {
     opacity: calc(0.2 + var(--t) * 0.8);
     transform: translate3d(calc((1 - var(--t)) * 14vw), 0, 0) scale(calc(0.9 + var(--t) * 0.1));

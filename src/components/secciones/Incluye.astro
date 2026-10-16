@@ -6,6 +6,8 @@
 //   · celular, iPad vertical, sin JS o con movimiento reducido: rejilla tipo bento con revelados (sin scroll
 //     horizontal secuestrado en pantallas táctiles)
 // Las miniaturas se animan al entrar en vista (clase .es-visible de base.ts); sin JS se ven terminadas.
+// Rendimiento: el motor escribe --p/--e/--s solo en los [data-p] (las dos luces, el carril y las piezas del reloj),
+// no en toda la escena; cada uno declara su --avance. data-sin-riel: el recorrido usa el borde derecho (≥ 1360 px).
 // Debajo: la lista completa de funciones (src/data/funciones.ts) en un desplegable y el bloque "En camino".
 import { GRUPOS, PROXIMAMENTE } from '../../data/funciones';
 import Icono from '../Icono.astro';
@@ -41,7 +43,8 @@ const MOMENTOS = [
     hora: '19:30',
     corto: 'Respaldo',
     titulo: 'Respaldas al cerrar',
-    texto: 'Copia tu base a una USB o disco externo con un clic y comprueba que la copia quedó idéntica.',
+    texto:
+      'Con un clic copias tu base (y, si quieres, a una USB) y el programa comprueba que la copia quedó idéntica. Sirve para recuperarla en esta misma computadora.',
   },
 ] as const;
 
@@ -60,14 +63,14 @@ const area = `M14,118 L${linea.replaceAll(' ', ' L')} L284,118 Z`;
 ---
 
 <section class="seccion fondo-navy fondo-cuadricula incluye" id="incluye" aria-labelledby="incluye-titulo">
-  <div class="dia" data-escena>
+  <div class="dia" data-escena data-sin-riel>
     <div class="dia-escenario" data-escenario>
-      <span class="dia-luz dia-luz-manana" aria-hidden="true"></span>
-      <span class="dia-luz dia-luz-tarde" aria-hidden="true"></span>
+      <span class="dia-luz dia-luz-manana" aria-hidden="true" data-p></span>
+      <span class="dia-luz dia-luz-tarde" aria-hidden="true" data-p></span>
 
       <div class="dia-pista">
         <!-- En escritorio, el carril (título + tarjetas) es lo que se desliza; el título es la primera "parada". -->
-        <div class="dia-carril">
+        <div class="dia-carril" data-p>
         <div class="dia-cabeza">
           <div class="entrada revelar">
             <h2 id="incluye-titulo">Todo lo que tu consultorio usa en un día</h2>
@@ -148,7 +151,7 @@ const area = `M14,118 L${linea.replaceAll(' ', ' L')} L284,118 Z`;
                       <div class="hoja">
                         <div class="hoja-cabeza">
                           <strong>Receta médica</strong>
-                          <span class="mono">Folio 0142</span>
+                          <span class="mono">Folio: nota 12</span>
                         </div>
                         <p class="hoja-rx">
                           <strong>Paracetamol 500 mg</strong>
@@ -159,10 +162,8 @@ const area = `M14,118 L${linea.replaceAll(' ', ' L')} L284,118 Z`;
                           <span>3 veces al día</span>
                         </p>
                         <div class="hoja-pie">
-                          <span class="hoja-sello">
-                            <Icono nombre="check" /> Sellada
-                          </span>
-                          <span class="mono">sello 9f2c…e41a</span>
+                          <span>Sello de la nota</span>
+                          <span class="mono">9f2c41e8…b07a</span>
                         </div>
                       </div>
                     </div>
@@ -208,7 +209,7 @@ const area = `M14,118 L${linea.replaceAll(' ', ' L')} L284,118 Z`;
                         <span class="mono">clinica.db</span>
                         <span class="respaldo-flecha" />
                         <Icono nombre="carpeta" />
-                        <span class="mono">Documentos</span>
+                        <span class="mono">Respaldos</span>
                       </div>
                       <div class="respaldo-barra">
                         <i />
@@ -228,8 +229,8 @@ const area = `M14,118 L${linea.replaceAll(' ', ' L')} L284,118 Z`;
                           <Icono nombre="check" />
                         </span>
                         <span>
-                          <strong>Copia verificada</strong>
-                          <small class="mono">SHA-256 idéntico</small>
+                          <strong>Copia comprobada</strong>
+                          <small>idéntica · para esta computadora</small>
                         </span>
                       </div>
                     </div>
@@ -244,10 +245,10 @@ const area = `M14,118 L${linea.replaceAll(' ', ' L')} L284,118 Z`;
 
       <div class="contenedor dia-reloj" aria-hidden="true">
         <div class="reloj-linea">
-          <i class="reloj-avance"></i>
-          <span class="reloj-cursor"><i></i></span>
+          <i class="reloj-avance" data-p></i>
+          <span class="reloj-cursor" data-p><i></i></span>
         </div>
-        <ol class="reloj-horas">
+        <ol class="reloj-horas" data-p>
           {
             MOMENTOS.map((m) => (
               <li>
@@ -377,12 +378,17 @@ const area = `M14,118 L${linea.replaceAll(' ', ' L')} L284,118 Z`;
       0 1px 0 rgb(255 255 255 / 0.06) inset,
       0 30px 60px -40px rgb(0 0 0 / 0.8);
     overflow: hidden;
+    /* Rendimiento: el carril ([data-p]) recibe --p en cada cuadro y con él todas las tarjetas; las que están lejos de la
+       vista no se recalculan ni se pintan. "auto" recuerda su alto real una vez vistas (sin saltos al volver). */
+    content-visibility: auto;
+    contain-intrinsic-block-size: auto 378px;
   }
 
   @media (min-width: 640px) {
     .momento-1 {
       flex-direction: row;
       align-items: center;
+      contain-intrinsic-block-size: auto 208px;
     }
 
     .momento-1 .tarjeta-texto {
@@ -465,7 +471,6 @@ const area = `M14,118 L${linea.replaceAll(' ', ' L')} L284,118 Z`;
   .cita,
   .luces i,
   .hoja,
-  .hoja-sello,
   .grafica-trazo,
   .respaldo-barra i,
   .respaldo-ok {
@@ -642,7 +647,7 @@ const area = `M14,118 L${linea.replaceAll(' ', ' L')} L284,118 Z`;
   }
 
   .hoja-cabeza .mono,
-  .hoja-pie .mono {
+  .hoja-pie {
     color: var(--tinta-tenue);
     font-size: 0.75rem;
   }
@@ -664,27 +669,6 @@ const area = `M14,118 L${linea.replaceAll(' ', ' L')} L284,118 Z`;
     gap: 8px;
     padding-top: 6px;
     border-top: 1px solid var(--linea-clara);
-  }
-
-  .hoja-sello {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    color: var(--esmeralda);
-    font-size: 0.75rem;
-    font-weight: 700;
-    transition-delay: 0.5s;
-  }
-
-  .hoja-sello :global(.icono) {
-    width: 14px;
-    height: 14px;
-    stroke-width: 2.2;
-  }
-
-  :global(.js) .dia-tarjeta:not(.es-visible) .hoja-sello {
-    opacity: 0;
-    transform: scale(1.3);
   }
 
   /* ── 4 · Laboratorios ── */
@@ -860,6 +844,11 @@ const area = `M14,118 L${linea.replaceAll(' ', ' L')} L284,118 Z`;
   @media (min-width: 1024px) and (min-height: 620px) {
     :global(.movimiento) .dia {
       --largo: 3;
+    }
+
+    /* Cada destino del motor ([data-p]) calcula su avance: el reposo inicial y final (0.04–0.96) deja leer la primera
+       y la última tarjeta. */
+    :global(.movimiento) .dia [data-p] {
       --avance: clamp(0, (var(--p, 1) - 0.04) / 0.92, 1);
     }
 
@@ -1166,7 +1155,7 @@ const area = `M14,118 L${linea.replaceAll(' ', ' L')} L284,118 Z`;
   }
 
   .panel-grupo .tenue {
-    font-size: 0.9375rem;
+    font-size: 1rem;
     line-height: 1.45;
   }
 
@@ -1193,6 +1182,7 @@ const area = `M14,118 L${linea.replaceAll(' ', ' L')} L284,118 Z`;
 
   .pronto .pildora {
     align-items: flex-start;
+    font-size: 1rem;
     padding: 0.6em 1em;
     border-radius: 14px;
     background: transparent;

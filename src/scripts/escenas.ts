@@ -1,11 +1,12 @@
 // Escenas que dependen del scroll y no caben en CSS puro. Se carga diferido desde base.ts solo cuando la página
 // tiene `[data-historia]` y el usuario no pidió movimiento reducido.
 //
-// Historia de integridad (Integridad.astro): la escena fijada la mueve el motor de scroll (--p, data-paso y el evento
-// `escena:paso`). Aquí solo vive lo que CSS no puede hacer: la huella SHA-256 que se "decodifica" carácter por carácter
-// cuando la escena llega a su paso (`data-huella="…" data-huella-paso="n"`). El HTML ya trae la huella final, así que
-// sin este módulo (sin JS o con movimiento reducido) se ve tal cual. Las huellas viven en una zona aria-hidden: los
-// cambios de texto no llegan a los lectores de pantalla.
+// Historia de integridad (Integridad.astro): la escena fijada la mueve el motor de scroll (--p en sus [data-p],
+// data-paso y el evento `escena:paso`). Aquí solo vive lo que CSS no puede hacer: la huella que se "decodifica"
+// carácter por carácter cuando la escena llega a su paso (`data-huella="…" data-huella-paso="n"`): la de la nota
+// sellada (9f2c41e8…b07a, paso 3) y la que deja una alteración por fuera de la app (paso 5, en la lupa). El HTML ya trae
+// la huella final, así que sin este módulo (sin JS o con movimiento reducido) se ve tal cual. Las huellas viven en una
+// zona aria-hidden: los cambios de texto no llegan a los lectores de pantalla.
 
 const HEX = '0123456789abcdef';
 /** Duración total del efecto (ms): cada carácter se fija en orden, de izquierda a derecha. */

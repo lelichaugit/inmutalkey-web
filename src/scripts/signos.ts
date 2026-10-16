@@ -192,6 +192,17 @@ function iniciarMonitor(seccion: HTMLElement): void {
   }
 
   ajustarOndas(seccion);
+  vigilarVista(seccion);
+}
+
+/** .en-vista mientras el monitor se ve: fuera de vista, las animaciones infinitas (barrido, latido) se pausan en CSS. */
+function vigilarVista(seccion: HTMLElement): void {
+  const monitor = seccion.querySelector('[data-monitor]');
+  if (!monitor || !('IntersectionObserver' in window)) {
+    seccion.classList.add('en-vista');
+    return;
+  }
+  new IntersectionObserver(([e]) => seccion.classList.toggle('en-vista', e?.isIntersecting ?? false)).observe(monitor);
 }
 
 export async function iniciarSignos(raiz: ParentNode): Promise<void> {

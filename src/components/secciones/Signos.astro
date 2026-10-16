@@ -3,7 +3,8 @@
 // Mismas reglas que la app (src/lib/imc.ts). Lógica en src/scripts/signos.ts.
 //
 // Movimiento (solo con .movimiento): los trazos de ECG y pletismografía se dibujan ligados al scroll (--p del
-// monitor, data-progreso-scroll) y después un hueco de barrido los recorre a 72 lpm; las cifras cuentan al verse
+// monitor, data-progreso-scroll, escrito solo en las dos franjas [data-p]) y después un hueco de barrido los recorre a
+// 72 lpm (solo mientras el monitor está a la vista: signos.ts pone .en-vista); las cifras cuentan al verse
 // (data-contar) y el IMC se calcula a la vista (signos.ts). Sin JS o con movimiento reducido: monitor completo y quieto.
 import { calcularImc, clasificarImc, ETIQUETA_IMC } from '../../lib/imc';
 import { trazoEcg, trazoPleth } from '../../scripts/signos';
@@ -18,12 +19,13 @@ const ANCHO = 520;
 const ALTO = 76;
 const ecg = trazoEcg(ANCHO, ALTO);
 const pleth = trazoPleth(ANCHO, ALTO);
+const SIGLAS = ['TA', 'FC', 'FR', 'Temp', 'SpO₂', 'Glucemia', 'Peso', 'Talla'];
 ---
 
 <section class="seccion fondo-oscuro fondo-cuadricula signos-seccion" id="signos" data-signos data-sin-flotante aria-labelledby="signos-titulo">
   <div class="contenedor signos-rejilla">
     <div class="signos-texto">
-      <p class="signos-etiqueta" data-animar="aparecer">TA · FC · FR · Temp · SpO₂ · Glucemia · Peso · Talla</p>
+      <p class="signos-etiqueta" data-animar="aparecer"><span class="signos-siglas">{SIGLAS.map((s) => <span>{s}</span>)}</span></p>
       <h2 id="signos-titulo" data-animar="titulo">Signos vitales sin calculadora</h2>
       <p class="texto-grande tenue" data-animar="subir" data-retraso="2">
         Escribe el peso y la talla y el IMC aparece al instante con su clasificación. Si un valor es imposible, el
@@ -35,7 +37,7 @@ const pleth = trazoPleth(ANCHO, ALTO);
     </div>
 
     <div class="monitor-entrada" data-animar="subir">
-      <div class="monitor" role="group" aria-label="Monitor de signos de un paciente de ejemplo" data-monitor data-progreso-scroll>
+      <div class="monitor" role="group" aria-label="Monitor de signos de un paciente de ejemplo" data-monitor data-progreso-scroll data-progreso-hasta="0.5">
         <header class="monitor-cabecera">
           <span class="monitor-paciente">
             <Icono nombre="usuario" />
@@ -45,7 +47,7 @@ const pleth = trazoPleth(ANCHO, ALTO);
         </header>
 
         <div class="ondas">
-          <div class="onda onda-ecg">
+          <div class="onda onda-ecg" data-p>
             <span class="onda-etiqueta" aria-hidden="true">II</span>
             <svg viewBox={`0 0 ${ANCHO} ${ALTO}`} preserveAspectRatio="xMinYMid slice" aria-hidden="true" focusable="false" data-onda="ecg">
               <path pathLength="1" d={ecg}></path>
@@ -62,7 +64,7 @@ const pleth = trazoPleth(ANCHO, ALTO);
             <small>lpm</small>
           </div>
 
-          <div class="onda onda-pleth">
+          <div class="onda onda-pleth" data-p>
             <span class="onda-etiqueta" aria-hidden="true">Pleth</span>
             <svg viewBox={`0 0 ${ANCHO} ${ALTO}`} preserveAspectRatio="xMinYMid slice" aria-hidden="true" focusable="false" data-onda="pleth">
               <path pathLength="1" d={pleth}></path>
@@ -160,6 +162,27 @@ const pleth = trazoPleth(ANCHO, ALTO);
     font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
     font-size: 0.8125rem;
     letter-spacing: 0.04em;
+    /* Recorta el separador con que empieza cada renglón (ver abajo): ningún "·" queda colgando. */
+    overflow: hidden;
+  }
+
+  /* Cada sigla lleva su separador delante; el margen negativo saca del recuadro el del inicio de cada renglón. */
+  .signos-siglas {
+    display: flex;
+    flex-wrap: wrap;
+    margin-left: -1.6em;
+  }
+
+  .signos-siglas > span {
+    white-space: nowrap;
+  }
+
+  .signos-siglas > span::before {
+    content: '·';
+    content: '·' / '';
+    display: inline-block;
+    width: 1.6em;
+    text-align: center;
   }
 
   .signos-pista {
@@ -181,9 +204,6 @@ const pleth = trazoPleth(ANCHO, ALTO);
     --verde-monitor: #34d399;
     --cian: #67e8f9;
     --fondo-monitor: #030811;
-    /* Tramos del --p que pone scroll.ts (0 al asomar por abajo, 1 al salir por arriba): ECG y luego pletismografía. */
-    --d1: clamp(0, (var(--p, 1) - 0.06) / 0.34, 1);
-    --d2: clamp(0, (var(--p, 1) - 0.12) / 0.34, 1);
     position: relative;
     padding: clamp(14px, 2.6vw, 22px);
     border: 1px solid var(--linea-oscura-fuerte);
@@ -306,7 +326,11 @@ const pleth = trazoPleth(ANCHO, ALTO);
       #02060d;
   }
 
+  /* Destinos [data-p] del monitor: scroll.ts escribe --p solo en las dos franjas (0 al asomar por abajo; tope 0.5 con
+     data-progreso-hasta, cuando las dos ondas ya están completas). Tramos: ECG y luego pletismografía. */
   .onda {
+    --d1: clamp(0, (var(--p, 1) - 0.06) / 0.34, 1);
+    --d2: clamp(0, (var(--p, 1) - 0.12) / 0.34, 1);
     position: relative;
     overflow: hidden;
     padding: 10px 0 6px;
@@ -381,6 +405,13 @@ const pleth = trazoPleth(ANCHO, ALTO);
     animation: barrido var(--barrido, 3.3s) linear infinite;
   }
 
+  /* Fuera de vista, nada corre (el barrido recalcula el estilo en cada cuadro). signos.ts alterna .en-vista. */
+  :global(.movimiento) .signos-seccion:not(.en-vista) .onda svg,
+  :global(.movimiento) .signos-seccion:not(.en-vista) .latido,
+  :global(.movimiento) .signos-seccion:not(.en-vista) .monitor-vivo i {
+    animation-play-state: paused;
+  }
+
   @keyframes barrido {
     from {
       -webkit-mask-position: 100% 0;
@@ -435,6 +466,7 @@ const pleth = trazoPleth(ANCHO, ALTO);
   .numerico input {
     width: 100%;
     min-width: 0;
+    min-height: 44px;
     padding: 0;
     border: 0;
     border-bottom: 1px dashed color-mix(in srgb, currentColor 45%, transparent);
@@ -548,9 +580,9 @@ const pleth = trazoPleth(ANCHO, ALTO);
     font-variant-numeric: tabular-nums;
   }
 
+  /* El anillo de foco es el global (:focus-visible); además, la línea de captura se vuelve sólida. */
   .numerico input:focus,
   .campo-monitor input:focus {
-    outline: none;
     border-bottom-color: var(--azul-vivo);
     border-bottom-style: solid;
   }

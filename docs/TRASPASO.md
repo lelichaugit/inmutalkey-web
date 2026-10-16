@@ -117,3 +117,15 @@ Del traspaso anterior:
 ## 5. TODO_DEFINIR (para Alan)
 
 WhatsApp `522291525847` **confirmado** · textos prellenados (provisionales) · correo de contacto · precio de fundador y precio público · nota de precios (IVA, medios de pago) · lugares totales y ocupados · fecha fin del precio de fundador · actualizaciones incluidas · "después de la prueba" · soporte fuera de Fundadores · nombre de archivo, versión y SHA-256 del instalador · razón social, domicilio y correo del aviso de privacidad · cancelaciones y jurisdicción de los términos · revisión legal · subir a `capturas/` el render 3D, el avatar y las capturas de la app.
+
+## Estado 16-oct (escenas estilo Apple + auditoría)
+
+- Scroll: Lenis en escritorio, nativo en táctil, motor propio de escenas (`docs/ANIMACIONES.md`). Las escenas escriben
+  `--p` solo en sus `[data-p]`; una escena que el CSS no fija a cierto ancho no recibe variables.
+- Revisión integrada (Chromium, CSP real con `wrangler dev`): iPhone 13 (844 y 664 px de alto), Galaxy S8, iPad Mini,
+  1366 y 1440 px, más movimiento reducido y sin JS: 0 desbordes, 0 errores, 0 violaciones de CSP, CLS ≤ 0.0014, todas
+  las escenas se fijan y se sueltan. "Cómo funciona" a CPU 4x (Pixel 7): ~18 → 33–38 fps.
+- Pendiente de Alan: razón social y domicilio (aviso de privacidad, LFPDPPP) y revisión de abogado de /privacidad y
+  /terminos-fundadores (hoy "versión preliminar", sin indexar); precios/cupos (TODO_DEFINIR); que el respaldo del
+  programa incluya `clinica.salt` (y la llave) para poder prometer restauración en otro equipo; probar en un iPhone y un
+  Mac reales con Safari (aquí solo hubo Chromium).

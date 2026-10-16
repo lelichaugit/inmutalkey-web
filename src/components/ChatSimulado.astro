@@ -3,6 +3,8 @@
 // colita, hora y palomitas dentro de la burbuja). Sin JS se ve completo; con JS (src/scripts/chat.ts) la conversación
 // se reproduce al entrar en vista: el médico teclea en la barra de abajo y envía (palomita → dos grises → azules),
 // InmutalKey responde con "escribiendo…". No se usa el logo de WhatsApp: el avatar es la llave de InmutalKey.
+// Si la conversación empieza con el médico, ese primer mensaje ya está enviado desde el inicio (.ya-enviado): el
+// teléfono nunca se ve vacío y solo se reproducen las respuestas.
 import Isotipo3D from './Isotipo3D.astro';
 
 export interface Mensaje {
@@ -78,7 +80,11 @@ const idFondo = `chat-fondo-${h.toString(36)}`;
         {
           mensajes.map((m, i) => (
             <li
-              class:list={['burbuja', `de-${m.de}`, { 'con-cola': i === 0 || mensajes[i - 1]?.de !== m.de }]}
+              class:list={[
+                'burbuja',
+                `de-${m.de}`,
+                { 'con-cola': i === 0 || mensajes[i - 1]?.de !== m.de, 'ya-enviado': i === 0 && m.de === 'medico' },
+              ]}
               data-mensaje
             >
               {m.archivo && (
@@ -179,8 +185,50 @@ const idFondo = `chat-fondo-${h.toString(36)}`;
     }
 
     .telefono-pantalla {
-      height: 600px;
       border-radius: 41px;
+    }
+  }
+
+  /* Celular: pantalla 9:16 (menos alta que la de un teléfono real) para que el teléfono quepa con aire en la vista. */
+  @media (max-width: 599px) {
+    .telefono {
+      width: min(330px, 100%);
+    }
+
+    .telefono-pantalla {
+      height: auto;
+      aspect-ratio: 9 / 16;
+      max-height: 560px;
+    }
+  }
+
+  /* Conversación completa de una vez (sin JS o con movimiento reducido): el teléfono crece para que se lea entera,
+     desde el primer mensaje; con la reproducción, los mensajes viejos suben y salen por arriba, como en la app. */
+  :global(html:not(.js)) .telefono .telefono-pantalla {
+    height: auto;
+    min-height: 640px;
+    max-height: none;
+    aspect-ratio: auto;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .telefono .telefono-pantalla {
+      height: auto;
+      min-height: 640px;
+      max-height: none;
+      aspect-ratio: auto;
+    }
+  }
+
+  @media (max-width: 599px) {
+    :global(html:not(.js)) .telefono .telefono-pantalla {
+      min-height: 560px;
+    }
+  }
+
+  @media (max-width: 599px) and (prefers-reduced-motion: reduce) {
+    .telefono .telefono-pantalla {
+      min-height: 560px;
     }
   }
 
@@ -538,11 +586,11 @@ const idFondo = `chat-fondo-${h.toString(36)}`;
 
   /* ── Con JS (y sin "reducir movimiento"): los mensajes esperan su turno y las palomitas avanzan ── */
   @media (prefers-reduced-motion: no-preference) {
-    :global(.js) .burbuja[data-mensaje] {
+    :global(.js) .burbuja[data-mensaje]:not(.ya-enviado) {
       display: none;
     }
 
-    :global(.js) .burbuja[data-mensaje].es-visible {
+    :global(.js) .burbuja[data-mensaje].es-visible:not(.ya-enviado) {
       display: block;
       animation: llega 0.38s cubic-bezier(0.16, 1, 0.3, 1);
     }
@@ -551,7 +599,8 @@ const idFondo = `chat-fondo-${h.toString(36)}`;
       stroke: #8696a0;
     }
 
-    :global(.js) .burbuja[data-mensaje]:not(.es-entregado) .palomita-2 {
+    /* El primero ya salió: dos palomitas grises hasta que InmutalKey lo lee. */
+    :global(.js) .burbuja[data-mensaje]:not(.es-entregado):not(.ya-enviado) .palomita-2 {
       opacity: 0;
     }
   }
