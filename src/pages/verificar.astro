@@ -1,4 +1,5 @@
 ---
+import '../styles/formularios.css';
 import Icono from '../components/Icono.astro';
 import PaginaTexto from '../layouts/PaginaTexto.astro';
 import { enlaceWhatsApp } from '../lib/whatsapp';
@@ -44,6 +45,10 @@ const pedir = enlaceWhatsApp(sitio.contacto.whatsapp, 'Hola, ¿me compartes la h
       </div>
     )
   }
+  <div class="aviso" data-versiones-vivas hidden>
+    <p><strong>Versiones publicadas</strong> (la misma huella que va en tu correo de descarga):</p>
+    <ul data-lista></ul>
+  </div>
 
   <h2>Cómo comprobarla en Windows</h2>
   <ol>

@@ -1,0 +1,26 @@
+---
+import '../../styles/formularios.css';
+
+import PaginaTexto from '../../layouts/PaginaTexto.astro';
+import { enlaceWhatsApp } from '../../lib/whatsapp';
+import { sitio } from '../../site.config';
+
+const whatsapp = enlaceWhatsApp(sitio.contacto.whatsapp, sitio.contacto.mensajes.fundadores);
+---
+
+<PaginaTexto titulo="¡Gracias! Tu correo quedó confirmado" descripcion="Ya estás en la lista del programa Fundadores." antetitulo="Programa Fundadores" indexar={false}>
+  <div class="aviso-paso exito">
+    <p>
+      Te escribiremos en los próximos días para tu prueba de {sitio.licencia.diasPrueba} días: te mandamos un enlace
+      personal para descargar el instalador y te acompañamos en la primera consulta.
+    </p>
+    {
+      whatsapp && (
+        <p>
+          ¿Tienes prisa? <a href={whatsapp} target="_blank" rel="noopener noreferrer">Escríbenos por WhatsApp</a>.
+        </p>
+      )
+    }
+    <p><a href="/">Volver a inmutalkey.com</a></p>
+  </div>
+</PaginaTexto>

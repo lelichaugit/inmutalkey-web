@@ -1,0 +1,154 @@
+---
+// Registro al programa Fundadores (lead). Envía a POST /api/leads; el médico recibe un correo para confirmar
+// (doble opt-in) y solo entonces le llega el aviso a Alan. Sin JS el formulario no puede pasar Turnstile: se invita
+// a escribir por WhatsApp.
+import '../styles/formularios.css';
+
+import Icono from '../components/Icono.astro';
+import {
+  COMO_SE_ENTERO,
+  ESTADOS_MX,
+  RANGOS_PACIENTES,
+  SISTEMAS_OPERATIVOS,
+  TIPOS_PRACTICA,
+  USA_HOY,
+  VERSION_AVISO_VIGENTE,
+} from '../compartido/leads';
+import PaginaTexto from '../layouts/PaginaTexto.astro';
+import { detectarEntorno, siteKeyTurnstile } from '../lib/entorno';
+import { enlaceWhatsApp } from '../lib/whatsapp';
+import { estaDefinido, sitio } from '../site.config';
+
+const entorno = detectarEntorno(process.env, { servidorDev: import.meta.env.DEV });
+const sitekey = siteKeyTurnstile(entorno, estaDefinido(sitio.turnstile.siteKey) ? sitio.turnstile.siteKey : null);
+const whatsapp = enlaceWhatsApp(sitio.contacto.whatsapp, sitio.contacto.mensajes.fundadores);
+
+const selecciona = (opciones: readonly (readonly [string, string])[]) => opciones;
+---
+
+<PaginaTexto
+  titulo="Aparta tu lugar de fundador"
+  descripcion="Déjanos tus datos y te escribimos para tu prueba de 30 días. Solo datos de contacto de tu consultorio: nada de pacientes."
+  antetitulo="Programa Fundadores"
+>
+  <p class="cupo-vivo" data-cupo hidden></p>
+
+  {
+    !sitekey && (
+      <div class="aviso-paso">
+        <p>
+          El registro con correo se habilita muy pronto.
+          {whatsapp ? <a href={whatsapp} target="_blank" rel="noopener noreferrer"> Mientras tanto, escríbenos por WhatsApp</a> : ' Mientras tanto, escríbenos'}
+          y te apartamos tu lugar.
+        </p>
+      </div>
+    )
+  }
+
+  <form
+    class="formulario"
+    data-formulario="fundadores"
+    data-sitekey={sitekey ?? undefined}
+    data-version-aviso={VERSION_AVISO_VIGENTE}
+  >
+    <div class="formulario-rejilla">
+      <label class="campo">
+        <span>Nombre completo</span>
+        <input name="nombre" required minlength="3" maxlength="120" autocomplete="name" placeholder="Dra. Ana López Ruiz" />
+      </label>
+      <label class="campo">
+        <span>Correo</span>
+        <input name="correo" type="email" required maxlength="160" autocomplete="email" inputmode="email" />
+        <small>Te enviaremos un enlace para confirmarlo.</small>
+      </label>
+      <label class="campo">
+        <span>Teléfono <span class="opcional">(opcional)</span></span>
+        <input name="telefono" type="tel" maxlength="20" autocomplete="tel" inputmode="tel" placeholder="229 000 0000" />
+      </label>
+      <label class="campo">
+        <span>Especialidad</span>
+        <input name="especialidad" required minlength="3" maxlength="80" placeholder="Medicina general" />
+      </label>
+      <label class="campo">
+        <span>Estado</span>
+        <select name="estado" required>
+          <option value="">Elige…</option>
+          {ESTADOS_MX.map((e) => <option value={e}>{e}</option>)}
+        </select>
+      </label>
+      <label class="campo">
+        <span>Ciudad</span>
+        <input name="ciudad" required minlength="2" maxlength="80" autocomplete="address-level2" />
+      </label>
+      <label class="campo">
+        <span>¿Dónde das consulta?</span>
+        <select name="tipo_practica" required>
+          <option value="">Elige…</option>
+          {selecciona(TIPOS_PRACTICA).map(([v, t]) => <option value={v}>{t}</option>)}
+        </select>
+      </label>
+      <label class="campo">
+        <span>Pacientes por semana</span>
+        <select name="pacientes_semana_rango" required>
+          <option value="">Elige…</option>
+          {selecciona(RANGOS_PACIENTES).map(([v, t]) => <option value={v}>{t}</option>)}
+        </select>
+      </label>
+      <label class="campo">
+        <span>¿Qué usas hoy para tus expedientes?</span>
+        <select name="usa_hoy" required>
+          <option value="">Elige…</option>
+          {selecciona(USA_HOY).map(([v, t]) => <option value={v}>{t}</option>)}
+        </select>
+      </label>
+      <label class="campo">
+        <span>¿Cómo te enteraste?</span>
+        <select name="como_se_entero" required>
+          <option value="">Elige…</option>
+          {selecciona(COMO_SE_ENTERO).map(([v, t]) => <option value={v}>{t}</option>)}
+        </select>
+      </label>
+    </div>
+
+    <fieldset class="campo">
+      <legend>Tu computadora del consultorio</legend>
+      <div class="opciones">
+        {
+          selecciona(SISTEMAS_OPERATIVOS).map(([v, t]) => (
+            <label>
+              <input type="radio" name="so" value={v} required />
+              <span>{t}</span>
+            </label>
+          ))
+        }
+      </div>
+      <small>InmutalKey funciona hoy en Windows; la versión para Mac está en evaluación.</small>
+    </fieldset>
+
+    <div class="trampa" aria-hidden="true">
+      <label>No llenes este campo <input name="sitio_web" tabindex="-1" autocomplete="off" /></label>
+    </div>
+
+    <label class="casilla">
+      <input type="checkbox" name="consentimiento" required />
+      <span>
+        Autorizo que InmutalKey use estos datos para contactarme sobre el programa Fundadores y mi prueba, conforme al
+        <a href="/privacidad">aviso de privacidad</a>. Puedo pedir que los borren en cualquier momento.
+      </span>
+    </label>
+
+    <div class="turnstile" data-turnstile></div>
+
+    <button type="submit" class="boton boton-primario" disabled={!sitekey}><Icono nombre="enviar" /> Enviar registro</button>
+    <p class="formulario-estado" data-estado role="status" aria-live="polite"></p>
+    <noscript><p>Para enviar este formulario necesitas JavaScript activado. También puedes escribirnos por WhatsApp.</p></noscript>
+  </form>
+
+  <div class="aviso-paso exito" data-enviado tabindex="-1" hidden>
+    <h2>Revisa tu correo</h2>
+    <p>
+      Te enviamos un enlace para confirmar tu registro (vence en 72 horas). Si no lo ves en unos minutos, busca en
+      correo no deseado o promociones. En cuanto confirmes, te escribimos para tu prueba.
+    </p>
+  </div>
+</PaginaTexto>

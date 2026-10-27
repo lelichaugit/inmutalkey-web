@@ -1,0 +1,431 @@
+---
+// Panel de administración. Esta página es pública en dist/, pero el Worker solo la entrega a quien pasó Cloudflare
+// Access y trae un JWT válido de un correo autorizado (src/worker/lib/acceso.ts). Los datos llegan de /api/admin/*,
+// que exige lo mismo. Todo el contenido se arma en src/scripts/admin.ts con textContent (nunca innerHTML con datos).
+import '../styles/global.css';
+
+import { UTM_FUENTES } from '../compartido/eventos';
+import { ESTATUS_LEAD } from '../compartido/leads';
+---
+
+<!doctype html>
+<html lang="es-MX">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>Panel · InmutalKey</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  </head>
+  <body class="panel">
+    <header class="panel-cabecera">
+      <div>
+        <p class="panel-marca">InmutalKey · Panel</p>
+        <p class="panel-sesion" data-sesion>Verificando sesión…</p>
+      </div>
+      <nav class="panel-pestanas" aria-label="Secciones del panel">
+        <button type="button" data-pestana="metricas" aria-pressed="true">Embudo</button>
+        <button type="button" data-pestana="leads" aria-pressed="false">Leads</button>
+        <button type="button" data-pestana="testimonios" aria-pressed="false">Testimonios</button>
+        <button type="button" data-pestana="versiones" aria-pressed="false">Instaladores</button>
+        <button type="button" data-pestana="arco" aria-pressed="false">ARCO</button>
+        <button type="button" data-pestana="config" aria-pressed="false">Ajustes</button>
+      </nav>
+    </header>
+
+    <p class="panel-aviso" data-aviso role="status" aria-live="polite" hidden></p>
+
+    <main class="panel-cuerpo">
+      <section data-seccion="metricas">
+        <form class="panel-filtros" data-form-metricas>
+          <label>Desde <input type="date" name="desde" /></label>
+          <label>Hasta <input type="date" name="hasta" /></label>
+          <button type="submit">Actualizar</button>
+        </form>
+        <div class="panel-tarjetas" data-metricas-tarjetas></div>
+        <h2>Embudo por origen</h2>
+        <p class="panel-nota">
+          Visitas = cargas de página registradas por el sitio (agregadas, sin cookies). Prueba incluye a quienes ya son clientes.
+        </p>
+        <div class="panel-tabla-marco"><table data-tabla-embudo></table></div>
+        <div class="panel-dos">
+          <div>
+            <h2>Preguntas frecuentes más abiertas</h2>
+            <div class="panel-tabla-marco"><table data-tabla-faq></table></div>
+          </div>
+          <div>
+            <h2>Descargas por versión</h2>
+            <div class="panel-tabla-marco"><table data-tabla-descargas></table></div>
+          </div>
+        </div>
+      </section>
+
+      <section data-seccion="leads" hidden>
+        <form class="panel-filtros" data-form-leads>
+          <label>
+            Estatus
+            <select name="estatus">
+              <option value="">Todos</option>
+              {ESTATUS_LEAD.map((e) => <option value={e}>{e}</option>)}
+            </select>
+          </label>
+          <label>
+            Origen
+            <select name="fuente">
+              <option value="">Todos</option>
+              {UTM_FUENTES.map((f) => <option value={f}>{f}</option>)}
+            </select>
+          </label>
+          <label>
+            Correo
+            <select name="confirmado">
+              <option value="">Todos</option>
+              <option value="si">Confirmado</option>
+              <option value="no">Sin confirmar</option>
+            </select>
+          </label>
+          <label class="panel-busqueda">Buscar <input type="search" name="q" maxlength="80" placeholder="Nombre, correo, especialidad o ciudad" /></label>
+          <button type="submit">Filtrar</button>
+          <a class="panel-boton-secundario" href="/api/admin/leads.csv" data-exportar download>Exportar CSV</a>
+        </form>
+        <p class="panel-nota" data-leads-total></p>
+        <div class="panel-tabla-marco"><table data-tabla-leads></table></div>
+        <div class="panel-paginas" data-paginas></div>
+      </section>
+
+      <section data-seccion="testimonios" hidden>
+        <h2>Agregar testimonio</h2>
+        <p class="panel-nota">
+          Solo con autorización del médico. Anota la fecha en que te la dio (WhatsApp o correo): sin esa fecha no se puede publicar.
+        </p>
+        <form class="panel-formulario" data-form-testimonio>
+          <label>Lead (número) <input name="lead_id" type="number" min="1" required /></label>
+          <label>Nombre público (opcional) <input name="nombre_publico" maxlength="80" placeholder="Dra. Ana L." /></label>
+          <label class="panel-ancho">Texto <textarea name="texto" minlength="20" maxlength="600" rows="3" required></textarea></label>
+          <label>Fecha del consentimiento <input name="consentimiento_fecha" type="date" /></label>
+          <button type="submit">Guardar (oculto)</button>
+        </form>
+        <h2>Testimonios</h2>
+        <div class="panel-tabla-marco"><table data-tabla-testimonios></table></div>
+      </section>
+
+      <section data-seccion="versiones" hidden>
+        <h2>Registrar versión del instalador</h2>
+        <p class="panel-nota">
+          Primero sube el archivo al bucket de R2 (README_DEPLOY.md). Calcula el SHA-256 en tu computadora con
+          <code>Get-FileHash .\archivo.exe -Algorithm SHA256</code> y pégalo aquí: es el que verán los médicos en /verificar.
+        </p>
+        <form class="panel-formulario" data-form-version>
+          <label>Versión <input name="version" required placeholder="0.3.0" maxlength="32" /></label>
+          <label>Ruta en R2 <input name="clave_r2" required placeholder="instaladores/InmutalKey_0.3.0_x64-setup.exe" maxlength="200" /></label>
+          <label>Nombre del archivo <input name="nombre_archivo" required placeholder="InmutalKey_0.3.0_x64-setup.exe" maxlength="120" /></label>
+          <label class="panel-ancho">SHA-256 <input name="sha256" required minlength="64" maxlength="64" spellcheck="false" /></label>
+          <label class="panel-casilla"><input type="checkbox" name="vigente" checked /> Es la versión que se envía al aprobar pruebas</label>
+          <button type="submit">Registrar</button>
+        </form>
+        <h2>Versiones</h2>
+        <div class="panel-tabla-marco"><table data-tabla-versiones></table></div>
+      </section>
+
+      <section data-seccion="arco" hidden>
+        <h2>Solicitudes ARCO</h2>
+        <p class="panel-nota">
+          Plazo legal: responder en 20 días hábiles y, si procede, hacerlo efectivo en los 15 siguientes. Antes de
+          entregar o borrar datos, confirma la identidad del titular respondiendo desde contacto@ al correo registrado.
+          Procedimiento completo: docs/ARCO.md.
+        </p>
+        <div class="panel-tabla-marco"><table data-tabla-arco></table></div>
+      </section>
+
+      <section data-seccion="config" hidden>
+        <h2>Programa Fundadores</h2>
+        <form class="panel-formulario" data-form-config>
+          <label>Lugares totales <input name="total_cupos" type="number" min="0" max="100000" required /></label>
+          <button type="submit">Guardar</button>
+        </form>
+        <p class="panel-nota">
+          Lugares restantes = total − leads en “prueba” o “cliente”. Con 0, el sitio no muestra el contador.
+        </p>
+      </section>
+    </main>
+
+    <script>
+      import { iniciarPanel } from '../scripts/admin';
+      iniciarPanel(document);
+    </script>
+  </body>
+</html>
+
+<style is:global>
+  body.panel {
+    min-height: 100vh;
+    margin: 0;
+    background: var(--medianoche);
+    color: var(--texto);
+    font-family: var(--fuente-texto);
+    font-size: 0.9375rem;
+  }
+
+  .panel :is(h1, h2) {
+    margin: 32px 0 8px;
+    font-family: var(--fuente-titulo);
+    font-size: 1.25rem;
+  }
+
+  .panel-cabecera {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px var(--margen);
+    border-bottom: 1px solid var(--linea-oscura-fuerte);
+    background: var(--navy);
+  }
+
+  .panel-marca {
+    margin: 0;
+    font-family: var(--fuente-titulo);
+    font-weight: 600;
+  }
+
+  .panel-sesion {
+    margin: 0;
+    color: var(--texto-tenue);
+    font-size: 0.8125rem;
+  }
+
+  .panel-pestanas {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .panel button,
+  .panel-boton-secundario {
+    min-height: 40px;
+    padding: 0 14px;
+    border: 1px solid var(--linea-oscura-fuerte);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--texto);
+    font: inherit;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .panel button:hover,
+  .panel-boton-secundario:hover {
+    border-color: var(--azul-vivo);
+  }
+
+  .panel button[aria-pressed='true'],
+  .panel button[type='submit'] {
+    border-color: transparent;
+    background: var(--azul);
+    color: #fff;
+  }
+
+  .panel button.peligro {
+    border-color: var(--error);
+    color: var(--error);
+    background: transparent;
+  }
+
+  .panel button:disabled {
+    opacity: 0.5;
+    cursor: wait;
+  }
+
+  .panel-cuerpo {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 8px var(--margen) 64px;
+  }
+
+  .panel-aviso {
+    margin: 12px var(--margen) 0;
+    padding: 10px 14px;
+    border-radius: 10px;
+    background: rgb(46 159 224 / 0.15);
+  }
+
+  .panel-aviso.error {
+    background: rgb(255 107 107 / 0.15);
+    color: var(--error);
+  }
+
+  .panel-filtros,
+  .panel-formulario {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 12px;
+    margin: 16px 0;
+  }
+
+  .panel-formulario {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    padding: 16px;
+    border: 1px solid var(--linea-oscura);
+    border-radius: 14px;
+  }
+
+  .panel-ancho {
+    grid-column: 1 / -1;
+  }
+
+  .panel label {
+    display: grid;
+    gap: 4px;
+    color: var(--texto-tenue);
+    font-size: 0.8125rem;
+  }
+
+  .panel-casilla {
+    display: flex !important;
+    align-items: center;
+    gap: 8px !important;
+  }
+
+  .panel :is(input, select, textarea) {
+    min-height: 40px;
+    padding: 6px 10px;
+    border: 1px solid var(--linea-oscura-fuerte);
+    border-radius: 8px;
+    background: var(--medianoche-2, #0b1324);
+    color: var(--texto);
+    font: inherit;
+  }
+
+  .panel-busqueda input {
+    min-width: min(320px, 80vw);
+  }
+
+  .panel-nota {
+    margin: 4px 0 12px;
+    color: var(--texto-tenue);
+    font-size: 0.8125rem;
+  }
+
+  .panel-tarjetas {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
+  }
+
+  .panel-tarjeta {
+    padding: 14px;
+    border: 1px solid var(--linea-oscura);
+    border-radius: 14px;
+    background: rgb(255 255 255 / 0.03);
+  }
+
+  .panel-tarjeta strong {
+    display: block;
+    font-family: var(--fuente-titulo);
+    font-size: 1.75rem;
+  }
+
+  .panel-tarjeta span {
+    color: var(--texto-tenue);
+    font-size: 0.8125rem;
+  }
+
+  .panel-tarjeta.alerta {
+    border-color: var(--error);
+  }
+
+  .panel-tabla-marco {
+    overflow-x: auto;
+    border: 1px solid var(--linea-oscura);
+    border-radius: 12px;
+  }
+
+  .panel table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .panel :is(th, td) {
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--linea-oscura);
+    text-align: left;
+    vertical-align: top;
+    white-space: nowrap;
+  }
+
+  .panel td.envolver {
+    white-space: normal;
+    min-width: 240px;
+  }
+
+  .panel th {
+    color: var(--texto-tenue);
+    font-weight: 600;
+  }
+
+  .panel td.numero,
+  .panel th.numero {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .panel tr.detalle td {
+    white-space: normal;
+    background: rgb(255 255 255 / 0.03);
+  }
+
+  .panel-detalle {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 8px 16px;
+  }
+
+  .panel-detalle dt {
+    color: var(--texto-tenue);
+    font-size: 0.75rem;
+  }
+
+  .panel-detalle dd {
+    margin: 0 0 6px;
+  }
+
+  .panel-acciones {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 12px;
+  }
+
+  .panel-paginas {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+  }
+
+  .panel-dos {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 24px;
+  }
+
+  .panel .si {
+    color: var(--esmeralda-vivo);
+  }
+
+  .panel .no {
+    color: var(--texto-tenue);
+  }
+
+  .panel code {
+    font-size: 0.8125rem;
+  }
+</style>

@@ -1,6 +1,9 @@
 User-agent: *
 Allow: /
 Disallow: /api/
+Disallow: /admin
+Disallow: /descarga
+Disallow: /fundadores/confirmar
 Disallow: /resena
 
 Sitemap: https://inmutalkey.com/sitemap.xml

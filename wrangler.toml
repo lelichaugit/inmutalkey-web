@@ -1,22 +1,68 @@
 # Cloudflare Workers con Static Assets: el sitio es estático (dist/) y Cloudflare lo sirve desde su red.
-# Build: `npm run build:cloudflare` · Deploy: `npx wrangler deploy`. Ver README_DEPLOY.md.
+# El Worker (src/worker/index.ts) solo atiende /api/* y /admin*: el resto ni siquiera lo invoca (gratis e ilimitado).
+# Build: `npm run build:cloudflare` · Deploy: `npx wrangler deploy` · Migraciones: `npm run db:migrar`.
+# Pasos del panel (R2, Turnstile, Access, correo, secretos): README_DEPLOY.md §7 en adelante.
 name = "inmutalkey-web"
+main = "src/worker/index.ts"
 compatibility_date = "2026-09-15"
+# Las vistas previas por rama (*.workers.dev) siguen activas. Comparten la base D1 de producción, pero /admin exige el
+# JWT de Access (401 sin él) y Turnstile solo acepta tokens emitidos para inmutalkey.com (TURNSTILE_HOSTNAMES).
 
 [assets]
 directory = "./dist"
+binding = "ASSETS"
 # Las páginas se generan como archivo (verificar.html) y se sirven sin diagonal final: /verificar.
 html_handling = "drop-trailing-slash"
 # Rutas inexistentes → dist/404.html con estado 404.
 not_found_handling = "404-page"
+run_worker_first = ["/api/*", "/admin", "/admin/*"]
 
-# Fase C (formularios y reseñas): se agregará aquí el Worker de /api/* (`main` + `run_worker_first`)
-# y la base D1. No se declara antes: un Worker no se despliega con una base que todavía no existe.
-#
-# main = "src/worker/index.ts"
-# [assets] … run_worker_first = ["/api/*"]
-# [[d1_databases]]
-# binding = "DB"
-# database_name = "inmutalkey-web"
-# database_id = "<id que imprime `npx wrangler d1 create inmutalkey-web`>"
-# migrations_dir = "migrations"
+[observability]
+# Solo los console.log del Worker (método, patrón de ruta, estado, ms). Sin cuerpos ni datos personales.
+enabled = true
+head_sampling_rate = 1
+
+[vars]
+ORIGEN = "https://inmutalkey.com"
+CORREO_PROVEEDOR = "cloudflare"
+CORREO_REMITENTE = "avisos@inmutalkey.com"
+CORREO_AVISOS = "contacto@inmutalkey.com"
+TURNSTILE_HOSTNAMES = "inmutalkey.com"
+R2_BUCKET = "inmutalkey-instaladores"
+# Cámbialo por el dominio de tu equipo de Zero Trust (Zero Trust → Settings → Custom Pages / Team domain).
+ACCESS_EQUIPO = "inmutalkey.cloudflareaccess.com"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "inmutalkey-web"
+database_id = "26781607-9e7b-4ec7-bf2f-e3786cfd0be4"
+migrations_dir = "migrations"
+
+[[r2_buckets]]
+binding = "INSTALADORES"
+bucket_name = "inmutalkey-instaladores"
+
+# Cloudflare Email Service (Email Sending). Requiere Workers Paid y el dominio dado de alta (README_DEPLOY.md §9).
+# Si usas Resend (plan Free), cambia CORREO_PROVEEDOR a "resend", carga el secreto RESEND_API_KEY y borra este bloque.
+[[send_email]]
+name = "EMAIL"
+
+# Límite por IP (aproximado, por ubicación de Cloudflare). La IP solo deriva la llave; no se guarda.
+[[ratelimits]]
+name = "LIMITE_FORMULARIOS"
+namespace_id = "2701"
+simple = { limit = 5, period = 60 }
+
+[[ratelimits]]
+name = "LIMITE_EVENTOS"
+namespace_id = "2702"
+simple = { limit = 60, period = 60 }
+
+[triggers]
+# Retención y aviso ARCO: todos los días a las 09:17 UTC (03:17 en el centro de México).
+crons = ["17 9 * * *"]
+
+# Secretos (no van aquí): npx wrangler secret put <NOMBRE>
+#   TURNSTILE_SECRET · LIMITE_SAL · ACCESS_AUD · ADMIN_CORREOS
+#   R2_CUENTA_ID · R2_ACCESS_KEY_ID · R2_SECRET_ACCESS_KEY
+#   (opcional) RESEND_API_KEY · CF_API_TOKEN_ANALITICA · CF_CUENTA_ID · WA_SITE_TAG

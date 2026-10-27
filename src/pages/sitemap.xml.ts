@@ -4,10 +4,15 @@ import { sitio } from '../site.config';
 
 // Se arma con las páginas que existen de verdad; 404 y /resena (formulario por código) no se indexan, ni las páginas
 // legales mientras sean versión preliminar (sin revisión de abogado).
+// /admin (panel privado) y los pasos de confirmación y descarga (solo sirven con un enlace personal) tampoco.
 const EXCLUIDAS = new Set([
   '/404',
   '/resena',
-  ...(sitio.legal.revisadoPorAbogado ? [] : ['/privacidad', '/terminos-fundadores']),
+  '/admin',
+  '/descarga',
+  '/fundadores/confirmar',
+  '/fundadores/gracias',
+  ...(sitio.legal.revisadoPorAbogado ? [] : ['/privacidad', '/terminos-fundadores', '/derechos']),
 ]);
 
 const rutas = Object.keys(import.meta.glob('./**/*.astro'))

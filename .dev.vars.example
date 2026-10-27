@@ -1,0 +1,10 @@
+# Copia este archivo como .dev.vars (está en .gitignore) para `npx wrangler dev`. Nunca lo subas con valores reales.
+ENTORNO=desarrollo
+ADMIN_DEV_CORREO=tu-correo@ejemplo.com
+ORIGEN=http://localhost:8787
+ORIGENES_EXTRA=http://127.0.0.1:8787,http://localhost:4321
+CORREO_PROVEEDOR=ninguno
+# Claves de prueba públicas de Turnstile: siempre aprueba.
+TURNSTILE_SECRET=1x0000000000000000000000000000000AA
+TURNSTILE_HOSTNAMES=
+LIMITE_SAL=cambia-esto-por-cualquier-texto-largo

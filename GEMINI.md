@@ -12,6 +12,7 @@ API de animaciones y scroll: `docs/ANIMACIONES.md`. Despliegue: `README_DEPLOY.m
 
 Astro 5 estático (TypeScript estricto, sin `any`), CSS propio, Vitest. Se publica como **Worker con Static Assets** en
 Cloudflare (`wrangler.toml`): cada push a la rama de producción compila con `npm run build:cloudflare` y despliega.
+El Worker (`src/worker/`, Hono) atiende solo `/api/*` y `/admin` con D1, R2, Turnstile y Access: ver `docs/BACKEND.md`.
 Node 22 (`.nvmrc`).
 
 | Comando | Para qué |
@@ -40,6 +41,8 @@ Node 22 (`.nvmrc`).
 - `src/site.config.ts` — **único** lugar con datos variables (`TODO_DEFINIR` = sin definir: nunca se muestra en el sitio).
 - `src/data/` — FAQ, funciones, redes (`socials.ts`, con el interruptor `WHATSAPP_ENABLED`), marca, reseñas.
 - `src/lib/` — reglas probadas (guardian, whatsapp, semáforo NOM-004, IMC, reseñas, entorno, QR).
+- `src/worker/` — backend (rutas públicas, panel, retención); `src/compartido/` — validación y eventos que usan el
+  sitio y el Worker; `migrations/` — D1 (solo aditivas, nunca `DROP TABLE`); `tests/worker/` — pruebas con Miniflare.
 - `capturas/` — fuentes de imágenes (logo 3D, capturas de la app) → `npm run activos` las procesa.
 
 ## Reglas duras

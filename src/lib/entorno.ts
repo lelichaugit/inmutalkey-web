@@ -34,3 +34,15 @@ export function quiereEjemplos(entorno: Entorno, env: VariablesEntorno): boolean
   if (entorno === 'desarrollo') return true;
   return env['SHOW_EXAMPLE_REVIEWS'] === 'true';
 }
+
+/** Sitekey pública de prueba de Cloudflare: siempre aprueba. Solo fuera de producción. */
+export const TURNSTILE_PRUEBA = '1x00000000000000000000AA';
+
+/**
+ * Sitekey de Turnstile para el build: la real en producción (o null si falta: el formulario se muestra deshabilitado
+ * con la invitación a WhatsApp); la de prueba en desarrollo y preview.
+ */
+export function siteKeyTurnstile(entorno: Entorno, real: string | null): string | null {
+  if (entorno !== 'produccion') return TURNSTILE_PRUEBA;
+  return real;
+}

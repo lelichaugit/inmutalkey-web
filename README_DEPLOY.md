@@ -79,12 +79,119 @@ Cloudflare, con los encabezados de `public/_headers`).
 
 Las ramas que no son de producción generan una versión de vista previa con su propia dirección.
 
-## 7. Pendiente para la Fase C (formularios y reseñas)
+## 7. Backend (Fase C): qué ya está hecho y qué te toca
 
-1. **Workers & Pages → D1** → **Create database** → `inmutalkey-web`; su ID va en `wrangler.toml` junto con el Worker
-   de `/api/*` (ya está la plantilla comentada).
-2. **Turnstile** → **Add widget** para `inmutalkey.com` → la *site key* (pública) va a la configuración y la
-   *secret key* como secreto.
-3. En el Worker: **Settings → Variables and Secrets** → secretos `TURNSTILE_SECRET_KEY` y `RATE_LIMIT_SALT`
-   (texto aleatorio largo).
-4. Migraciones: `npx wrangler d1 migrations apply inmutalkey-web --remote`.
+El Worker de `/api/*` y `/admin` vive en `src/worker/` (detalle técnico y contrato de la API: `docs/BACKEND.md`).
+
+**Ya hecho desde Claude (27-oct-2026):**
+
+- Base D1 `inmutalkey-web` creada (región WNAM) con su ID en `wrangler.toml`.
+- Las 7 migraciones aplicadas en producción y registradas en `d1_migrations`: `npm run db:migrar` dirá
+  "No migrations to apply". Las siguientes (`0008_…`) se aplican con ese mismo comando.
+
+**Te toca en el panel de Cloudflare (en este orden).** Hasta terminar los pasos 8 a 11, no fusiones la rama del
+backend a la de producción: el deploy fallaría si falta el bucket de R2, y el sitio actual seguiría publicado sin
+cambios.
+
+## 8. R2: bucket de instaladores
+
+1. **R2 Object Storage → Enable** (pide un método de pago aunque te quedes en el nivel gratuito: 10 GB y egreso gratis).
+2. **Create bucket** → `inmutalkey-instaladores` → ubicación automática. **No** actives acceso público ni dominio
+   público: el bucket es privado y solo se descarga con URL firmada de 5 minutos.
+3. Sube el instalador (p. ej. a `instaladores/InmutalKey_0.3.0_x64-setup.exe`).
+4. **R2 → Manage API tokens → Create API token**: permiso **Object Read only**, limitado al bucket
+   `inmutalkey-instaladores`, sin vencimiento o con el que prefieras. Guarda el *Access Key ID*, el
+   *Secret Access Key* y tu *Account ID* (sale en la misma pantalla).
+
+## 9. Correo saliente (Cloudflare Email Sending)
+
+Requiere **Workers Paid** (5 USD al mes; incluye 3,000 correos al mes). Tu correo de Hostinger no se toca: Cloudflare
+pone sus registros en el subdominio `cf-bounce` y la recepción de `contacto@inmutalkey.com` sigue en Hostinger.
+
+1. **Workers & Pages → Plans** → Workers Paid.
+2. **Compute → Email Service → Email Sending → Onboard Domain** → `inmutalkey.com`.
+3. **Trampa con DMARC**: el asistente ofrece crear un TXT en `_dmarc.inmutalkey.com`. **No lo aceptes**: ya tienes uno
+   (`v=DMARC1; p=none`) y con dos registros los servidores ignoran tu política. En su lugar, edita el existente:
+   - Ahora: `v=DMARC1; p=none; rua=mailto:contacto@inmutalkey.com; adkim=r; aspf=r`
+   - En 3 o 4 semanas, si los reportes salen limpios (Hostinger y Cloudflare con DKIM alineado):
+     `v=DMARC1; p=quarantine; rua=mailto:contacto@inmutalkey.com`
+4. **No cambies** el SPF de la raíz (`v=spf1 include:_spf.mail.hostinger.com ~all`) ni los MX de Hostinger. Cloudflare
+   usa `cf-bounce.inmutalkey.com` para el sobre del mensaje y firma con DKIM de `inmutalkey.com`: DMARC pasa por DKIM.
+5. El remitente es `avisos@inmutalkey.com` (`CORREO_REMITENTE` en `wrangler.toml`). No necesita buzón; si quieres que
+   las respuestas lleguen, los correos ya llevan *Reply-To* al médico (avisos internos) o puedes crear el alias en
+   Hostinger.
+6. Prueba: desde el panel de Email Sending manda un correo de prueba a una cuenta de Gmail y revisa en
+   "Mostrar original" que diga `DKIM: PASS` y `DMARC: PASS`.
+
+**Alternativa sin pagar (Resend, 100 correos al día):** `CORREO_PROVEEDOR = "resend"` en `wrangler.toml`, alta del
+dominio en Resend (sus registros van en `send.inmutalkey.com`, tampoco tocan Hostinger), el secreto `RESEND_API_KEY`
+y borra el bloque `[[send_email]]` de `wrangler.toml` (en el plan Free ese binding no aplica).
+Resend sería un encargado más (EE. UU.) que hay que declarar en el aviso de privacidad.
+
+## 10. Turnstile
+
+1. **Turnstile → Add widget** → nombre `inmutalkey.com`, dominio `inmutalkey.com`, modo **Managed**.
+2. La **site key** (pública) va en `src/site.config.ts` → `turnstile.siteKey` (mientras sea `TODO_DEFINIR`, los
+   formularios de producción se muestran deshabilitados con la invitación a WhatsApp).
+3. La **secret key** va como secreto `TURNSTILE_SECRET` (paso 12).
+
+## 11. Cloudflare Access para /admin
+
+1. **Zero Trust** (plan gratuito) → elige el nombre de tu equipo; queda `<equipo>.cloudflareaccess.com`. Escríbelo en
+   `ACCESS_EQUIPO` de `wrangler.toml` si no es `inmutalkey.cloudflareaccess.com`.
+2. **Access → Applications → Add an application → Self-hosted**:
+   - Nombre: `Panel InmutalKey`. Dominios: `inmutalkey.com/admin` **y** `inmutalkey.com/api/admin` (dos rutas en la
+     misma aplicación).
+   - Duración de sesión: 24 h.
+   - Política **Allow** → *Include* → *Emails* → solo tu correo. Método de inicio: *One-time PIN* (código por correo).
+3. Copia el **Application Audience (AUD) Tag** de la aplicación: va como secreto `ACCESS_AUD`.
+4. El Worker revisa por su cuenta el JWT de Access (firma, audiencia, vencimiento y correo). Si algún día Access se
+   desactiva por error, `/admin` sigue respondiendo 401.
+
+## 12. Secretos del Worker
+
+Desde tu computadora, en la carpeta del repo (`npx wrangler login` la primera vez), uno por uno:
+
+```sh
+npx wrangler secret put TURNSTILE_SECRET      # paso 10
+npx wrangler secret put LIMITE_SAL            # texto aleatorio largo (p. ej. de un gestor de contraseñas)
+npx wrangler secret put ACCESS_AUD            # paso 11
+npx wrangler secret put ADMIN_CORREOS         # tu correo (o varios separados por coma)
+npx wrangler secret put R2_CUENTA_ID          # paso 8
+npx wrangler secret put R2_ACCESS_KEY_ID      # paso 8
+npx wrangler secret put R2_SECRET_ACCESS_KEY  # paso 8
+```
+
+Opcional, para ver las visitas de Web Analytics en el panel: `CF_API_TOKEN_ANALITICA` (token con *Account Analytics:
+Read*), `CF_CUENTA_ID` y `WA_SITE_TAG` (sale en **Web Analytics → tu sitio → Manage site**). Sin ellos, el panel usa
+solo las vistas agregadas que registra el propio sitio.
+
+Nunca pongas secretos en `wrangler.toml`, en `.dev.vars` subido a Git ni en el chat.
+
+## 13. Publicar
+
+1. Fusiona la rama del backend a la de producción. Cloudflare compila (`npm run build:cloudflare`) y despliega.
+2. Comprueba:
+   - `https://inmutalkey.com/api/fundadores/cupo` → `{"total":0,"restantes":0}`.
+   - `https://inmutalkey.com/admin` → te pide el código de Access y luego muestra el panel con tu correo arriba.
+   - En **Ajustes** del panel pon los lugares totales; en **Instaladores** registra la versión con su SHA-256
+     (`Get-FileHash .\archivo.exe -Algorithm SHA256` en PowerShell).
+   - Regístrate tú mismo en `/fundadores`, confirma desde el correo, apruébate la prueba desde **Leads** y descarga.
+   - **Workers & Pages → inmutalkey-web → Settings → Triggers**: aparece el cron `17 9 * * *` (retención diaria).
+3. Local: copia `.dev.vars.example` a `.dev.vars`, `npm run db:migrar:local` y `npm run dev:worker`
+   (panel en `http://localhost:8787/admin` sin Access, solo con `ENTORNO=desarrollo`).
+
+## 14. HSTS con preload
+
+El encabezado ya lleva `preload`, pero **no** inscribas el dominio en hstspreload.org hasta que todos los subdominios
+que uses (correo web, `cf-bounce`, futuros) respondan por HTTPS: la inscripción tarda meses en revertirse y obliga a
+HTTPS en todo `*.inmutalkey.com` en los navegadores.
+
+## 15. Costos mensuales esperados (USD)
+
+| Concepto | Con Cloudflare Email Sending | Con Resend |
+|---|---|---|
+| Workers | 5 (Paid) | 0 (Free) |
+| Correo | incluido (3,000/mes; luego 0.35 por 1,000) | 0 (100/día, 3,000/mes) |
+| D1, R2 (≤ 10 GB), Turnstile, Access (≤ 50 usuarios), cron, rate limiting | 0 | 0 |
+| **Total** | **≈ 5** | **0** |

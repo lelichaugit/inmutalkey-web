@@ -54,6 +54,10 @@ export interface ConfigSitio {
     readonly version: Valor<string>;
     readonly sha256: Valor<string>;
   };
+  /** Turnstile (antibots de Cloudflare). La sitekey es pública; el secreto vive solo en el Worker. */
+  readonly turnstile: {
+    readonly siteKey: Valor<string>;
+  };
   readonly legal: {
     readonly razonSocial: Valor<string>;
     readonly domicilio: Valor<string>;
@@ -100,6 +104,10 @@ export const sitio: ConfigSitio = {
     archivo: TODO_DEFINIR,
     version: TODO_DEFINIR,
     sha256: TODO_DEFINIR,
+  },
+  turnstile: {
+    // Créala en Cloudflare → Turnstile → Add widget (dominio inmutalkey.com, modo Managed) y pégala aquí.
+    siteKey: TODO_DEFINIR,
   },
   legal: {
     razonSocial: TODO_DEFINIR,

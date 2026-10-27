@@ -1,0 +1,32 @@
+---
+// Descarga del instalador con enlace personal. El correo lleva a /api/descarga/<token>, que redirige aquí con el
+// token en el fragmento. El botón hace un POST normal a /api/descarga: el Worker gasta el token (un solo uso) y
+// responde con una redirección a una URL de R2 válida 5 minutos. Los filtros de correo que abren el enlace no
+// gastan la descarga.
+import '../styles/formularios.css';
+
+import Icono from '../components/Icono.astro';
+import PaginaTexto from '../layouts/PaginaTexto.astro';
+---
+
+<PaginaTexto titulo="Descarga InmutalKey" descripcion="Tu enlace personal para instalar la prueba." antetitulo="Instalador" indexar={false}>
+  <div data-pagina-descarga>
+    <div class="aviso-paso" data-paso="descargar" hidden>
+      <p>El enlace funciona una sola vez. Descarga el instalador en la computadora de tu consultorio.</p>
+      <form method="post" action="/api/descarga" data-descarga>
+        <input type="hidden" name="token" />
+        <button type="submit" class="boton boton-primario"><Icono nombre="descarga" /> Descargar el instalador</button>
+      </form>
+      <p>Antes de instalar, puedes <a href="/verificar">comprobar que el archivo es el original</a>.</p>
+    </div>
+    <div class="aviso-paso exito" data-paso="iniciada" hidden>
+      <p>Tu descarga empezó. Si no ves el archivo, revisa la carpeta Descargas.</p>
+      <p><a href="/verificar">Cómo comprobar el archivo e instalarlo</a></p>
+    </div>
+    <div class="aviso-paso problema" data-paso="vencido" hidden>
+      <h2>Este enlace ya no está disponible</h2>
+      <p>Los enlaces funcionan una sola vez y vencen a las 72 horas. Escríbenos a {'contacto@inmutalkey.com'} y te mandamos otro.</p>
+    </div>
+    <noscript><p class="aviso-paso">Para descargar necesitas JavaScript activado.</p></noscript>
+  </div>
+</PaginaTexto>

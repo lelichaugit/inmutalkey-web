@@ -1,0 +1,196 @@
+/* Formularios conectados a la API (Fundadores, ARCO) y páginas de paso (confirmar, descarga).
+   Mismo lenguaje que /resena: campos de 52 px, texto ≥ 16 px, foco azul visible. Errores en rojo junto al campo. */
+
+.formulario {
+  display: grid;
+  gap: 20px;
+  padding: clamp(20px, 4vw, 32px);
+  border: 1px solid var(--linea-oscura-fuerte);
+  border-radius: 20px;
+  background: rgb(255 255 255 / 0.02);
+}
+
+.formulario-rejilla {
+  display: grid;
+  gap: 20px;
+}
+
+@media (min-width: 720px) {
+  .formulario-rejilla {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.formulario .campo {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+
+.formulario .campo > span,
+.formulario .campo legend {
+  color: var(--texto);
+  font-weight: 600;
+}
+
+.formulario .campo small,
+.formulario .opcional {
+  color: var(--texto-tenue);
+  font-size: 0.9rem;
+  font-weight: 400;
+}
+
+.formulario input:not([type='radio']):not([type='checkbox']),
+.formulario select,
+.formulario textarea {
+  width: 100%;
+  min-height: 52px;
+  padding: 12px 14px;
+  border: 1px solid var(--linea-oscura-fuerte);
+  border-radius: 12px;
+  background: var(--medianoche-2, #0b1324);
+  color: var(--texto);
+  font: inherit;
+  font-size: 1.0625rem;
+}
+
+.formulario textarea {
+  resize: vertical;
+}
+
+.formulario :is(input, select, textarea):focus {
+  outline: 3px solid rgb(46 159 224 / 0.4);
+  outline-offset: 1px;
+  border-color: var(--azul-vivo);
+}
+
+.formulario [aria-invalid='true'] {
+  border-color: var(--error) !important;
+}
+
+.formulario .campo-error {
+  color: var(--error);
+  font-size: 0.9375rem;
+}
+
+.formulario .casilla {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: flex-start;
+  color: var(--texto-tenue);
+}
+
+.formulario .casilla input {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  margin-top: 2px;
+  accent-color: var(--azul);
+}
+
+.formulario .casilla > span {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.formulario .casilla .campo-error {
+  flex-basis: 100%;
+}
+
+.formulario .opciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.formulario .opciones label {
+  position: relative;
+}
+
+.formulario .opciones input {
+  position: absolute;
+  opacity: 0;
+}
+
+.formulario .opciones span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1px solid var(--linea-oscura-fuerte);
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.formulario .opciones input:checked + span {
+  border-color: var(--azul-vivo);
+  background: rgb(46 159 224 / 0.14);
+}
+
+.formulario .opciones input:focus-visible + span {
+  outline: 3px solid var(--azul-vivo);
+  outline-offset: 2px;
+}
+
+/* Campo trampa: fuera de la vista y del lector de pantalla, pero presente para los bots. */
+.formulario .trampa {
+  position: absolute;
+  left: -10000px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+.formulario .boton {
+  justify-self: start;
+}
+
+.formulario .boton:disabled {
+  opacity: 0.55;
+  cursor: progress;
+  transform: none;
+}
+
+.formulario-estado:empty {
+  display: none;
+}
+
+.formulario-estado[data-tipo='error'] {
+  color: var(--error);
+}
+
+.aviso-paso {
+  padding: clamp(20px, 4vw, 32px);
+  border: 1px solid var(--linea-oscura-fuerte);
+  border-left: 3px solid var(--azul-vivo);
+  border-radius: 20px;
+  background: rgb(255 255 255 / 0.03);
+}
+
+.aviso-paso.exito {
+  border-left-color: var(--esmeralda-vivo);
+}
+
+.aviso-paso.problema {
+  border-left-color: var(--error);
+}
+
+.aviso-paso:focus {
+  outline: none;
+}
+
+.cupo-vivo {
+  margin: 0 0 20px;
+  font-weight: 600;
+  color: var(--azul-vivo);
+}
+
+/* Huellas SHA-256 que /verificar trae de /api/versiones. */
+.huella-viva {
+  word-break: break-all;
+}

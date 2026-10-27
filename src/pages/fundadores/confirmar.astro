@@ -1,0 +1,26 @@
+---
+// Paso de confirmación del doble opt-in. El correo lleva a /api/confirmar/<token>, que redirige aquí con el token en
+// el fragmento (#t=…). Se confirma solo con el clic del botón (POST), así los filtros de correo que abren enlaces
+// por su cuenta no confirman en nombre del médico.
+import '../../styles/formularios.css';
+
+import Icono from '../../components/Icono.astro';
+import PaginaTexto from '../../layouts/PaginaTexto.astro';
+---
+
+<PaginaTexto titulo="Confirma tu correo" descripcion="Un clic y listo: así sabemos que este correo es tuyo." antetitulo="Programa Fundadores" indexar={false}>
+  <div data-confirmacion>
+    <div class="aviso-paso" data-paso="confirmar" hidden>
+      <p>Confirma que quieres recibir información del programa Fundadores en este correo.</p>
+      <button type="button" class="boton boton-primario" data-confirmar><Icono nombre="check" /> Confirmar mi correo</button>
+    </div>
+    <div class="aviso-paso problema" data-paso="vencido" hidden>
+      <h2>Este enlace ya no es válido</h2>
+      <p>Los enlaces de confirmación vencen a las 72 horas. Vuelve a <a href="/fundadores">registrarte</a> y te mandamos uno nuevo.</p>
+    </div>
+    <div class="aviso-paso problema" data-paso="error" hidden>
+      <p>No pudimos confirmar en este momento. Revisa tu conexión e intenta de nuevo.</p>
+    </div>
+    <noscript><p class="aviso-paso">Para confirmar necesitas JavaScript activado.</p></noscript>
+  </div>
+</PaginaTexto>

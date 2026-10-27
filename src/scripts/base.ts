@@ -386,3 +386,16 @@ if (!movimientoReducido.matches) {
 cargarCerca('[data-demo]', () => import('./demo').then((m) => m.iniciarDemo(document)).then(motor.medir));
 cargarCerca('[data-signos]', () => import('./signos').then((m) => m.iniciarSignos(document)).then(motor.medir));
 cargarCerca('[data-chat]', () => import('./chat').then((m) => m.iniciarChats(document)).then(motor.medir));
+
+// ───────────── API del sitio (src/worker) ─────────────
+// Métricas agregadas (sin cookies ni identificadores) cuando el navegador queda libre; formularios, confirmación,
+// descarga, cupo y testimonios solo en las páginas que los tienen.
+const enReposo = (tarea: () => void): void => {
+  // Safari todavía no trae requestIdleCallback.
+  if (typeof window.requestIdleCallback === 'function') window.requestIdleCallback(tarea, { timeout: 3000 });
+  else setTimeout(tarea, 1200);
+};
+enReposo(() => void import('./eventos').then((m) => m.iniciarEventos(document)));
+if (document.querySelector('[data-formulario], [data-confirmacion], [data-pagina-descarga], [data-cupo], [data-testimonios-vivos], [data-versiones-vivas]')) {
+  void import('./formularios').then((m) => m.iniciarFormularios(document));
+}

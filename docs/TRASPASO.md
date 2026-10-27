@@ -129,3 +129,20 @@ WhatsApp `522291525847` **confirmado** · textos prellenados (provisionales) · 
   /terminos-fundadores (hoy "versión preliminar", sin indexar); precios/cupos (TODO_DEFINIR); que el respaldo del
   programa incluya `clinica.salt` (y la llave) para poder prometer restauración en otro equipo; probar en un iPhone y un
   Mac reales con Safari (aquí solo hubo Chromium).
+
+## Estado 27-oct (Fase C: backend)
+
+- Hecho en la rama `claude/backend-fase-c`: Worker Hono en `src/worker/` (leads con doble opt-in, cupo, eventos
+  agregados, testimonios, versiones y descargas por R2, ARCO, retención por cron) y panel `/admin` tras Cloudflare
+  Access. Detalle: `docs/BACKEND.md`. Pasos del panel de Cloudflare: `README_DEPLOY.md` §7–§15.
+- D1 `inmutalkey-web` creada (id en `wrangler.toml`) con las migraciones 0001–0007 aplicadas en producción.
+- Reemplaza el plan anterior de `0001_solicitudes` / `0002_resenas` / `0003_limite_frecuencia` (nunca se escribió): no
+  hay IP hasheada en la base; el límite usa el binding nativo. `/resena` sigue apagada; los testimonios los captura
+  Alan en el panel con la fecha del consentimiento.
+- Páginas nuevas: `/fundadores` (registro), `/fundadores/confirmar`, `/fundadores/gracias`, `/descarga`, `/derechos`.
+  La sección Fundadores suma "Prefiero registrarme con mi correo". `/verificar` muestra las huellas de `/api/versiones`.
+- Confirmación y descarga piden un clic (POST) a propósito: los filtros de correo corporativo abren los enlaces.
+- Pendiente de Alan: R2, Workers Paid + Email Sending (o Resend), Turnstile (`turnstile.siteKey`), Access, secretos,
+  editar el DMARC existente (no duplicarlo) y fusionar la rama. Aviso de privacidad: el abogado parte de
+  `docs/PRIVACIDAD_DATOS_Y_FINALIDADES.md`; al publicarlo, cambiar `VERSION_AVISO_VIGENTE`.
+- Decisión abierta: hoy una prueba gratuita ocupa lugar de fundador (`ESTATUS_QUE_OCUPAN_CUPO`).

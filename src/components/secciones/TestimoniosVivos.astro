@@ -1,0 +1,54 @@
+---
+// Testimonios aprobados en el panel (/admin), con consentimiento del médico. La banda nace oculta y solo aparece si
+// GET /api/testimonios trae alguno (src/scripts/formularios.ts los pinta con textContent). Sin JS no se ve: no hay
+// nada que mostrar sin consultar la base.
+---
+
+<section class="seccion fondo-oscuro testimonios-vivos" aria-labelledby="testimonios-titulo" data-testimonios-vivos hidden>
+  <div class="contenedor">
+    <h2 id="testimonios-titulo">Lo que dicen los médicos fundadores</h2>
+    <p class="tenue">Publicados con su autorización.</p>
+    <ul class="testimonios-lista" data-lista></ul>
+  </div>
+</section>
+
+<style>
+  .testimonios-vivos[hidden] {
+    display: none;
+  }
+
+  .testimonios-lista {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+    gap: 16px;
+    margin: 32px 0 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .testimonios-lista :global(.testimonio) {
+    display: grid;
+    gap: 16px;
+    align-content: space-between;
+    padding: 24px;
+    border: 1px solid var(--linea-oscura-fuerte);
+    border-radius: 20px;
+    background: rgb(255 255 255 / 0.03);
+  }
+
+  .testimonios-lista :global(blockquote) {
+    margin: 0;
+    font-size: var(--texto-grande);
+    line-height: 1.5;
+  }
+
+  .testimonios-lista :global(.testimonio-autor) {
+    display: grid;
+    gap: 2px;
+    margin: 0;
+  }
+
+  .testimonios-lista :global(.testimonio-autor span) {
+    color: var(--texto-tenue);
+  }
+</style>

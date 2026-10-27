@@ -1,0 +1,69 @@
+---
+// Solicitud de derechos ARCO (acceso, rectificación, cancelación, oposición). Registra la solicitud y avisa a
+// contacto@; Alan responde por correo dentro del plazo legal (docs/ARCO.md). Versión preliminar: el texto definitivo
+// lo da el abogado junto con el aviso de privacidad.
+import '../styles/formularios.css';
+
+import Icono from '../components/Icono.astro';
+import { TIPOS_ARCO } from '../compartido/leads';
+import PaginaTexto from '../layouts/PaginaTexto.astro';
+import { detectarEntorno, siteKeyTurnstile } from '../lib/entorno';
+import { estaDefinido, sitio } from '../site.config';
+
+const entorno = detectarEntorno(process.env, { servidorDev: import.meta.env.DEV });
+const sitekey = siteKeyTurnstile(entorno, estaDefinido(sitio.turnstile.siteKey) ? sitio.turnstile.siteKey : null);
+const correo = estaDefinido(sitio.contacto.correo) ? sitio.contacto.correo : null;
+
+const ETIQUETAS: Record<(typeof TIPOS_ARCO)[number], string> = {
+  acceso: 'Acceso: saber qué datos tenemos',
+  rectificacion: 'Rectificación: corregir un dato',
+  cancelacion: 'Cancelación: borrar mis datos',
+  oposicion: 'Oposición: dejar de usarlos para algo',
+};
+---
+
+<PaginaTexto
+  titulo="Tus derechos sobre tus datos"
+  descripcion="Pide ver, corregir o borrar los datos que nos diste, u oponerte a algún uso. Respondemos por correo."
+  antetitulo="Privacidad"
+  borrador={!sitio.legal.revisadoPorAbogado}
+  indexar={sitio.legal.revisadoPorAbogado}
+>
+  <p>
+    Te respondemos al correo que escribas en un máximo de 20 días hábiles y, si procede, lo hacemos efectivo en los 15
+    siguientes. Para protegerte, antes de entregar o borrar datos podemos pedirte que confirmes que el correo es tuyo.
+    {correo && <>También puedes escribir directo a <a href={`mailto:${correo}`}>{correo}</a>.</>}
+  </p>
+
+  <form class="formulario" data-formulario="arco" data-sitekey={sitekey ?? undefined}>
+    <label class="campo">
+      <span>Correo con el que te registraste</span>
+      <input name="correo" type="email" required maxlength="160" autocomplete="email" />
+    </label>
+    <fieldset class="campo">
+      <legend>¿Qué quieres hacer?</legend>
+      <div class="opciones">
+        {
+          TIPOS_ARCO.map((t) => (
+            <label>
+              <input type="radio" name="tipo" value={t} required />
+              <span>{ETIQUETAS[t]}</span>
+            </label>
+          ))
+        }
+      </div>
+    </fieldset>
+    <label class="campo">
+      <span>Detalle <span class="opcional">(opcional)</span></span>
+      <textarea name="detalle" maxlength="1000" rows="4" placeholder="Por ejemplo: corrijan mi especialidad a Pediatría."></textarea>
+      <small>No incluyas datos de pacientes ni documentos de identidad aquí.</small>
+    </label>
+    <div class="trampa" aria-hidden="true">
+      <label>No llenes este campo <input name="sitio_web" tabindex="-1" autocomplete="off" /></label>
+    </div>
+    <div class="turnstile" data-turnstile></div>
+    <button type="submit" class="boton boton-primario" disabled={!sitekey}><Icono nombre="enviar" /> Enviar solicitud</button>
+    <p class="formulario-estado" data-estado role="status" aria-live="polite"></p>
+    <noscript><p>Sin JavaScript, escríbenos directo por correo.</p></noscript>
+  </form>
+</PaginaTexto>

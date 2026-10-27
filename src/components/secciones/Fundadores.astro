@@ -145,6 +145,9 @@ const CHAT: readonly Mensaje[] = [
                   </a>
                 )
               }
+              <a class:list={['boton', enlace ? 'boton-secundario' : 'boton-primario', 'plan-cta']} href="/fundadores">
+                <Icono nombre="correo" /> {enlace ? 'Prefiero registrarme con mi correo' : 'Apartar mi lugar'}
+              </a>
               <p class="plan-nota tenue">
                 {fecha && <>Precio de fundador válido hasta el {fecha}. </>}
                 {estaDefinido(precios.notaPrecios) && <>{precios.notaPrecios} </>}
