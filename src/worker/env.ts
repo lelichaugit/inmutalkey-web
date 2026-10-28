@@ -59,6 +59,8 @@ export interface Env {
   /** `desarrollo` solo en .dev.vars: permite /admin sin Access para ADMIN_DEV_CORREO. Nunca en producción. */
   readonly ENTORNO?: string;
   readonly ADMIN_DEV_CORREO?: string;
+  /** ID de cliente OAuth de Google (público). Sin él, el botón "Continuar con Google" lleva a un aviso. */
+  readonly GOOGLE_CLIENT_ID?: string;
 
   // ── Secretos (wrangler secret put) ──
   readonly TURNSTILE_SECRET: string;
@@ -69,6 +71,10 @@ export interface Env {
   /** Correos con permiso de entrar a /admin, separados por coma. Secreto para no publicar tu correo en el repo. */
   readonly ADMIN_CORREOS?: string;
   readonly RESEND_API_KEY?: string;
+  /** Secreto del cliente OAuth de Google. */
+  readonly GOOGLE_CLIENT_SECRET?: string;
+  /** Texto aleatorio largo para firmar las cookies cortas del inicio con Google (HMAC). */
+  readonly SESION_SECRETO?: string;
   /** Credenciales S3 de R2 de SOLO LECTURA sobre el bucket de instaladores (para la URL prefirmada). */
   readonly R2_CUENTA_ID?: string;
   readonly R2_ACCESS_KEY_ID?: string;

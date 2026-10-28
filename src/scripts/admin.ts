@@ -211,6 +211,7 @@ export function iniciarPanel(raiz: Document): void {
       ['Qué usa hoy', lead.usa_hoy],
       ['UTM', [lead.utm_source, lead.utm_medium, lead.utm_campaign].filter(Boolean).join(' / ')],
       ['Aviso aceptado', `${lead.version_aviso} · ${fecha(lead.consentimiento_utc)}`],
+      ['Registro', lead.metodo_registro === 'google' ? 'Con Google (correo verificado por Google)' : 'Con correo'],
       ['Confirmó correo', fecha(lead.confirmado_utc)],
       ['Primer contacto', fecha(lead.primer_contacto_utc)],
       ['Estatus desde', fecha(lead.estatus_utc)],
@@ -456,6 +457,14 @@ export function iniciarPanel(raiz: Document): void {
       await cargadores.versiones?.();
     }, formVersion.querySelector('button') ?? undefined);
   });
+
+  const botonPendientes = $<HTMLButtonElement>('[data-notificar-pendientes]');
+  botonPendientes.addEventListener('click', () =>
+    void intentar(async () => {
+      const r = await api<{ enviados: number; restantes: number }>('/versiones/notificar-pendientes', { metodo: 'POST', cuerpo: {} });
+      avisar(r.restantes ? `${r.enviados} enviados; quedan ${r.restantes}: vuelve a pulsar.` : `${r.enviados} enviados. Nadie más espera.`);
+    }, botonPendientes),
+  );
 
   // ── ARCO ──
   interface Arco {

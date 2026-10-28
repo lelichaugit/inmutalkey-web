@@ -396,6 +396,6 @@ const enReposo = (tarea: () => void): void => {
   else setTimeout(tarea, 1200);
 };
 enReposo(() => void import('./eventos').then((m) => m.iniciarEventos(document)));
-if (document.querySelector('[data-formulario], [data-confirmacion], [data-pagina-descarga], [data-cupo], [data-testimonios-vivos], [data-versiones-vivas]')) {
+if (document.querySelector('[data-formulario], [data-confirmacion], [data-pagina-descarga], [data-cupo], [data-testimonios-vivos], [data-versiones-vivas], [data-gracias]')) {
   void import('./formularios').then((m) => m.iniciarFormularios(document));
 }

@@ -146,3 +146,16 @@ WhatsApp `522291525847` **confirmado** · textos prellenados (provisionales) · 
   editar el DMARC existente (no duplicarlo) y fusionar la rama. Aviso de privacidad: el abogado parte de
   `docs/PRIVACIDAD_DATOS_Y_FINALIDADES.md`; al publicarlo, cambiar `VERSION_AVISO_VIGENTE`.
 - Decisión abierta: hoy una prueba gratuita ocupa lugar de fundador (`ESTATUS_QUE_OCUPAN_CUPO`).
+
+## Estado 28-oct (registro con Google y descarga directa)
+
+- Misma rama `claude/backend-fase-c`. El médico descarga solo al confirmar el correo o al entrar con Google (OIDC +
+  PKCE en el Worker, sin scripts de Google en la página). `/descarga` es ahora la instalación guiada (requisitos,
+  huella SHA-256 con botón de copiar, SmartScreen, instalación, primer inicio, 30 días) y detecta celular o Mac para
+  mandar el enlace al correo. Componentes nuevos: `PasosRegistro.astro` (indicador 1-2-3) y `BotonGoogle.astro`.
+- Cupo: solo cuentan los clientes (con descarga automática, las pruebas lo agotarían).
+- `site.config.ts`: instalador 0.3.2 con su SHA-256 (de ESTADO_PROYECTO); `google.habilitado` en false hasta configurar.
+- Migración 0008 (`metodo_registro`) aplicada en producción.
+- Pendiente de Alan: cliente OAuth en Google Cloud (README_DEPLOY §16), logotipo oficial «G» en
+  `public/brand/terceros/google-g.svg`, subir el instalador 0.3.2 a R2 y registrarlo en el panel.
+- Sin verificar en este entorno: inicio real con Google y envío real de correos (sin acceso de red a esos servicios).

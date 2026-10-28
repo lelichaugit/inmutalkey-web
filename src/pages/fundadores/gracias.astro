@@ -1,6 +1,9 @@
 ---
+// Después de confirmar cuando no hay descarga inmediata: aún no hay versión publicada (?estado=pronto), pidió
+// demasiados enlaces hoy (?estado=limite) o vuelve a un enlace ya usado. formularios.ts muestra el texto que toca.
 import '../../styles/formularios.css';
 
+import PasosRegistro from '../../components/PasosRegistro.astro';
 import PaginaTexto from '../../layouts/PaginaTexto.astro';
 import { enlaceWhatsApp } from '../../lib/whatsapp';
 import { sitio } from '../../site.config';
@@ -8,16 +11,25 @@ import { sitio } from '../../site.config';
 const whatsapp = enlaceWhatsApp(sitio.contacto.whatsapp, sitio.contacto.mensajes.fundadores);
 ---
 
-<PaginaTexto titulo="¡Gracias! Tu correo quedó confirmado" descripcion="Ya estás en la lista del programa Fundadores." antetitulo="Programa Fundadores" indexar={false}>
-  <div class="aviso-paso exito">
-    <p>
-      Te escribiremos en los próximos días para tu prueba de {sitio.licencia.diasPrueba} días: te mandamos un enlace
-      personal para descargar el instalador y te acompañamos en la primera consulta.
+<PaginaTexto titulo="¡Listo! Tu correo quedó confirmado" descripcion="Ya estás en el programa Fundadores." antetitulo="Programa Fundadores" indexar={false}>
+  <PasosRegistro actual={3} />
+  <div class="aviso-paso exito" data-gracias>
+    <p data-estado-gracias="normal">
+      Si tu descarga no se abrió, pide un enlace nuevo en <a href="/descarga">inmutalkey.com/descarga</a> con el mismo
+      correo: te llega en un minuto.
+    </p>
+    <p data-estado-gracias="pronto" hidden>
+      Estamos publicando la versión más reciente del instalador. En cuanto esté lista te mandamos tu enlace personal por
+      correo; no tienes que hacer nada más.
+    </p>
+    <p data-estado-gracias="limite" hidden>
+      Por seguridad, cada registro puede pedir pocos enlaces al día y ya llegaste al límite de hoy. Usa el que te
+      llegó por correo o vuelve a intentarlo mañana.
     </p>
     {
       whatsapp && (
         <p>
-          ¿Tienes prisa? <a href={whatsapp} target="_blank" rel="noopener noreferrer">Escríbenos por WhatsApp</a>.
+          ¿Necesitas ayuda? <a href={whatsapp} target="_blank" rel="noopener noreferrer">Escríbenos por WhatsApp</a>.
         </p>
       )
     }

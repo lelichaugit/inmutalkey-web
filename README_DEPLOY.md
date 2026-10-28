@@ -86,8 +86,8 @@ El Worker de `/api/*` y `/admin` vive en `src/worker/` (detalle técnico y contr
 **Ya hecho desde Claude (27-oct-2026):**
 
 - Base D1 `inmutalkey-web` creada (región WNAM) con su ID en `wrangler.toml`.
-- Las 7 migraciones aplicadas en producción y registradas en `d1_migrations`: `npm run db:migrar` dirá
-  "No migrations to apply". Las siguientes (`0008_…`) se aplican con ese mismo comando.
+- Las 8 migraciones (0001–0008) aplicadas en producción y registradas en `d1_migrations`: `npm run db:migrar`
+  dirá "No migrations to apply". Las siguientes (`0009_…`) se aplican con ese mismo comando.
 
 **Te toca en el panel de Cloudflare (en este orden).** Hasta terminar los pasos 8 a 11, no fusiones la rama del
 backend a la de producción: el deploy fallaría si falta el bucket de R2, y el sitio actual seguiría publicado sin
@@ -160,6 +160,8 @@ npx wrangler secret put ADMIN_CORREOS         # tu correo (o varios separados po
 npx wrangler secret put R2_CUENTA_ID          # paso 8
 npx wrangler secret put R2_ACCESS_KEY_ID      # paso 8
 npx wrangler secret put R2_SECRET_ACCESS_KEY  # paso 8
+npx wrangler secret put SESION_SECRETO        # texto aleatorio largo, distinto de LIMITE_SAL
+npx wrangler secret put GOOGLE_CLIENT_SECRET  # paso 16 (si activas Google)
 ```
 
 Opcional, para ver las visitas de Web Analytics en el panel: `CF_API_TOKEN_ANALITICA` (token con *Account Analytics:
@@ -176,7 +178,9 @@ Nunca pongas secretos en `wrangler.toml`, en `.dev.vars` subido a Git ni en el c
    - `https://inmutalkey.com/admin` → te pide el código de Access y luego muestra el panel con tu correo arriba.
    - En **Ajustes** del panel pon los lugares totales; en **Instaladores** registra la versión con su SHA-256
      (`Get-FileHash .\archivo.exe -Algorithm SHA256` en PowerShell).
-   - Regístrate tú mismo en `/fundadores`, confirma desde el correo, apruébate la prueba desde **Leads** y descarga.
+   - Regístrate tú mismo en `/fundadores` con un correo de prueba: al confirmar debes caer en `/descarga` con tu
+     enlace. Pruébalo también desde el celular («Mandármelo al correo») y con Google (§16).
+   - Si alguien confirmó antes de que hubiera versión vigente: **Instaladores → Enviar enlace a quienes esperan**.
    - **Workers & Pages → inmutalkey-web → Settings → Triggers**: aparece el cron `17 9 * * *` (retención diaria).
 3. Local: copia `.dev.vars.example` a `.dev.vars`, `npm run db:migrar:local` y `npm run dev:worker`
    (panel en `http://localhost:8787/admin` sin Access, solo con `ENTORNO=desarrollo`).
@@ -193,5 +197,32 @@ HTTPS en todo `*.inmutalkey.com` en los navegadores.
 |---|---|---|
 | Workers | 5 (Paid) | 0 (Free) |
 | Correo | incluido (3,000/mes; luego 0.35 por 1,000) | 0 (100/día, 3,000/mes) |
-| D1, R2 (≤ 10 GB), Turnstile, Access (≤ 50 usuarios), cron, rate limiting | 0 | 0 |
+| D1, R2 (≤ 10 GB), Turnstile, Access (≤ 50 usuarios), cron, rate limiting, inicio con Google | 0 | 0 |
 | **Total** | **≈ 5** | **0** |
+
+Cada médico que descarga gasta unos 3 correos (confirmación, aviso a ti y, si lo pide, el enlace por correo): con
+3,000 al mes caben ~1,000 registros. El instalador (~85 MB) sale de R2 sin costo de transferencia.
+
+## 16. Inicio con Google
+
+El médico puede registrarse con su cuenta de Google: el sitio recibe solo su nombre y su correo ya verificado
+(alcances `openid email profile`, sin pasar por la revisión de Google porque no son alcances sensibles).
+
+1. **console.cloud.google.com** → crea el proyecto `InmutalKey`.
+2. **Google Auth Platform → Branding**: nombre `InmutalKey`, correo de soporte `contacto@inmutalkey.com`, logotipo
+   (opcional), página principal `https://inmutalkey.com`, política de privacidad `https://inmutalkey.com/privacidad`,
+   dominio autorizado `inmutalkey.com`.
+3. **Audience**: tipo *External* → **Publish app** (en *Testing* solo entran los correos que agregues a mano).
+4. **Data access**: agrega solo `openid`, `.../auth/userinfo.email` y `.../auth/userinfo.profile`.
+5. **Clients → Create client → Web application**:
+   - *Authorized redirect URIs*: `https://inmutalkey.com/api/auth/google/callback`
+   - (Para probar en tu computadora agrega también `http://localhost:8787/api/auth/google/callback`.)
+6. Copia el **Client ID** en `GOOGLE_CLIENT_ID` de `wrangler.toml` (es público) y el **Client secret** como secreto
+   `GOOGLE_CLIENT_SECRET`. `SESION_SECRETO` también tiene que existir (§12).
+7. Logotipo del botón: las reglas de marca de Google piden su «G» oficial. Descárgala de la guía *Sign in with Google
+   branding guidelines* y guárdala como `public/brand/terceros/google-g.svg`; el build la muestra sola.
+8. Enciende el botón en producción: `google.habilitado: true` en `src/site.config.ts`.
+
+Comprueba: en `/fundadores`, **Continuar con Google** → eliges tu cuenta → regresas con el correo bloqueado y
+«Conectado con Google» → completas → caes en `/descarga`. Si vuelves a entrar con Google ya registrado, vas directo a
+la descarga.

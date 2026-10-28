@@ -31,6 +31,8 @@ TURNSTILE_HOSTNAMES = "inmutalkey.com"
 R2_BUCKET = "inmutalkey-instaladores"
 # Cámbialo por el dominio de tu equipo de Zero Trust (Zero Trust → Settings → Custom Pages / Team domain).
 ACCESS_EQUIPO = "inmutalkey.cloudflareaccess.com"
+# ID de cliente OAuth de Google (público). Vacío = "Continuar con Google" lleva a un aviso. README_DEPLOY.md §16.
+GOOGLE_CLIENT_ID = ""
 
 [[d1_databases]]
 binding = "DB"
@@ -63,6 +65,6 @@ simple = { limit = 60, period = 60 }
 crons = ["17 9 * * *"]
 
 # Secretos (no van aquí): npx wrangler secret put <NOMBRE>
-#   TURNSTILE_SECRET · LIMITE_SAL · ACCESS_AUD · ADMIN_CORREOS
+#   TURNSTILE_SECRET · LIMITE_SAL · ACCESS_AUD · ADMIN_CORREOS · SESION_SECRETO · GOOGLE_CLIENT_SECRET
 #   R2_CUENTA_ID · R2_ACCESS_KEY_ID · R2_SECRET_ACCESS_KEY
 #   (opcional) RESEND_API_KEY · CF_API_TOKEN_ANALITICA · CF_CUENTA_ID · WA_SITE_TAG

@@ -60,10 +60,11 @@ export const ESTATUS_LEAD = ['nuevo', 'contactado', 'prueba', 'cliente', 'descar
 export type EstatusLead = (typeof ESTATUS_LEAD)[number];
 
 /**
- * Estatus que ocupan un lugar de Fundador en `GET /api/fundadores/cupo`. Tal como lo pidió la especificación:
- * una prueba aparta lugar. Si decides que solo cuentan las licencias pagadas, deja solo 'cliente' (hay prueba).
+ * Estatus que ocupan un lugar de Fundador en `GET /api/fundadores/cupo`. Desde que la prueba de 30 días se descarga
+ * sola (28-oct), cada descarga pone al lead en 'prueba': si las pruebas contaran, el cupo se agotaría sin una sola
+ * venta. Por eso solo cuentan los clientes. Para volver a contar pruebas: ['prueba', 'cliente'] (hay prueba).
  */
-export const ESTATUS_QUE_OCUPAN_CUPO: readonly EstatusLead[] = ['prueba', 'cliente'];
+export const ESTATUS_QUE_OCUPAN_CUPO: readonly EstatusLead[] = ['cliente'];
 
 const valores = <T extends Opciones>(o: T): [T[number][0], ...T[number][0][]] =>
   o.map(([v]) => v) as [T[number][0], ...T[number][0][]];

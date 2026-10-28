@@ -1,7 +1,7 @@
 # Borrador técnico: datos que recabamos y finalidades (sitio inmutalkey.com)
 
 > **Documento para el abogado, no es el aviso de privacidad.** Describe con exactitud lo que hace el sistema al
-> 27-oct-2026 (código en `src/worker/` y migraciones en `migrations/`) para que se redacte el aviso conforme a la
+> 28-oct-2026 (código en `src/worker/` y migraciones en `migrations/`) para que se redacte el aviso conforme a la
 > LFPDPPP publicada en el DOF el 20-mar-2025 (autoridad: Secretaría Anticorrupción y Buen Gobierno). La página
 > `/privacidad` actual es anterior a este backend y **no** refleja todo lo de aquí: hay que actualizarla y cambiar
 > `VERSION_AVISO_VIGENTE` en `src/compartido/leads.ts` al publicarla.
@@ -26,11 +26,16 @@ incluirlos.
 | | Origen de campaña (`utm_source`, `utm_medium`, `utm_campaign`), p. ej. "tarjeta" del QR impreso | Automático, si llegó por un enlace con campaña |
 | | Versión del aviso aceptada y fecha y hora del consentimiento | Automático |
 | Confirmación por correo | Fecha y hora de confirmación | Automático |
+| Registro con Google (opcional) | Google nos entrega el **nombre y el correo verificado** (alcances `openid email profile`). Se guarda solo el correo, el nombre (que el médico puede editar) y que se registró con Google. **No** se guarda el identificador de la cuenta de Google ni la foto; la contraseña nunca pasa por el sitio. | A elección del médico |
 | Gestión interna | Estatus comercial (nuevo, contactado, prueba, cliente, descartado), fecha de primer contacto, notas internas de Alan | Interno |
 | Descarga del instalador | Versión enviada, fecha de creación, vencimiento y uso del enlace | Automático |
 | Testimonio | Texto, nombre público elegido, fecha en que el médico autorizó publicarlo | Con consentimiento expreso |
 | Formulario `/derechos` | Correo, derecho que ejerce, detalle libre | Sí (salvo detalle) |
 | Uso del sitio | **Solo conteos diarios** por tipo de evento (página vista, formulario iniciado, clic a WhatsApp por intención, pregunta frecuente abierta, simulador visto) y origen de campaña | No identifica a nadie |
+
+**Cookies:** solo dos cookies técnicas durante el registro con Google, firmadas y de vida corta (`ik_oauth`, 10 min,
+protección contra falsificación del inicio de sesión; `ik_registro`, 30 min, correo y nombre mientras completa sus
+datos). Son HttpOnly y se borran al terminar. No hay cookies de publicidad ni de analítica.
 
 **No se guarda:** dirección IP, user-agent, cookies de rastreo ni identificador de visitante. La IP se usa solo en
 memoria, durante la solicitud, para derivar una llave cifrada (SHA-256 con sal secreta) que limita envíos abusivos; no
@@ -42,8 +47,8 @@ envía Global Privacy Control o Do Not Track, no se envía ninguna métrica.
 
 Necesarias (dan origen a la relación):
 1. Confirmar que el correo pertenece a quien se registró (doble confirmación).
-2. Contactar al médico sobre el programa Fundadores y su prueba; enviarle el enlace personal de descarga del
-   instalador.
+2. Entregarle la prueba de 30 días: enlace personal de descarga (72 h, un solo uso) en cuanto confirma su correo o
+   entra con Google, y contactarlo sobre el programa Fundadores.
 3. Administrar su participación: estatus, licencia (emitida fuera de este sistema) y soporte.
 4. Atender solicitudes de derechos ARCO.
 5. Proteger el sitio contra envíos automatizados (Turnstile, límite de frecuencia, campo trampa).
@@ -61,6 +66,7 @@ Las estadísticas de uso del sitio son conteos sin datos personales.
 | Proveedor | Para qué | Ubicación |
 |---|---|---|
 | Cloudflare, Inc. | Alojamiento del sitio y la API, base de datos D1, almacenamiento R2 de instaladores, Turnstile, Access (panel), Web Analytics (sin cookies) y envío de correo (Email Service) | EE. UU. y red global |
+| Google LLC | Solo si el médico elige «Continuar con Google»: verifica su identidad y nos entrega nombre y correo | EE. UU. |
 | Hostinger | Buzón `contacto@inmutalkey.com` (avisos internos, respuestas) | Por confirmar |
 | Resend (solo si se elige en lugar de Cloudflare Email) | Envío de correos al médico | EE. UU. |
 | Meta (WhatsApp) | Solo si el médico decide escribir por WhatsApp | Global |
@@ -101,4 +107,6 @@ almacenamiento privado con enlaces de 5 minutos, validación y límite de frecue
 5. Texto del consentimiento del formulario (hoy: "Autorizo que InmutalKey use estos datos para contactarme sobre el
    programa Fundadores y mi prueba, conforme al aviso de privacidad. Puedo pedir que los borren en cualquier
    momento.").
-6. Mecanismo para comunicar cambios al aviso. Cada versión aceptada queda registrada por lead (`version_aviso`).
+6. Google: mencionar en el aviso que, si elige ese botón, Google comparte nombre y correo verificado, y enlazar la
+   política de Google. La pantalla de consentimiento de Google pide la URL de `/privacidad`.
+7. Mecanismo para comunicar cambios al aviso. Cada versión aceptada queda registrada por lead (`version_aviso`).

@@ -54,6 +54,13 @@ export interface ConfigSitio {
     readonly version: Valor<string>;
     readonly sha256: Valor<string>;
   };
+  /**
+   * Botón "Continuar con Google" en el registro. Enciéndelo cuando el cliente OAuth y los secretos estén cargados
+   * (README_DEPLOY.md §16). Fuera de producción siempre se muestra, para probarlo.
+   */
+  readonly google: {
+    readonly habilitado: boolean;
+  };
   /** Turnstile (antibots de Cloudflare). La sitekey es pública; el secreto vive solo en el Worker. */
   readonly turnstile: {
     readonly siteKey: Valor<string>;
@@ -100,10 +107,15 @@ export const sitio: ConfigSitio = {
     despuesDeLaPrueba: TODO_DEFINIR,
     soporteFueraDeFundadores: TODO_DEFINIR,
   },
+  // Versión beta vigente (ESTADO_PROYECTO, 27-oct). La fuente en vivo es el panel (/admin → Instaladores, que alimenta
+  // /api/versiones); esto solo es el respaldo del build. Al publicar otra versión, actualiza ambos.
   instalador: {
     archivo: TODO_DEFINIR,
-    version: TODO_DEFINIR,
-    sha256: TODO_DEFINIR,
+    version: '0.3.2',
+    sha256: 'aa255d5881107c7be2e135c49b7fedb9e1d21da3b8e0911968ed7857bce284d5',
+  },
+  google: {
+    habilitado: false,
   },
   turnstile: {
     // Créala en Cloudflare → Turnstile → Add widget (dominio inmutalkey.com, modo Managed) y pégala aquí.

@@ -20,6 +20,7 @@ export const TURNSTILE_BUENO = 'token-turnstile-valido';
 export const EQUIPO = 'prueba.cloudflareaccess.com';
 export const AUD = 'aud-de-prueba';
 export const ADMIN = 'alan@ejemplo.mx';
+export const GOOGLE_CLIENTE = 'cliente-prueba.apps.googleusercontent.com';
 
 export interface CorreoEnviado {
   readonly to: string;
@@ -40,6 +41,10 @@ export interface Banco {
   limpiar(): Promise<void>;
   cerrar(): Promise<void>;
   jwt(cambios?: Partial<{ aud: string; iss: string; exp: number; email: string; kid: string }>): Promise<string>;
+  /** id_token de Google firmado con la llave de prueba (kid google-1). */
+  idTokenGoogle(carga: Record<string, unknown>): Promise<string>;
+  /** Lo que el doble del endpoint de tokens de Google devolverá y lo último que recibió. */
+  google: { idToken: string | null; ultimaSolicitud: URLSearchParams | null; estado: number };
 }
 
 /** Divide un archivo de migración en sentencias (las del repo no tienen triggers ni cuerpos con ';'). */
@@ -103,6 +108,8 @@ export async function crearBanco(extra: Partial<Env> = {}): Promise<Banco> {
 
   const par = await parDeLlaves();
   const jwkPublica = { ...(await crypto.subtle.exportKey('jwk', par.publicKey)), kid: 'llave-1' };
+  const jwkGoogle = { ...jwkPublica, kid: 'google-1' };
+  const dobleGoogle: Banco['google'] = { idToken: null, ultimaSolicitud: null, estado: 200 };
 
   // Solo se interceptan Turnstile y las llaves de Access; lo demás (Miniflare) usa el fetch real.
   const fetchReal = globalThis.fetch;
@@ -114,10 +121,36 @@ export async function crearBanco(extra: Partial<Env> = {}): Promise<Banco> {
       return Response.json({ success: exito, hostname: 'inmutalkey.com', ...(exito ? {} : { 'error-codes': ['invalid-input-response'] }) });
     }
     if (url === `https://${EQUIPO}/cdn-cgi/access/certs`) return Response.json({ keys: [jwkPublica] });
+    if (url === 'https://www.googleapis.com/oauth2/v3/certs') return Response.json({ keys: [jwkGoogle] });
+    if (url === 'https://oauth2.googleapis.com/token') {
+      dobleGoogle.ultimaSolicitud = new URLSearchParams(String(init?.body ?? ''));
+      if (dobleGoogle.estado !== 200) return Response.json({ error: 'invalid_grant' }, { status: dobleGoogle.estado });
+      return Response.json({ access_token: 'x', id_token: dobleGoogle.idToken, token_type: 'Bearer', expires_in: 3599 });
+    }
     return fetchReal(entrada, init);
   });
 
+  const firmarRs256 = async (cabecera: Record<string, unknown>, carga: Record<string, unknown>): Promise<string> => {
+    const h = base64url(new TextEncoder().encode(JSON.stringify(cabecera)));
+    const p = base64url(new TextEncoder().encode(JSON.stringify(carga)));
+    const firma = await crypto.subtle.sign('RSASSA-PKCS1-v1_5', par.privateKey, new TextEncoder().encode(`${h}.${p}`));
+    return `${h}.${p}.${base64url(new Uint8Array(firma))}`;
+  };
+
   const banco: Banco = {
+    google: dobleGoogle,
+    idTokenGoogle: (carga) =>
+      firmarRs256(
+        { alg: 'RS256', kid: 'google-1', typ: 'JWT' },
+        {
+          iss: 'https://accounts.google.com',
+          aud: GOOGLE_CLIENTE,
+          exp: Math.floor(Date.now() / 1000) + 3600,
+          email_verified: true,
+          name: 'Dr. Luis Herrera',
+          ...carga,
+        },
+      ),
     db,
     r2,
     correos,
@@ -188,6 +221,9 @@ export async function crearBanco(extra: Partial<Env> = {}): Promise<Banco> {
     R2_SECRET_ACCESS_KEY: 'secreto-de-prueba',
     TURNSTILE_SECRET: 'secreto-turnstile',
     LIMITE_SAL: 'sal-de-prueba',
+    GOOGLE_CLIENT_ID: GOOGLE_CLIENTE,
+    GOOGLE_CLIENT_SECRET: 'secreto-google',
+    SESION_SECRETO: 'secreto-de-sesion-de-prueba',
     ...extra,
   };
   return banco;
@@ -236,4 +272,27 @@ export async function leadConfirmado(banco: Banco, correo = 'ana.lopez@ejemplo.m
 
 export async function cabecerasAdmin(banco: Banco): Promise<Record<string, string>> {
   return { 'Cf-Access-Jwt-Assertion': await banco.jwt(), Origin: ORIGEN };
+}
+
+/** Cookies `nombre=valor` de los Set-Cookie de una respuesta (sin atributos). */
+export function cookiesDe(respuesta: Response): Record<string, string> {
+  const resultado: Record<string, string> = {};
+  for (const linea of respuesta.headers.getSetCookie()) {
+    const [par = ''] = linea.split(';');
+    const [nombre = '', ...valor] = par.split('=');
+    resultado[nombre.trim()] = valor.join('=');
+  }
+  return resultado;
+}
+
+/** Registra una versión vigente con su archivo en R2 (lo que haría Alan desde el panel). */
+export async function versionVigente(banco: Banco, version = '0.3.2'): Promise<void> {
+  const clave = `instaladores/InmutalKey_${version}_x64-setup.exe`;
+  await banco.r2.put(clave, new Uint8Array(2048));
+  const r = await banco.json(
+    '/api/admin/versiones',
+    { version, clave_r2: clave, nombre_archivo: `InmutalKey_${version}_x64-setup.exe`, sha256: 'b'.repeat(64), vigente: true },
+    { headers: await cabecerasAdmin(banco) },
+  );
+  if (r.status !== 201) throw new Error(`versión no registrada: ${r.status}`);
 }

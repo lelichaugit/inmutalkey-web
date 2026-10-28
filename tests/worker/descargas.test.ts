@@ -67,7 +67,7 @@ describe('descargas', () => {
     expect(url.searchParams.get('X-Amz-Expires')).toBe('300');
     expect(url.searchParams.get('X-Amz-Signature')).toMatch(/^[0-9a-f]{64}$/);
     expect(url.searchParams.get('response-content-disposition')).toBe('attachment; filename="InmutalKey_0.3.0_x64-setup.exe"');
-    expect(await banco.db.prepare('SELECT usado_utc FROM descargas').first('usado_utc')).not.toBeNull();
+    expect(await banco.db.prepare('SELECT COUNT(*) AS n FROM descargas WHERE usado_utc IS NOT NULL').first('n')).toBe(1);
 
     // Uso único: ni otro POST ni el GET funcionan ya.
     const otra = await banco.json('/api/descarga', { token });
@@ -120,8 +120,9 @@ describe('descargas', () => {
   });
 
   it('si el correo falla, no queda enlace ni cambia el estatus', async () => {
-    await registrarVersion();
+    // Versión registrada después de confirmar: así no hay descarga automática previa.
     const id = await leadConfirmado(banco);
+    await registrarVersion();
     const anterior = banco.env;
     banco.env = { ...anterior, EMAIL: { send: () => Promise.reject(Object.assign(new Error('x'), { code: 'E_DELIVERY_FAILED' })) } };
     expect((await aprobar(id)).status).toBe(502);

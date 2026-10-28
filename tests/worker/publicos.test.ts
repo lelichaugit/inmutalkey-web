@@ -23,18 +23,19 @@ describe('GET /api/fundadores/cupo', () => {
     expect(r.headers.get('Cache-Control')).toBe('public, max-age=60');
   });
 
-  it('total menos los leads en prueba o cliente; nuevo, contactado y descartado no cuentan; nunca negativo', async () => {
-    expect(ESTATUS_QUE_OCUPAN_CUPO).toEqual(['prueba', 'cliente']);
+  it('total menos los clientes; nuevo, contactado, prueba y descartado no cuentan; nunca negativo', async () => {
+    // Con la descarga directa, cada prueba es automática: si contaran, el cupo se agotaría sin ventas.
+    expect(ESTATUS_QUE_OCUPAN_CUPO).toEqual(['cliente']);
     await banco.db.prepare('UPDATE fundadores_config SET total_cupos = 10 WHERE id = 1').run();
-    const estatus = ['nuevo', 'contactado', 'prueba', 'prueba', 'cliente', 'descartado'];
+    const estatus = ['nuevo', 'contactado', 'prueba', 'prueba', 'cliente', 'cliente', 'descartado'];
     for (const [i, e] of estatus.entries()) {
       const id = await leadConfirmado(banco, `medico${i}@ejemplo.mx`);
       await banco.db.prepare('UPDATE leads SET estatus = ?1 WHERE id = ?2').bind(e, id).run();
     }
-    expect(await (await banco.pedir('/api/fundadores/cupo')).json()).toEqual({ total: 10, restantes: 7 });
+    expect(await (await banco.pedir('/api/fundadores/cupo')).json()).toEqual({ total: 10, restantes: 8 });
 
-    await banco.db.prepare('UPDATE fundadores_config SET total_cupos = 2 WHERE id = 1').run();
-    expect(await (await banco.pedir('/api/fundadores/cupo')).json()).toEqual({ total: 2, restantes: 0 });
+    await banco.db.prepare('UPDATE fundadores_config SET total_cupos = 1 WHERE id = 1').run();
+    expect(await (await banco.pedir('/api/fundadores/cupo')).json()).toEqual({ total: 1, restantes: 0 });
   });
 });
 

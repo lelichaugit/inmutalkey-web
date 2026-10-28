@@ -11,6 +11,7 @@ import { soloAdmin } from './lib/acceso';
 import { registrarError, registro } from './lib/registro';
 import { cors, encabezados } from './lib/seguridad';
 import { admin } from './rutas/admin';
+import { google } from './rutas/google';
 import { publicas } from './rutas/publicas';
 import { ejecutarRetencion } from './tareas/retencion';
 
@@ -29,6 +30,7 @@ export function crearApp(): Hono<Contexto> {
   app.get('/admin/*', (c) => c.redirect('/admin', 302));
 
   app.route('/api/admin', admin);
+  app.route('/api/auth', google);
   app.route('/api', publicas);
 
   app.notFound((c) => c.json({ error: 'no_encontrado' }, 404));

@@ -8,3 +8,7 @@ CORREO_PROVEEDOR=ninguno
 TURNSTILE_SECRET=1x0000000000000000000000000000000AA
 TURNSTILE_HOSTNAMES=
 LIMITE_SAL=cambia-esto-por-cualquier-texto-largo
+# Inicio con Google (opcional en local; sin estas tres el botón lleva a un aviso).
+# GOOGLE_CLIENT_ID=xxxx.apps.googleusercontent.com
+# GOOGLE_CLIENT_SECRET=...
+SESION_SECRETO=cambia-esto-por-otro-texto-largo

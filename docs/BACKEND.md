@@ -1,6 +1,6 @@
 # Backend de inmutalkey.com
 
-Actualizado: 27-oct-2026. Despliegue y pasos del panel: `README_DEPLOY.md` §7–§15. Proceso ARCO: `docs/ARCO.md`.
+Actualizado: 28-oct-2026 (registro con Google y descarga directa). Despliegue y pasos del panel: `README_DEPLOY.md` §7–§15. Proceso ARCO: `docs/ARCO.md`.
 Borrador para el abogado: `docs/PRIVACIDAD_DATOS_Y_FINALIDADES.md`.
 
 **Alcance:** este backend **no** toca datos clínicos ni de pacientes. Solo maneja datos comerciales de médicos
@@ -54,15 +54,21 @@ Links y los antivirus, abren los enlaces antes que la persona):
 
 | Método y ruta | Respuesta |
 |---|---|
-| `POST /api/leads` | `201 {ok:true}` · `400 {error:'validacion'\|'verificacion', campos}` · `429` |
+| `POST /api/leads` | `201 {ok:true}` (correo) · `201 {ok:true, destino}` (con Google) · `400 {error:'validacion'\|'verificacion', campos}` · `429` |
 | `GET /api/confirmar/:token` | `302 /fundadores/confirmar#t=…` · `302 /fundadores/gracias` (ya usado) · `302 /fundadores/confirmar?estado=vencido` |
-| `POST /api/confirmar` `{token}` | `200 {ok:true}` · `410 {error:'vencido'}` · `429` |
+| `POST /api/confirmar` `{token}` | `200 {ok:true, destino}` (destino = `/descarga#t=…` o `/fundadores/gracias?estado=pronto\|limite`) · `410` · `429` |
 | `GET /api/fundadores/cupo` | `{total, restantes}` · caché 60 s |
 | `POST /api/eventos` `{evento, utm_source}` o `{eventos:[…], utm_source}` | `204` siempre |
 | `GET /api/testimonios` | `[{nombre, especialidad, ciudad, texto, fecha}]` · caché 5 min |
 | `GET /api/versiones` | `[{version, nombre_archivo, sha256, tamano_bytes, publicada_utc, vigente}]` · caché 5 min |
 | `GET /api/descarga/:token` | `302 /descarga#t=…` · `410` |
 | `POST /api/descarga` `{token}` | `200 {url}` (JSON) o `303` (formulario) · `410` · `503` (sin credenciales R2; el token se libera) |
+| `POST /api/descarga/reenviar` `{correo, turnstile}` | `202 {ok:true}` siempre; si el correo está confirmado, llega un enlace nuevo |
+| `POST /api/descarga/a-mi-correo` `{token}` | `200 {ok:true, correo: 'an•••@dominio'}` (mismo enlace, sin gastarlo) · `410` |
+| `GET /api/auth/google/inicio` | `302` a Google (PKCE S256, state, nonce) · `302 /fundadores?google=no-disponible` |
+| `GET /api/auth/google/callback` | `302 /descarga#t=…` (ya registrado) · `302 /fundadores?google=listo` (nuevo) · `?google=cancelado\|error` |
+| `GET /api/auth/sesion` | `{correo, nombre}` del registro con Google en curso · `204` |
+| `POST /api/auth/salir` | `204` (borra la cookie de registro) |
 | `POST /api/arco` `{correo, tipo, detalle?, turnstile}` | `201 {ok:true, folio}` · `400` · `429` |
 
 Por qué `POST /api/descarga` devuelve JSON a la página: en Chrome, la CSP `form-action 'self'` también bloquea la
@@ -71,7 +77,7 @@ redirección de un `<form>` hacia otro dominio (R2). La página hace `fetch` y n
 Panel (`/api/admin/*`, todo tras Access + JWT): `GET sesion`, `GET leads` (filtros `estatus`, `fuente`,
 `confirmado`, `q`, `pagina`), `PATCH leads/:id {estatus?, notas_internas?}`, `DELETE leads/:id`,
 `POST leads/:id/aprobar-prueba`, `GET leads.csv`, `GET metricas?desde&hasta`, `GET|POST testimonios`,
-`PATCH testimonios/:id {publicado}`, `GET|POST versiones`, `POST versiones/:version/vigente`, `GET|PUT config`,
+`PATCH testimonios/:id {publicado}`, `GET|POST versiones`, `POST versiones/:version/vigente`, `POST versiones/notificar-pendientes`, `GET|PUT config`,
 `GET arco`, `POST arco/:id/resolver`. Las acciones que cambian algo exigen `Content-Type: application/json` y el
 origen del sitio.
 
@@ -94,16 +100,41 @@ ISO 8601.
 Ninguna tabla tiene IP, user-agent ni identificador de visitante (prueba `tests/worker/privacidad.test.ts`, que revisa
 nombres de columna y, tras un recorrido completo, que la IP y el user-agent no aparezcan en ningún valor).
 
+## Registro y descarga directa (28-oct)
+
+El médico descarga solo, sin aprobación manual, en cuanto prueba que el correo es suyo:
+
+```
+Con correo:  /fundadores → POST /api/leads → correo con enlace → /fundadores/confirmar (clic) → POST /api/confirmar
+             → destino /descarga#t=… (instalación guiada)
+Con Google:  /fundadores → /api/auth/google/inicio → Google → /api/auth/google/callback
+             · nuevo       → /fundadores?google=listo (correo bloqueado, completa datos) → POST /api/leads → /descarga#t=…
+             · registrado  → /descarga#t=… directo
+Vuelve:      formulario otra vez, «Pide un enlace nuevo» en /descarga o Google → enlace nuevo
+Celular/Mac: /descarga lo detecta en el navegador y ofrece «Mandármelo al correo» (mismo enlace, sin gastarlo)
+```
+
+- `emitirDescarga` (`src/worker/lib/descargas.ts`): solo leads confirmados y no descartados, con versión vigente,
+  máximo 5 enlaces por lead en 24 h; pone el lead en `prueba` (sin tocar `primer_contacto_utc`, que mide el contacto
+  humano de Alan).
+- Si alguien confirma sin versión vigente: va a `/fundadores/gracias?estado=pronto`. En cuanto publiques la versión,
+  **Instaladores → Enviar enlace a quienes esperan** (50 por clic).
+- Google: OpenID Connect con PKCE S256, `state` (contra CSRF de OAuth) y `nonce` (contra repetición) en una cookie
+  firmada HMAC de 10 min; se verifica la firma del `id_token` con las llaves públicas de Google, `aud`, `iss`, `exp`,
+  `nonce` y `email_verified`. El médico nuevo lleva su identidad en otra cookie firmada de 30 min (`ik_registro`,
+  HttpOnly, Secure, SameSite=Lax, Path=/api): al registrar, el correo sale de la cookie, no del formulario. Con Google
+  no se pide Turnstile ni correo de confirmación. No se guarda el identificador de Google ni la foto; solo
+  `metodo_registro = 'google'` (migración 0008).
+
 ## Reglas de negocio
 
-- **Cupo:** `total_cupos − leads con estatus 'prueba' o 'cliente'` (`ESTATUS_QUE_OCUPAN_CUPO` en
-  `src/compartido/leads.ts`). Ojo: así, una prueba gratuita aparta un lugar de fundador. Si prefieres que solo cuenten
-  los pagos, deja solo `'cliente'` y ajusta la prueba.
+- **Cupo:** `total_cupos − leads con estatus 'cliente'` (`ESTATUS_QUE_OCUPAN_CUPO` en `src/compartido/leads.ts`).
+  Cambió el 28-oct: con la descarga directa cada prueba es automática y, si contaran, el cupo se agotaría sin ventas.
 - **Lead repetido:** misma respuesta `201` (no revela qué correos existen); no pisa los datos guardados; reenvía la
   confirmación solo si sigue pendiente y pasaron 10 minutos.
 - **Campo trampa** (`sitio_web`): si llega lleno, `201` sin guardar.
 - **Aviso de lead:** a `contacto@` solo cuando el médico confirma su correo, una vez.
-- **Aprobar prueba:** exige correo confirmado y una versión vigente; si el correo falla, no queda enlace ni cambia el
+- **Aprobar prueba (panel):** sigue disponible para reenviar un enlace a mano; exige correo confirmado y una versión vigente; si el correo falla, no queda enlace ni cambia el
   estatus. Pone `prueba` (un `cliente` sigue siendo `cliente`) y registra `primer_contacto_utc` si no existía.
 - **primer_contacto_utc:** se fija la primera vez que el lead sale de `nuevo`; no se reescribe.
 - **Eventos:** lista cerrada; `utm_source` en lista cerrada (`tarjeta` = QR de las tarjetas); lo desconocido → `otro`.

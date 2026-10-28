@@ -1,0 +1,59 @@
+---
+// "Continuar con Google". Es un enlace normal (sin JS ni scripts de Google en la página: la CSP sigue cerrada):
+// el Worker arma la redirección con PKCE y regresa al médico ya verificado.
+//
+// Marca: las reglas de Google para el botón piden su logotipo "G" oficial. No se dibuja aquí; descárgalo de la página
+// de marca de Google Identity ("Sign in with Google branding guidelines") y guárdalo como
+// public/brand/terceros/google-g.svg. Si el archivo existe, el build lo muestra; si no, el botón sale solo con texto.
+import { existsSync } from 'node:fs';
+import { join } from 'node:path';
+
+const logo = existsSync(join(process.cwd(), 'public/brand/terceros/google-g.svg')) ? '/brand/terceros/google-g.svg' : null;
+---
+
+<a class="boton-google" href="/api/auth/google/inicio" data-boton-google>
+  {logo && <img src={logo} alt="" width="20" height="20" />}
+  <span>Continuar con Google</span>
+</a>
+
+<style>
+  /* Tema oscuro de los lineamientos de Google: fondo #131314, borde #8E918F, texto #E3E3E3, esquinas redondeadas. */
+  .boton-google {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    width: 100%;
+    min-height: 52px;
+    padding: 0 20px;
+    border: 1px solid #8e918f;
+    border-radius: 999px;
+    background: #131314;
+    color: #e3e3e3;
+    font-weight: 600;
+    font-size: 1.0625rem;
+    text-decoration: none;
+    transition:
+      border-color 0.2s var(--ease),
+      background-color 0.2s var(--ease);
+  }
+
+  .boton-google:hover {
+    border-color: #e3e3e3;
+    background: #1d1d1f;
+  }
+
+  .boton-google:focus-visible {
+    outline: 3px solid var(--azul-vivo);
+    outline-offset: 3px;
+  }
+
+  .boton-google[aria-disabled='true'] {
+    opacity: 0.6;
+    pointer-events: none;
+  }
+
+  .boton-google img {
+    flex: none;
+  }
+</style>

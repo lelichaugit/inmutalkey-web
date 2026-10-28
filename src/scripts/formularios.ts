@@ -76,7 +76,72 @@ async function esperarToken(widget: Widget | null): Promise<string | undefined> 
   return undefined;
 }
 
+const AVISOS_GOOGLE: Record<string, string> = {
+  cancelado: 'Cancelaste el inicio con Google. Puedes intentarlo de nuevo o registrarte con tu correo.',
+  error: 'No pudimos completar el inicio con Google. Intenta de nuevo o regístrate con tu correo.',
+  'no-disponible': 'El inicio con Google se habilita muy pronto. Mientras tanto, regístrate con tu correo.',
+  espera: 'Recibimos varios intentos seguidos. Espera un minuto y vuelve a intentarlo.',
+};
+
+/** Registro con Google en curso: correo verificado y bloqueado, nombre sugerido, sin Turnstile. */
+async function prepararGoogle(form: HTMLFormElement): Promise<boolean> {
+  const raiz = form.closest('main') ?? document;
+  const estadoGoogle = new URLSearchParams(window.location.search).get('google');
+  const aviso = raiz.querySelector<HTMLElement>('[data-aviso-google]');
+  if (estadoGoogle && estadoGoogle !== 'listo') {
+    if (aviso && AVISOS_GOOGLE[estadoGoogle]) {
+      aviso.textContent = AVISOS_GOOGLE[estadoGoogle] ?? '';
+      aviso.classList.add('problema');
+      aviso.hidden = false;
+    }
+    return false;
+  }
+  if (estadoGoogle !== 'listo') return false;
+  try {
+    const r = await fetch('/api/auth/sesion', { credentials: 'same-origin' });
+    if (r.status !== 200) {
+      if (aviso) {
+        aviso.textContent = 'Tu sesión con Google venció (duran 30 minutos). Vuelve a pulsar «Continuar con Google».';
+        aviso.classList.add('problema');
+        aviso.hidden = false;
+      }
+      return false;
+    }
+    const { correo, nombre } = (await r.json()) as { correo: string; nombre: string };
+    const campoCorreo = form.elements.namedItem('correo');
+    const campoNombre = form.elements.namedItem('nombre');
+    if (campoCorreo instanceof HTMLInputElement) {
+      campoCorreo.value = correo;
+      campoCorreo.readOnly = true;
+    }
+    if (campoNombre instanceof HTMLInputElement && !campoNombre.value) campoNombre.value = nombre;
+    raiz.querySelector<HTMLElement>('[data-registro-rapido]')?.setAttribute('hidden', '');
+    const conectado = raiz.querySelector<HTMLElement>('[data-conectado]');
+    const correoVisible = raiz.querySelector<HTMLElement>('[data-conectado-correo]');
+    if (correoVisible) correoVisible.textContent = correo;
+    if (conectado) conectado.hidden = false;
+    const nota = form.querySelector<HTMLElement>('[data-nota-correo]');
+    if (nota) nota.textContent = 'Verificado por Google.';
+    const texto = form.querySelector<HTMLElement>('[data-enviar-texto]');
+    if (texto) texto.textContent = 'Completar y descargar';
+    form.querySelector<HTMLButtonElement>('button[type="submit"]')?.removeAttribute('disabled');
+    form.querySelector('[data-turnstile]')?.setAttribute('hidden', '');
+    raiz.querySelector<HTMLButtonElement>('[data-usar-otro]')?.addEventListener('click', async () => {
+      await fetch('/api/auth/salir', { method: 'POST', credentials: 'same-origin' }).catch(() => undefined);
+      window.location.assign('/fundadores');
+    });
+    (form.elements.namedItem('especialidad') as HTMLInputElement | null)?.focus();
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 function iniciarFundadores(form: HTMLFormElement): void {
+  let conGoogle = false;
+  void prepararGoogle(form).then((v) => {
+    conGoogle = v;
+  });
   const turnstile = prepararTurnstile(form, 'lead', () => enviarEvento('formulario_iniciado'));
   const boton = form.querySelector<HTMLButtonElement>('button[type="submit"]');
 
@@ -87,7 +152,8 @@ function iniciarFundadores(form: HTMLFormElement): void {
     if (boton) boton.disabled = true;
     estado(form, 'Enviando…');
     try {
-      const widget = await turnstile();
+      // Con Google el servidor no pide Turnstile: la identidad ya está probada.
+      const widget = conGoogle ? null : await turnstile();
       const token = await esperarToken(widget);
       const datos = new FormData(form);
       const texto = (n: string): string => String(datos.get(n) ?? '');
@@ -113,9 +179,17 @@ function iniciarFundadores(form: HTMLFormElement): void {
       const respuesta = await fetch('/api/leads', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
         body: JSON.stringify(cuerpo),
       });
       if (respuesta.status === 201) {
+        const { destino } = (await respuesta.json().catch(() => ({}))) as { destino?: string };
+        // Con Google: directo a la instalación guiada (o a gracias si aún no hay instalador publicado).
+        if (destino && destino.startsWith('/')) {
+          estado(form, 'Listo. Abriendo tu instalación guiada…');
+          window.location.assign(destino);
+          return;
+        }
         const listo = form.parentElement?.querySelector<HTMLElement>('[data-enviado]');
         if (listo) {
           form.hidden = true;
@@ -222,7 +296,8 @@ function iniciarConfirmacion(raiz: HTMLElement): void {
     try {
       const r = await fetch('/api/confirmar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token }) });
       if (r.ok) {
-        window.location.assign('/fundadores/gracias');
+        const { destino } = (await r.json().catch(() => ({}))) as { destino?: string };
+        window.location.assign(destino && destino.startsWith('/') ? destino : '/fundadores/gracias');
         return;
       }
       mostrar(raiz, r.status === 410 ? 'vencido' : 'error');
@@ -234,16 +309,88 @@ function iniciarConfirmacion(raiz: HTMLElement): void {
   });
 }
 
+/** Windows de escritorio: donde sí se instala InmutalKey. Solo se mira en el navegador; nada se envía. */
+function esWindows(): boolean {
+  const nav = navigator as Navigator & { userAgentData?: { platform?: string; mobile?: boolean } };
+  if (nav.userAgentData?.platform) return nav.userAgentData.platform === 'Windows' && !nav.userAgentData.mobile;
+  return /Windows NT/i.test(navigator.userAgent);
+}
+
+interface Vigente {
+  readonly version: string;
+  readonly nombre_archivo: string;
+  readonly sha256: string;
+  readonly tamano_bytes: number | null;
+  readonly vigente: boolean;
+}
+
+/** Datos de la versión vigente (nombre, tamaño y huella) desde el panel; si falla, quedan los del build. */
+async function pintarVersion(raiz: HTMLElement): Promise<void> {
+  try {
+    const r = await fetch('/api/versiones');
+    if (!r.ok) return;
+    const vigente = ((await r.json()) as Vigente[]).find((v) => v.vigente);
+    if (!vigente) return;
+    const poner = (selector: string, texto: string): void => {
+      raiz.querySelectorAll<HTMLElement>(selector).forEach((n) => {
+        n.textContent = texto;
+      });
+    };
+    poner('[data-version]', vigente.version);
+    poner('[data-archivo]', vigente.nombre_archivo);
+    if (vigente.tamano_bytes) poner('[data-tamano]', `${(vigente.tamano_bytes / 1_048_576).toFixed(0)} MB`);
+    poner('[data-huella]', vigente.sha256.toUpperCase());
+    const comando = raiz.querySelector('#comando-huella');
+    if (comando) comando.textContent = `Get-FileHash "$env:USERPROFILE\\Downloads\\${vigente.nombre_archivo}" -Algorithm SHA256`;
+  } catch {
+    // Sin conexión: quedan los datos del build.
+  }
+}
+
 function iniciarDescarga(raiz: HTMLElement): void {
+  void pintarVersion(raiz);
   const token = tokenDelFragmento();
   const form = raiz.querySelector<HTMLFormElement>('form[data-descarga]');
   const campo = form?.querySelector<HTMLInputElement>('input[name="token"]');
+  const vencido = new URLSearchParams(window.location.search).get('estado') === 'vencido';
   if (!token || !form || !campo) {
-    mostrar(raiz, 'vencido');
+    raiz.querySelectorAll<HTMLElement>('[data-motivo]').forEach((p) => {
+      p.hidden = p.dataset.motivo !== (vencido ? 'vencido' : 'sin-token');
+    });
+    mostrar(raiz, 'sin-enlace');
     return;
   }
   campo.value = token;
-  mostrar(raiz, 'descargar');
+  mostrar(raiz, esWindows() ? 'descargar' : 'movil');
+
+  raiz.querySelector<HTMLButtonElement>('[data-forzar]')?.addEventListener('click', () => mostrar(raiz, 'descargar'));
+
+  const aMiCorreo = raiz.querySelector<HTMLButtonElement>('[data-a-mi-correo]');
+  aMiCorreo?.addEventListener('click', async () => {
+    aMiCorreo.disabled = true;
+    try {
+      const r = await fetch('/api/descarga/a-mi-correo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token }),
+      });
+      if (r.ok) {
+        const { correo } = (await r.json()) as { correo: string };
+        const destino = raiz.querySelector('[data-correo-enmascarado]');
+        if (destino) destino.textContent = correo;
+        mostrar(raiz, 'enviado');
+        return;
+      }
+      if (r.status === 410) {
+        mostrar(raiz, 'sin-enlace');
+        return;
+      }
+      aMiCorreo.disabled = false;
+    } catch {
+      aMiCorreo.disabled = false;
+    }
+  });
+
   const boton = form.querySelector<HTMLButtonElement>('button');
   form.addEventListener('submit', async (e) => {
     // fetch + navegación en lugar del envío normal: la CSP (form-action 'self') bloquearía la redirección a R2.
@@ -255,14 +402,88 @@ function iniciarDescarga(raiz: HTMLElement): void {
         const { url } = (await r.json()) as { url: string };
         window.location.assign(url);
         mostrar(raiz, 'iniciada');
+        raiz.querySelector<HTMLElement>('[data-paso="iniciada"]')?.focus();
         return;
       }
-      // El enlace es de un solo uso: si ya se gastó o venció, no hay reintento posible desde aquí.
-      mostrar(raiz, r.status === 410 ? 'vencido' : 'descargar');
-      if (r.status !== 410 && boton) boton.disabled = false;
+      // El enlace es de un solo uso: si ya se gastó o venció, se ofrece pedir otro.
+      if (r.status === 410) {
+        raiz.querySelectorAll<HTMLElement>('[data-motivo]').forEach((p) => {
+          p.hidden = p.dataset.motivo !== 'vencido';
+        });
+        mostrar(raiz, 'sin-enlace');
+        return;
+      }
+      mostrar(raiz, 'error');
     } catch {
+      mostrar(raiz, 'error');
+    } finally {
       if (boton) boton.disabled = false;
     }
+  });
+}
+
+function iniciarReenviar(form: HTMLFormElement): void {
+  const turnstile = prepararTurnstile(form, 'reenviar');
+  const boton = form.querySelector<HTMLButtonElement>('button[type="submit"]');
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    limpiarErrores(form);
+    if (!form.reportValidity()) return;
+    if (boton) boton.disabled = true;
+    estado(form, 'Enviando…');
+    try {
+      const token = await esperarToken(await turnstile());
+      const correo = String(new FormData(form).get('correo') ?? '');
+      const r = await fetch('/api/descarga/reenviar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ correo, ...(token ? { turnstile: token } : {}) }),
+      });
+      if (r.status === 202) {
+        form.reset();
+        estado(form, 'Si ese correo está registrado y confirmado, en un minuto te llega tu enlace nuevo. Revisa también correo no deseado.');
+        return;
+      }
+      const error = (await r.json().catch(() => ({}))) as RespuestaError;
+      if (error.campos && Object.keys(error.campos).length) pintarErrores(form, error.campos);
+      estado(form, r.status === 429 ? 'Espera un minuto y vuelve a intentarlo.' : 'Revisa tu correo e intenta de nuevo.', 'error');
+    } catch {
+      estado(form, 'Sin conexión. Revisa tu internet e intenta de nuevo.', 'error');
+    } finally {
+      if (boton) boton.disabled = false;
+    }
+  });
+}
+
+/** Botones «Copiar» (comando y huella). Sin API del portapapeles quedan ocultos y el texto se selecciona a mano. */
+function iniciarCopiar(raiz: ParentNode): void {
+  if (!navigator.clipboard) return;
+  const aviso = raiz.querySelector<HTMLElement>('[data-copiar-aviso]');
+  raiz.querySelectorAll<HTMLButtonElement>('button[data-copiar]').forEach((boton) => {
+    const origen = document.getElementById(boton.dataset.copiar ?? '');
+    const etiqueta = boton.querySelector<HTMLElement>('[data-copiar-texto]');
+    if (!origen) return;
+    boton.hidden = false;
+    boton.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(origen.textContent?.trim() ?? '');
+        if (etiqueta) etiqueta.textContent = 'Copiado';
+        if (aviso) aviso.textContent = 'Copiado al portapapeles';
+        window.setTimeout(() => {
+          if (etiqueta) etiqueta.textContent = 'Copiar';
+        }, 2000);
+      } catch {
+        // Permiso denegado: el texto sigue a la vista para copiarlo a mano.
+      }
+    });
+  });
+}
+
+function iniciarGracias(raiz: HTMLElement): void {
+  const estadoGracias = new URLSearchParams(window.location.search).get('estado') ?? 'normal';
+  const valido = ['normal', 'pronto', 'limite'].includes(estadoGracias) ? estadoGracias : 'normal';
+  raiz.querySelectorAll<HTMLElement>('[data-estado-gracias]').forEach((p) => {
+    p.hidden = p.dataset.estadoGracias !== valido;
   });
 }
 
@@ -357,7 +578,12 @@ export function iniciarFormularios(raiz: Document): void {
   raiz.querySelectorAll<HTMLFormElement>('form[data-formulario="fundadores"]').forEach(iniciarFundadores);
   raiz.querySelectorAll<HTMLFormElement>('form[data-formulario="arco"]').forEach(iniciarArco);
   raiz.querySelectorAll<HTMLElement>('[data-confirmacion]').forEach(iniciarConfirmacion);
-  raiz.querySelectorAll<HTMLElement>('[data-pagina-descarga]').forEach(iniciarDescarga);
+  raiz.querySelectorAll<HTMLElement>('[data-pagina-descarga]').forEach((n) => {
+    iniciarDescarga(n);
+    iniciarCopiar(n);
+  });
+  raiz.querySelectorAll<HTMLFormElement>('form[data-formulario="reenviar"]').forEach(iniciarReenviar);
+  raiz.querySelectorAll<HTMLElement>('[data-gracias]').forEach(iniciarGracias);
   raiz.querySelectorAll<HTMLElement>('[data-cupo]').forEach((n) => void iniciarCupo(n));
   raiz.querySelectorAll<HTMLElement>('[data-testimonios-vivos]').forEach((n) => void iniciarTestimonios(n));
   raiz.querySelectorAll<HTMLElement>('[data-versiones-vivas]').forEach((n) => void iniciarVersiones(n));

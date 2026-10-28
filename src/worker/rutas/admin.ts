@@ -8,6 +8,7 @@ import { ESTATUS_LEAD, erroresPorCampo } from '../../compartido/leads';
 import { PREGUNTAS } from '../../data/faq';
 import type { Contexto, Env } from '../env';
 import { enviarCorreo } from '../lib/correo';
+import { emitirDescarga, esEnlace } from '../lib/descargas';
 import { sha256Hex, tokenNuevo } from '../lib/cripto';
 import { CLAVES_CACHE, invalidarCache, leerJson } from '../lib/http';
 import { correoDescarga } from '../lib/plantillas';
@@ -47,6 +48,7 @@ export interface FilaLead {
   readonly estatus_utc: string;
   readonly primer_contacto_utc: string | null;
   readonly notas_internas: string;
+  readonly metodo_registro: string;
 }
 
 function filtrosLeads(consulta: Record<string, string | undefined>): { donde: string; valores: (string | number)[] } {
@@ -187,7 +189,8 @@ admin.post('/leads/:id/aprobar-prueba', async (c) => {
 const COLUMNAS_CSV: readonly (keyof FilaLead)[] = [
   'id', 'creado_utc', 'nombre', 'correo', 'telefono', 'especialidad', 'estado', 'ciudad', 'tipo_practica',
   'pacientes_semana_rango', 'so', 'como_se_entero', 'usa_hoy', 'utm_source', 'utm_medium', 'utm_campaign',
-  'version_aviso', 'consentimiento_utc', 'confirmado_utc', 'estatus', 'estatus_utc', 'primer_contacto_utc', 'notas_internas',
+  'version_aviso', 'consentimiento_utc', 'confirmado_utc', 'metodo_registro', 'estatus', 'estatus_utc', 'primer_contacto_utc',
+  'notas_internas',
 ];
 
 /** Celda CSV segura: comillas y, si empieza con = + - @ (fórmula en Excel), un apóstrofo delante. */
@@ -502,6 +505,43 @@ admin.post('/versiones/:version/vigente', async (c) => {
   if (!marcada?.results.length) return c.json({ error: 'no_encontrado' }, 404);
   await invalidarCache(CLAVES_CACHE.versiones);
   return c.json({ ok: true });
+});
+
+/**
+ * Médicos que confirmaron su correo cuando todavía no había instalador publicado: se les manda su enlace ahora.
+ * Hasta 50 por clic (el proveedor de correo tiene límite diario); vuelve a pulsarlo si quedan más.
+ */
+admin.post('/versiones/notificar-pendientes', async (c) => {
+  const { results } = await c.env.DB.prepare(
+    `SELECT l.id, l.nombre, l.correo FROM leads l
+      WHERE l.confirmado_utc IS NOT NULL AND l.estatus <> 'descartado'
+        AND NOT EXISTS (SELECT 1 FROM descargas d WHERE d.lead_id = l.id)
+      ORDER BY l.confirmado_utc LIMIT 50`,
+  ).all<{ id: number; nombre: string; correo: string }>();
+  let enviados = 0;
+  for (const lead of results) {
+    const enlace = await emitirDescarga(c.env, lead.id);
+    if (!esEnlace(enlace)) {
+      if (enlace === 'sin_version') return c.json({ error: 'sin_version', mensaje: 'Primero marca una versión vigente.' }, 409);
+      continue;
+    }
+    try {
+      await enviarCorreo(
+        c.env,
+        correoDescarga(lead.correo, lead.nombre, `${c.env.ORIGEN}/api/descarga/${enlace.token}`, enlace.version, enlace.sha256, `${c.env.ORIGEN}/verificar`),
+      );
+      enviados++;
+    } catch (error) {
+      registrarError('correo_pendientes', error);
+      await c.env.DB.prepare('DELETE FROM descargas WHERE token_hash = ?1').bind(await sha256Hex(enlace.token)).run();
+      break;
+    }
+  }
+  const restantes = await c.env.DB.prepare(
+    `SELECT COUNT(*) AS n FROM leads l WHERE l.confirmado_utc IS NOT NULL AND l.estatus <> 'descartado'
+        AND NOT EXISTS (SELECT 1 FROM descargas d WHERE d.lead_id = l.id)`,
+  ).first<number>('n');
+  return c.json({ enviados, restantes: restantes ?? 0 });
 });
 
 // ─────────────────────────── Configuración de Fundadores ───────────────────────────

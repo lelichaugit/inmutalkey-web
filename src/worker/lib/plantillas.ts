@@ -50,9 +50,9 @@ export interface DatosAviso {
   readonly utm_source: string;
 }
 
-export function correoAvisoLead(para: string, lead: DatosAviso, panel: string): Mensaje {
+export function correoAvisoLead(para: string, lead: DatosAviso, panel: string, metodo: 'correo' | 'google' = 'correo'): Mensaje {
   const lineas = [
-    `Nuevo lead confirmado (#${lead.id})`,
+    `Nuevo lead confirmado (#${lead.id}) · ${metodo === 'google' ? 'con Google' : 'por correo'}`,
     `Nombre: ${lead.nombre}`,
     `Correo: ${lead.correo}`,
     `Teléfono: ${lead.telefono ?? '—'}`,
@@ -72,15 +72,15 @@ export function correoAvisoLead(para: string, lead: DatosAviso, panel: string): 
 export function correoDescarga(para: string, nombre: string, enlace: string, version: string, sha256: string, verificar: string): Mensaje {
   const parrafos = [
     `Hola, ${nombre}:`,
-    `Tu prueba de InmutalKey está lista. Este es tu enlace personal para descargar el instalador (versión ${version}).`,
-    'El enlace funciona una sola vez y vence en 72 horas. Si se te pasa, respóndenos y te mandamos otro.',
-    `Para comprobar que el archivo es el original, su huella SHA-256 es: ${sha256}. En ${verificar} te explicamos cómo revisarla.`,
+    `Tu prueba de 30 días de InmutalKey está lista (versión ${version}). Abre este enlace en la computadora de tu consultorio: te guía paso a paso para descargar, comprobar e instalar.`,
+    'El enlace es personal, vence en 72 horas y descarga una sola vez. Si se te pasa, pide otro en inmutalkey.com/descarga.',
+    `Huella SHA-256 oficial del instalador: ${sha256}. Cómo revisarla: ${verificar}.`,
   ];
   return {
     para,
     asunto: 'Tu instalador de InmutalKey',
     texto: `${parrafos.join('\n\n')}\n\nDescargar: ${enlace}\n\nInmutalKey · inmutalkey.com`,
-    html: html(parrafos, { href: enlace, texto: 'Descargar el instalador' }),
+    html: html(parrafos, { href: enlace, texto: 'Abrir mi instalación guiada' }),
   };
 }
 

@@ -1,14 +1,19 @@
 // Rutas públicas de /api. Contrato con el sitio (no cambiar sin avisar a Alan y actualizar docs/BACKEND.md):
-//   POST /api/leads                 → 201 {ok:true} | 400 {error, campos} | 429
+//   POST /api/leads                 → 201 {ok:true} (correo: llega un enlace de confirmación, o de descarga si ya
+//                                     estaba confirmado) | 201 {ok:true, destino} (con Google: correo ya verificado)
+//                                     | 400 {error, campos} | 429
 //   GET  /api/confirmar/:token      → 302 /fundadores/confirmar#t=… (vigente) | /fundadores/gracias (ya usado)
 //                                     | /fundadores/confirmar?estado=vencido
-//   POST /api/confirmar             → 200 {ok:true} | 410 {error:'vencido'} | 400 | 429
+//   POST /api/confirmar             → 200 {ok:true, destino?} (destino = /descarga#t=… o /fundadores/gracias?…)
+//                                     | 410 {error:'vencido'} | 400 | 429
 //   GET  /api/fundadores/cupo       → {total, restantes} (caché 60 s)
 //   POST /api/eventos               → 204 siempre
 //   GET  /api/testimonios           → [{nombre, especialidad, ciudad, texto, fecha}] (caché 5 min)
 //   GET  /api/versiones             → [{version, nombre_archivo, sha256, tamano_bytes, publicada_utc, vigente}]
 //   GET  /api/descarga/:token       → 302 /descarga#t=… (vigente) | 410
 //   POST /api/descarga              → JSON {url} (prefirmada de R2, 5 min) o 303 si llega como formulario | 410
+//   POST /api/descarga/reenviar     → 202 {ok:true} siempre (si el correo está confirmado, llega un enlace nuevo)
+//   POST /api/descarga/a-mi-correo  → 200 {ok:true} (manda el mismo enlace al correo del médico) | 410
 //   POST /api/arco                  → 201 {ok:true, folio} | 400 | 429
 //
 // Por qué la confirmación y la descarga piden un clic (POST) en lugar de actuar con el GET del correo: los filtros de
@@ -22,13 +27,17 @@ import { esEvento } from '../../compartido/eventos-validos';
 import { ESTATUS_QUE_OCUPAN_CUPO, erroresPorCampo, esquemaArco, esquemaLead } from '../../compartido/leads';
 import type { Contexto, Env } from '../env';
 import { enviarCorreo, enviarSinFallar } from '../lib/correo';
+import { emitirDescarga, enlaceReciente, esEnlace } from '../lib/descargas';
 import { esTokenValido, sha256Hex, tokenNuevo } from '../lib/cripto';
 import { CLAVES_CACHE, dentroDelLimite, jsonEnCache, leerCampo, leerJson, respuestaLimite } from '../lib/http';
-import { correoAvisoArco, correoAvisoLead, correoConfirmacion, type DatosAviso } from '../lib/plantillas';
+import { correoAvisoArco, correoConfirmacion, correoDescarga } from '../lib/plantillas';
 import { SEGUNDOS_URL_FIRMADA, urlFirmadaDescarga } from '../lib/r2';
 import { registrarError } from '../lib/registro';
 import { ahora, fechaMexico, iso, masHoras } from '../lib/tiempo';
+import { borrarCookie, COOKIE_REGISTRO } from '../lib/sesion';
 import { verificarTurnstile } from '../lib/turnstile';
+import { destinoTrasVerificar, marcarConfirmado } from './flujo';
+import { sesionGoogle } from './google';
 
 export const HORAS_CONFIRMACION = 72;
 /** No se reenvía la confirmación a un mismo correo más de una vez en este lapso. */
@@ -42,16 +51,21 @@ publicas.post('/leads', async (c) => {
   if (!(await dentroDelLimite(c, 'formularios'))) return respuestaLimite(c);
 
   const cuerpo = await leerJson(c);
-  if (cuerpo === undefined) return c.json({ error: 'validacion', campos: { formulario: 'Solicitud no válida' } }, 400);
+  if (typeof cuerpo !== 'object' || cuerpo === null) return c.json({ error: 'validacion', campos: { formulario: 'Solicitud no válida' } }, 400);
 
-  const resultado = esquemaLead.safeParse(cuerpo);
+  // Registro con Google en curso: el correo es el que Google verificó, no el que diga el formulario.
+  const sesion = await sesionGoogle(c.env, c.req.header('Cookie'));
+  const entrada = sesion ? { ...(cuerpo as Record<string, unknown>), correo: sesion.correo } : cuerpo;
+
+  const resultado = esquemaLead.safeParse(entrada);
   if (!resultado.success) return c.json({ error: 'validacion', campos: erroresPorCampo(resultado.error) }, 400);
   const lead = resultado.data;
 
   // Campo trampa lleno: se responde como si todo saliera bien y no se guarda nada.
   if (lead.sitio_web) return c.json({ ok: true }, 201);
 
-  if (!(await verificarTurnstile(c.env, lead.turnstile, 'lead'))) {
+  // Con Google la identidad ya está probada (y el límite de frecuencia sigue activo); sin Google, Turnstile.
+  if (!sesion && !(await verificarTurnstile(c.env, lead.turnstile, 'lead'))) {
     return c.json({ error: 'verificacion', campos: { turnstile: 'No pudimos verificar que no eres un robot. Intenta de nuevo.' } }, 400);
   }
 
@@ -60,8 +74,8 @@ publicas.post('/leads', async (c) => {
   const insertado = await c.env.DB.prepare(
     `INSERT INTO leads (creado_utc, nombre, correo, telefono, especialidad, estado, ciudad, tipo_practica,
        pacientes_semana_rango, so, como_se_entero, usa_hoy, utm_source, utm_medium, utm_campaign, version_aviso,
-       consentimiento_utc, estatus, estatus_utc)
-     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?1, 'nuevo', ?1)
+       consentimiento_utc, estatus, estatus_utc, metodo_registro)
+     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?1, 'nuevo', ?1, ?17)
      ON CONFLICT (correo) DO NOTHING
      RETURNING id`,
   )
@@ -82,26 +96,41 @@ publicas.post('/leads', async (c) => {
       normalizarUtmLibre(lead.utm_medium),
       normalizarUtmLibre(lead.utm_campaign),
       lead.version_aviso,
+      sesion ? 'google' : 'correo',
     )
     .first<{ id: number }>();
 
-  let leadId: number;
-  if (insertado) {
-    leadId = insertado.id;
-  } else {
-    // El correo ya existía. Respuesta idéntica (nadie puede averiguar qué correos están registrados); solo se
-    // reenvía la confirmación si sigue pendiente y no se mandó otra hace poco. Los datos guardados no se pisan.
-    const existente = await c.env.DB.prepare(
-      `SELECT l.id, l.confirmado_utc, MAX(cf.creado_utc) AS ultimo
-         FROM leads l LEFT JOIN confirmaciones cf ON cf.lead_id = l.id
-        WHERE l.correo = ?1 GROUP BY l.id`,
-    )
-      .bind(lead.correo)
-      .first<{ id: number; confirmado_utc: string | null; ultimo: string | null }>();
-    if (!existente || existente.confirmado_utc) return c.json({ ok: true }, 201);
-    const reciente = existente.ultimo && Date.parse(existente.ultimo) > momento.getTime() - MINUTOS_ENTRE_REENVIOS * 60_000;
-    if (reciente) return c.json({ ok: true }, 201);
-    leadId = existente.id;
+  const existente = insertado
+    ? null
+    : await c.env.DB.prepare(
+        `SELECT l.id, l.confirmado_utc, l.estatus, MAX(cf.creado_utc) AS ultimo
+           FROM leads l LEFT JOIN confirmaciones cf ON cf.lead_id = l.id
+          WHERE l.correo = ?1 GROUP BY l.id`,
+      )
+        .bind(lead.correo)
+        .first<{ id: number; confirmado_utc: string | null; estatus: string; ultimo: string | null }>();
+  const leadId = insertado?.id ?? existente?.id;
+  if (leadId === undefined) return c.json({ ok: true }, 201);
+
+  // ── Con Google: confirmado en el acto y directo a su descarga guiada. ──
+  if (sesion) {
+    await marcarConfirmado(c, leadId, 'google');
+    const destino = await destinoTrasVerificar(c, leadId);
+    c.header('Set-Cookie', borrarCookie(COOKIE_REGISTRO));
+    return c.json({ ok: true, destino }, 201);
+  }
+
+  // ── Con correo. La respuesta es idéntica en todos los casos: nadie puede averiguar qué correos están
+  // registrados. Los datos guardados nunca se pisan. ──
+  if (existente?.confirmado_utc) {
+    // Ya confirmado (vuelve por otro instalador): le llega un enlace de descarga nuevo, como mucho cada 10 min.
+    if (existente.estatus !== 'descartado' && !(await enlaceReciente(c.env, leadId))) {
+      await enviarEnlaceDescarga(c.env, leadId, lead.correo, lead.nombre);
+    }
+    return c.json({ ok: true }, 201);
+  }
+  if (existente?.ultimo && Date.parse(existente.ultimo) > momento.getTime() - MINUTOS_ENTRE_REENVIOS * 60_000) {
+    return c.json({ ok: true }, 201);
   }
 
   const token = tokenNuevo();
@@ -119,6 +148,21 @@ publicas.post('/leads', async (c) => {
   }
   return c.json({ ok: true }, 201);
 });
+
+/** Emite un enlace y lo manda por correo. Si el correo falla, el enlace no queda vivo. */
+async function enviarEnlaceDescarga(env: Env, leadId: number, correo: string, nombre: string): Promise<void> {
+  const enlace = await emitirDescarga(env, leadId);
+  if (!esEnlace(enlace)) return;
+  try {
+    await enviarCorreo(
+      env,
+      correoDescarga(correo, nombre, `${env.ORIGEN}/api/descarga/${enlace.token}`, enlace.version, enlace.sha256, `${env.ORIGEN}/verificar`),
+    );
+  } catch (error) {
+    registrarError('correo_descarga', error);
+    await env.DB.prepare('DELETE FROM descargas WHERE token_hash = ?1').bind(await sha256Hex(enlace.token)).run();
+  }
+}
 
 // ─────────────────────────── Confirmación (doble opt-in) ───────────────────────────
 
@@ -159,20 +203,8 @@ publicas.post('/confirmar', async (c) => {
     return c.json({ error: 'vencido' }, 410);
   }
 
-  const lead = await c.env.DB.prepare(
-    `UPDATE leads SET confirmado_utc = ?1 WHERE id = ?2 AND confirmado_utc IS NULL
-     RETURNING id, nombre, correo, telefono, especialidad, ciudad, estado, utm_source`,
-  )
-    .bind(momento, usado.lead_id)
-    .first<DatosAviso>();
-
-  // Primera confirmación de este lead: aviso a contacto@ (sin bloquear la respuesta al médico).
-  if (lead) {
-    c.executionCtx.waitUntil(
-      enviarSinFallar(c.env, correoAvisoLead(c.env.CORREO_AVISOS, lead, `${c.env.ORIGEN}/admin`), 'correo_aviso_lead').then(() => undefined),
-    );
-  }
-  return c.json({ ok: true }, 200);
+  await marcarConfirmado(c, usado.lead_id, 'correo');
+  return c.json({ ok: true, destino: await destinoTrasVerificar(c, usado.lead_id) }, 200);
 });
 
 // ─────────────────────────── Cupo de Fundadores ───────────────────────────
@@ -256,7 +288,7 @@ publicas.get('/versiones', (c) =>
 const PAGINA_VENCIDA =
   '<!doctype html><html lang="es-MX"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">' +
   '<title>Enlace vencido · InmutalKey</title><h1>Este enlace de descarga ya no está disponible</h1>' +
-  '<p>Los enlaces funcionan una sola vez y vencen a las 72 horas. Escríbenos a contacto@inmutalkey.com y te mandamos otro.</p>' +
+  '<p>Los enlaces funcionan una sola vez y vencen a las 72 horas. Pide uno nuevo en <a href="/descarga">inmutalkey.com/descarga</a> o escríbenos a contacto@inmutalkey.com.</p>' +
   '<p><a href="/">Volver a inmutalkey.com</a></p></html>';
 
 publicas.get('/descarga/:token', async (c) => {
@@ -301,6 +333,52 @@ publicas.post('/descarga', async (c) => {
     await c.env.DB.prepare('UPDATE descargas SET usado_utc = NULL WHERE token_hash = ?1').bind(await sha256Hex(token)).run();
     return c.json({ error: 'no_disponible' }, 503);
   }
+});
+
+/** Pedir un enlace nuevo con el correo (se venció, se usó o se perdió). Respuesta idéntica siempre. */
+publicas.post('/descarga/reenviar', async (c) => {
+  if (!(await dentroDelLimite(c, 'formularios'))) return respuestaLimite(c);
+  const cuerpo = (await leerJson(c, 4096)) as { correo?: unknown; turnstile?: unknown } | undefined;
+  const correo = typeof cuerpo?.correo === 'string' ? cuerpo.correo.trim().toLowerCase() : '';
+  const turnstile = typeof cuerpo?.turnstile === 'string' ? cuerpo.turnstile : undefined;
+  if (!correo || correo.length > 160 || !correo.includes('@')) return c.json({ error: 'validacion', campos: { correo: 'Revisa tu correo' } }, 400);
+  if (!(await verificarTurnstile(c.env, turnstile, 'reenviar'))) {
+    return c.json({ error: 'verificacion', campos: { turnstile: 'No pudimos verificar que no eres un robot. Intenta de nuevo.' } }, 400);
+  }
+  const lead = await c.env.DB.prepare('SELECT id, nombre, estatus, confirmado_utc FROM leads WHERE correo = ?1')
+    .bind(correo)
+    .first<{ id: number; nombre: string; estatus: string; confirmado_utc: string | null }>();
+  if (lead?.confirmado_utc && lead.estatus !== 'descartado' && !(await enlaceReciente(c.env, lead.id))) {
+    await enviarEnlaceDescarga(c.env, lead.id, correo, lead.nombre);
+  }
+  return c.json({ ok: true }, 202);
+});
+
+/** Desde el celular: manda el mismo enlace (sin gastarlo) al correo del médico para abrirlo en su computadora. */
+publicas.post('/descarga/a-mi-correo', async (c) => {
+  if (!(await dentroDelLimite(c, 'formularios'))) return respuestaLimite(c);
+  const token = await leerCampo(c, 'token');
+  if (!token || !esTokenValido(token)) return c.json({ error: 'vencido' }, 410);
+  const fila = await c.env.DB.prepare(
+    `SELECT l.correo, l.nombre, d.version, v.sha256 FROM descargas d
+       JOIN leads l ON l.id = d.lead_id JOIN versiones v ON v.version = d.version
+      WHERE d.token_hash = ?1 AND d.usado_utc IS NULL AND d.expira_utc > ?2`,
+  )
+    .bind(await sha256Hex(token), iso(ahora()))
+    .first<{ correo: string; nombre: string; version: string; sha256: string }>();
+  if (!fila) return c.json({ error: 'vencido' }, 410);
+  try {
+    await enviarCorreo(
+      c.env,
+      correoDescarga(fila.correo, fila.nombre, `${c.env.ORIGEN}/api/descarga/${token}`, fila.version, fila.sha256, `${c.env.ORIGEN}/verificar`),
+    );
+  } catch (error) {
+    registrarError('correo_a_mi_correo', error);
+    return c.json({ error: 'correo' }, 502);
+  }
+  // Solo los primeros caracteres del correo, para que la persona reconozca a cuál se mandó.
+  const [usuario = '', dominio = ''] = fila.correo.split('@');
+  return c.json({ ok: true, correo: `${usuario.slice(0, 2)}•••@${dominio}` }, 200);
 });
 
 // ─────────────────────────── Derechos ARCO ───────────────────────────

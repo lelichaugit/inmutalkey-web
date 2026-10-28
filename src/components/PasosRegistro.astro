@@ -1,0 +1,132 @@
+---
+// Indicador de avance del registro: Regístrate → Confirma → Instala. Mismo componente en /fundadores, la
+// confirmación, gracias y /descarga, para que el médico siempre sepa en qué paso va y cuánto falta.
+// Con Google el paso 2 se salta (el correo ya viene verificado): se marca como hecho al completar el registro.
+import Icono from './Icono.astro';
+
+interface Props {
+  /** 1 = registro, 2 = confirmación, 3 = instalación. */
+  actual: 1 | 2 | 3;
+}
+
+const { actual } = Astro.props;
+const PASOS = ['Regístrate', 'Confirma tu correo', 'Instala tu prueba'] as const;
+---
+
+<ol class="pasos-registro" aria-label="Avance del registro">
+  {
+    PASOS.map((texto, i) => {
+      const n = i + 1;
+      const estado = n < actual ? 'hecho' : n === actual ? 'actual' : 'pendiente';
+      return (
+        <li class={`paso-registro ${estado}`} aria-current={estado === 'actual' ? 'step' : undefined}>
+          <span class="paso-registro-marca" aria-hidden="true">
+            {estado === 'hecho' ? <Icono nombre="check" /> : n}
+          </span>
+          <span class="paso-registro-texto">
+            {texto}
+            {estado === 'hecho' && <span class="visualmente-oculto"> (hecho)</span>}
+          </span>
+        </li>
+      );
+    })
+  }
+</ol>
+
+<style>
+  .pasos-registro {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin: 0 0 28px;
+    padding: 0;
+    list-style: none;
+    counter-reset: none;
+  }
+
+  /* Dentro de la columna de lectura (.prosa), las listas llevan numeración propia: aquí no. */
+  /* Selectores dobles: ganan a `.prosa > ol > li` de PaginaTexto sin !important. */
+  .pasos-registro.pasos-registro {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    max-width: none;
+    margin: 0 0 28px;
+    padding: 0;
+    list-style: none;
+  }
+
+  .paso-registro.paso-registro {
+    min-height: 0;
+    margin: 0;
+    padding: 0;
+  }
+
+  .paso-registro.paso-registro::before {
+    content: none;
+    display: none;
+  }
+
+  .paso-registro {
+    position: relative;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    justify-items: center;
+    gap: 8px;
+    text-align: center;
+    color: var(--texto-tenue);
+    font-size: 0.875rem;
+    line-height: 1.3;
+  }
+
+  /* Línea que une los pasos (detrás de las marcas). */
+  .paso-registro:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    top: 17px;
+    left: calc(50% + 22px);
+    right: calc(-50% + 22px);
+    height: 2px;
+    border-radius: 2px;
+    background: var(--linea-oscura-fuerte);
+  }
+
+  .paso-registro.hecho:not(:last-child)::after {
+    background: var(--esmeralda-vivo);
+  }
+
+  .paso-registro-marca {
+    display: grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    border: 1px solid var(--linea-oscura-fuerte);
+    border-radius: 999px;
+    background: var(--medianoche);
+    font-family: var(--fuente-titulo);
+    font-weight: 600;
+  }
+
+  .paso-registro-marca :global(.icono) {
+    width: 18px;
+    height: 18px;
+  }
+
+  .paso-registro.actual {
+    color: var(--texto);
+    font-weight: 600;
+  }
+
+  .paso-registro.actual .paso-registro-marca {
+    border-color: var(--azul-vivo);
+    background: var(--azul);
+    color: #fff;
+    box-shadow: 0 0 0 6px rgb(46 159 224 / 0.16);
+  }
+
+  .paso-registro.hecho .paso-registro-marca {
+    border-color: var(--esmeralda-vivo);
+    color: var(--esmeralda-vivo);
+  }
+</style>
