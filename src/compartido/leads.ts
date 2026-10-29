@@ -85,7 +85,7 @@ export function normalizarCorreo(correo: string): string {
 const telefono = z
   .union([z.string(), z.null(), z.undefined()])
   .transform((v) => (v ?? '').replace(/[^\d]/g, ''))
-  .refine((v) => v === '' || (v.length >= 10 && v.length <= 15), 'Escribe 10 dígitos (o con lada de país)')
+  .refine((v) => v === '' || (v.length >= 10 && v.length <= 15), 'Escriba 10 dígitos (o con lada de país)')
   .transform((v) => (v === '' ? null : v));
 
 const opcion = <T extends Opciones>(o: T, mensaje: string) =>
@@ -93,22 +93,22 @@ const opcion = <T extends Opciones>(o: T, mensaje: string) =>
 
 /** Lo que manda el formulario (antes de Turnstile). */
 export const esquemaLead = z.object({
-  nombre: texto(3, 120, 'Escribe tu nombre'),
+  nombre: texto(3, 120, 'Escriba su nombre completo'),
   correo: z
-    .string({ required_error: 'Escribe tu correo' })
+    .string({ required_error: 'Escriba su correo' })
     .transform(normalizarCorreo)
-    .pipe(z.string().max(160, 'Correo demasiado largo').email('Revisa tu correo')),
+    .pipe(z.string().max(160, 'Correo demasiado largo').email('Este correo parece incompleto: revise la parte después de la @')),
   telefono,
-  especialidad: texto(3, 80, 'Escribe tu especialidad'),
-  estado: z.enum(ESTADOS_MX, { errorMap: () => ({ message: 'Elige tu estado' }) }),
-  ciudad: texto(2, 80, 'Escribe tu ciudad'),
-  tipo_practica: opcion(TIPOS_PRACTICA, 'Elige dónde das consulta'),
-  pacientes_semana_rango: opcion(RANGOS_PACIENTES, 'Elige un rango'),
-  so: opcion(SISTEMAS_OPERATIVOS, 'Elige tu sistema'),
-  como_se_entero: opcion(COMO_SE_ENTERO, 'Elige una opción'),
-  usa_hoy: opcion(USA_HOY, 'Elige una opción'),
+  especialidad: texto(3, 80, 'Escriba su especialidad'),
+  estado: z.enum(ESTADOS_MX, { errorMap: () => ({ message: 'Elija su estado' }) }),
+  ciudad: texto(2, 80, 'Escriba su ciudad'),
+  tipo_practica: opcion(TIPOS_PRACTICA, 'Elija dónde da consulta'),
+  pacientes_semana_rango: opcion(RANGOS_PACIENTES, 'Elija un rango'),
+  so: opcion(SISTEMAS_OPERATIVOS, 'Elija el sistema de su computadora'),
+  como_se_entero: opcion(COMO_SE_ENTERO, 'Elija una opción'),
+  usa_hoy: opcion(USA_HOY, 'Elija una opción'),
   consentimiento: z.literal(true, {
-    errorMap: () => ({ message: 'Necesitamos tu autorización para contactarte' }),
+    errorMap: () => ({ message: 'Necesitamos su autorización para contactarle' }),
   }),
   version_aviso: z
     .string()
@@ -140,11 +140,11 @@ export type TipoArco = (typeof TIPOS_ARCO)[number];
 
 export const esquemaArco = z.object({
   correo: z
-    .string({ required_error: 'Escribe tu correo' })
+    .string({ required_error: 'Escriba su correo' })
     .transform(normalizarCorreo)
-    .pipe(z.string().max(160).email('Revisa tu correo')),
-  tipo: z.enum(TIPOS_ARCO, { errorMap: () => ({ message: 'Elige qué derecho quieres ejercer' }) }),
-  detalle: texto(0, 1000, 'Describe tu solicitud').optional(),
+    .pipe(z.string().max(160).email('Este correo parece incompleto: revise la parte después de la @')),
+  tipo: z.enum(TIPOS_ARCO, { errorMap: () => ({ message: 'Elija qué derecho desea ejercer' }) }),
+  detalle: texto(0, 1000, 'Describa su solicitud').optional(),
   turnstile: z.string().max(4096).optional(),
   sitio_web: z.string().max(200).optional(),
 });

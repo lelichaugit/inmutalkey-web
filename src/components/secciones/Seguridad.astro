@@ -1,0 +1,121 @@
+---
+// Seguridad, en claro (IDENTIDAD_MARCA §9.7): qué se cifra, dónde vive, qué se sella y qué pasa si pierde el equipo o la
+// contraseña. Cada afirmación está verificada en clinica-nom004 v0.4.0 (db/clave.rs, sellado/, respaldo.rs,
+// ModalClaveRescate.tsx, guiaRapida.ts). Tecnicismos solo con su traducción al lado.
+import Icono from '../Icono.astro';
+
+const PUNTOS = [
+  {
+    icono: 'candado',
+    titulo: 'Qué se cifra',
+    texto: 'Todo el expediente: pacientes, notas, recetas y agenda. La base completa va bajo llave con SQLCipher (AES-256) y la clave sale de su contraseña.',
+  },
+  {
+    icono: 'computadora',
+    titulo: 'Dónde vive',
+    texto: 'En su computadora. No hay copia en la nube ni telemetría: los datos de sus pacientes no salen del equipo.',
+  },
+  {
+    icono: 'sello',
+    titulo: 'Qué se sella',
+    texto: 'Cada nota firmada recibe un sello digital (Ed25519) y una huella encadenada (SHA-256). Si alguien la alterara por fuera, la auditoría de integridad lo señala.',
+  },
+  {
+    icono: 'respaldo',
+    titulo: 'Si pierde el equipo',
+    texto: 'Su respaldo cifrado le devuelve todo en otra computadora: instale InmutalKey, elija «Restaurar respaldo» y escriba su frase de paso.',
+  },
+  {
+    icono: 'llave',
+    titulo: 'Si olvida su contraseña',
+    texto: 'La Clave de Rescate (24 letras y números) le permite crear una nueva. Sin contraseña y sin Clave de Rescate, nadie puede abrirlo, ni siquiera nosotros.',
+  },
+  {
+    icono: 'ojo',
+    titulo: 'Lo que nosotros vemos',
+    texto: 'Nada de su expediente. El sitio solo recibe los datos de contacto que usted escribe en el registro, conforme al aviso de privacidad.',
+  },
+] as const;
+---
+
+<section class="seccion seguridad" id="seguridad" aria-labelledby="seguridad-titulo">
+  <div class="contenedor">
+    <div class="seccion-cabecera">
+      <p class="antetitulo">Seguridad, en claro</p>
+      <h2 id="seguridad-titulo">Sin letra chiquita. Así se protege su expediente.</h2>
+      <p>Lo que hace InmutalKey, dicho sin tecnicismos. Y lo que no puede hacer nadie más.</p>
+    </div>
+    <dl class="seguridad-rejilla" data-escalonar>
+      {
+        PUNTOS.map((p) => (
+          <div class="tarjeta seguridad-punto revelar">
+            <dt>
+              <span class="sello">
+                <Icono nombre={p.icono} />
+              </span>
+              {p.titulo}
+            </dt>
+            <dd>{p.texto}</dd>
+          </div>
+        ))
+      }
+    </dl>
+    <p class="seguridad-mas">
+      <a href="/verificar">Cómo comprobar que su instalador es el original <Icono nombre="flecha" /></a>
+    </p>
+  </div>
+</section>
+
+<style>
+  .seguridad-rejilla {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
+    gap: 1rem;
+    margin: 0;
+  }
+
+  .seguridad-punto {
+    display: grid;
+    align-content: start;
+    gap: 0.75rem;
+    padding: 1.5rem;
+  }
+
+  .seguridad-punto dt {
+    display: flex;
+    align-items: center;
+    gap: 0.875rem;
+    color: var(--texto);
+    font-size: 1.125rem;
+    font-weight: 650;
+    letter-spacing: -0.018em;
+  }
+
+  .seguridad-punto .sello {
+    width: 2.375rem;
+    height: 2.375rem;
+    border-radius: 11px;
+  }
+
+  .seguridad-punto .sello :global(.icono) {
+    width: 1.2rem;
+    height: 1.2rem;
+  }
+
+  .seguridad-punto dd {
+    margin: 0;
+    color: var(--texto-2);
+  }
+
+  .seguridad-mas {
+    margin-top: 2rem;
+  }
+
+  .seguridad-mas a {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-height: 2.75rem;
+    font-weight: 600;
+  }
+</style>

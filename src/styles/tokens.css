@@ -1,0 +1,118 @@
+/* InmutalKey · Tokens de diseño «Cristal Sellado» (v0.4.0).
+   Fuente: docs/IDENTIDAD_MARCA.md §8 de lelichaugit/clinica-nom004 (tag v0.4.0), src/App.css y src/estilos/marca.css.
+   Los valores de §8 se copian tal cual; lo demás (semánticos, cristal, halo, foco) sale de los mismos archivos de la app.
+
+   Temas:
+   · Sin data-theme → sigue a prefers-color-scheme (Niebla de día, Marino de noche).
+   · data-theme="claro" | "oscuro" | "aurora" → elección manual (la recuerda public/clases.js antes del primer pintado).
+   · .tema-marino → láminas oscuras dentro de cualquier tema (hero, cierre, pie): la marca de noche. */
+
+:root {
+  /* Marca */
+  --marca-marino: #043259; --marca-abismo: #032340; --marca-acero: #224D73; --marca-pizarra: #566573; --marca-niebla: #F2F2F2;
+  --luz-destello: #3D7CC9; --luz-cielo: #8EC3F2; --luz-hielo: #B6D9FA;
+  /* Tema claro (Niebla) */
+  --fondo: #EEF1F5; --superficie: #FFFFFF; --texto: #0B1F33; --texto-suave: #4A5868; --borde: #D9E0E8;
+  --primario: #043259; --primario-hover: #224D73; --sobre-primario: #FFFFFF; --acento: #2F6FB5;
+  --aurora-1: #224D73; --aurora-2: #7FB2E5; --aurora-3: #F2F2F2;
+  /* Forma y luz */
+  --radio-sm: 9px; --radio: 13px; --radio-lg: 18px; --radio-xl: 24px;
+  --cristal: color-mix(in srgb, var(--superficie) 70%, transparent);
+  --cristal-blur: blur(22px) saturate(170%);
+  --elev-1: 0 1px 2px rgba(3, 35, 64, .07), 0 2px 8px -4px rgba(3, 35, 64, .10);
+  --elev-2: 0 10px 26px -14px rgba(3, 35, 64, .30), 0 2px 6px -2px rgba(3, 35, 64, .08);
+  --elev-3: 0 28px 60px -26px rgba(3, 35, 64, .42), 0 10px 22px -14px rgba(3, 35, 64, .22);
+  --grad-primario: linear-gradient(180deg, #315777 0%, #043259 46%, #224D73 100%);
+  --curva-cristal: cubic-bezier(.2, .8, .2, 1);
+  --fuente: "Inter Variable", Inter, -apple-system, "Segoe UI Variable Text", system-ui, sans-serif;
+
+  /* Complementos de la app (App.css · claro-estandar y marca.css) */
+  --borde-campo: #B9C4D0; --primario-suave: #E3ECF6; --campo-inactivo: #E9EDF2;
+  --exito: #0F6B46; --exito-suave: #E8F6EF; --exito-borde: #A6DCC0;
+  --alerta: #8A5200; --alerta-suave: #FFF5E0; --alerta-borde: #F1CF86;
+  --peligro: #A8231C; --peligro-suave: #FDECEB; --peligro-borde: #F3B4AE;
+  --info: #1D4F91; --info-suave: #EAF1FB; --info-borde: #B7CDEE;
+  --cristal-denso: color-mix(in srgb, var(--superficie) 84%, transparent);
+  --cristal-borde: color-mix(in srgb, var(--borde) 70%, rgba(255, 255, 255, .55));
+  --cristal-brillo: inset 0 1px 0 rgba(255, 255, 255, .75), inset 0 0 0 .5px rgba(255, 255, 255, .35);
+  --grad-tarjeta: linear-gradient(180deg, color-mix(in srgb, var(--superficie) 96%, #fff 4%), color-mix(in srgb, var(--superficie) 90%, var(--fondo) 10%));
+  --halo-acento: 0 0 0 1px color-mix(in srgb, var(--acento) 36%, transparent), 0 10px 30px -12px color-mix(in srgb, var(--acento) 55%, transparent);
+  --anillo-foco: 0 0 0 2px var(--superficie), 0 0 0 4.5px color-mix(in srgb, var(--acento) 70%, transparent), 0 0 18px 2px color-mix(in srgb, var(--acento) 30%, transparent);
+  --mono: ui-monospace, "Cascadia Mono", "SF Mono", Consolas, Menlo, monospace;
+  --resorte-suave: linear(0, .009, .035 2.1%, .141 4.4%, .723 12.9%, .938 16.7%, 1.017 20.5%, 1.035 24.4%, 1.026 29.4%, 1 41.3%, .998 51.6%, 1);
+
+  /* Ritmo del sitio (en rem: crece con el zoom y con la escala de pantallas grandes) */
+  --ancho: 72rem;
+  --ancho-amplio: 82rem;
+  --ancho-texto: 40rem;
+  --medianil: clamp(1rem, 4vw, 2.5rem);
+  --seccion: clamp(4.5rem, 6vw + 2rem, 8.5rem);
+  --altura-nav: 4rem;
+
+  color-scheme: light;
+}
+
+/* ── Marino: la marca de noche (§8). Misma lista en el tema manual, en el automático y en las láminas ── */
+:root[data-theme="oscuro"],
+:root[data-theme="aurora"],
+.tema-marino {
+  --fondo: #021A30; --superficie: #06294A; --texto: #EEF4FB; --texto-suave: #A9BCCF; --borde: #173D61;
+  --primario: #8EC3F2; --primario-hover: #B6D9FA; --sobre-primario: #032340; --acento: #5B9BE0;
+  --aurora-1: #224D73; --aurora-2: #043259; --aurora-3: #3D7CC9;
+  --borde-campo: #2A5379; --primario-suave: rgba(142, 195, 242, .16); --campo-inactivo: rgba(255, 255, 255, .05);
+  --exito: #5FD4A0; --exito-suave: rgba(95, 212, 160, .13); --exito-borde: rgba(95, 212, 160, .38);
+  --alerta: #F2C76B; --alerta-suave: rgba(242, 199, 107, .13); --alerta-borde: rgba(242, 199, 107, .38);
+  --peligro: #FF9A92; --peligro-suave: rgba(255, 154, 146, .13); --peligro-borde: rgba(255, 154, 146, .38);
+  --info: #8FB8FF; --info-suave: rgba(143, 184, 255, .13); --info-borde: rgba(143, 184, 255, .38);
+  --cristal: color-mix(in srgb, var(--superficie) 62%, transparent);
+  --cristal-denso: color-mix(in srgb, var(--superficie) 80%, transparent);
+  --cristal-borde: color-mix(in srgb, var(--borde) 70%, rgba(255, 255, 255, .10));
+  --cristal-brillo: inset 0 1px 0 rgba(255, 255, 255, .09), inset 0 0 0 .5px rgba(255, 255, 255, .05);
+  --elev-1: 0 1px 2px rgba(0, 4, 12, .45), 0 2px 10px -4px rgba(0, 4, 12, .35);
+  --elev-2: 0 14px 30px -14px rgba(0, 4, 12, .75), 0 0 0 .5px rgba(255, 255, 255, .05);
+  --elev-3: 0 34px 70px -24px rgba(0, 4, 12, .85), 0 0 0 .5px rgba(255, 255, 255, .07);
+  --grad-primario: linear-gradient(180deg, color-mix(in srgb, var(--primario) 80%, #fff 20%) 0%, var(--primario) 55%, color-mix(in srgb, var(--primario) 86%, #000 14%) 100%);
+  --grad-tarjeta: linear-gradient(180deg, color-mix(in srgb, var(--superficie) 94%, #fff 6%), var(--superficie));
+  --halo-acento: 0 0 0 1px color-mix(in srgb, var(--acento) 36%, transparent), 0 10px 30px -12px color-mix(in srgb, var(--acento) 55%, transparent);
+  --anillo-foco: 0 0 0 2px var(--superficie), 0 0 0 4.5px color-mix(in srgb, var(--acento) 70%, transparent), 0 0 18px 2px color-mix(in srgb, var(--acento) 30%, transparent);
+  color-scheme: dark;
+}
+
+/* Aurora: variante eléctrica del tema oscuro (tema `oscuro-aurora` de la app, referencia «Luminous gradient»). */
+:root[data-theme="aurora"] {
+  --fondo: #030F24; --superficie: #0A1F3F; --texto: #F1F6FF; --texto-suave: #A9BDDB; --borde: #1A3762; --borde-campo: #2C4F80;
+  --primario: #6AA8FF; --primario-hover: #9CC5FF; --sobre-primario: #03122A; --acento: #4F8DFF; --primario-suave: rgba(106, 168, 255, .17);
+  --aurora-1: #1F5FFF; --aurora-2: #33B5FF; --aurora-3: #043259;
+  --halo-acento: 0 0 0 1px color-mix(in srgb, var(--acento) 36%, transparent), 0 10px 30px -12px color-mix(in srgb, var(--acento) 55%, transparent);
+  --anillo-foco: 0 0 0 2px var(--superficie), 0 0 0 4.5px color-mix(in srgb, var(--acento) 70%, transparent), 0 0 18px 2px color-mix(in srgb, var(--acento) 30%, transparent);
+  --cristal: color-mix(in srgb, var(--superficie) 62%, transparent);
+  --cristal-denso: color-mix(in srgb, var(--superficie) 80%, transparent);
+  --cristal-borde: color-mix(in srgb, var(--borde) 70%, rgba(255, 255, 255, .10));
+  --grad-primario: linear-gradient(180deg, color-mix(in srgb, var(--primario) 80%, #fff 20%) 0%, var(--primario) 55%, color-mix(in srgb, var(--primario) 86%, #000 14%) 100%);
+  --grad-tarjeta: linear-gradient(180deg, color-mix(in srgb, var(--superficie) 94%, #fff 6%), var(--superficie));
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    --fondo: #021A30; --superficie: #06294A; --texto: #EEF4FB; --texto-suave: #A9BCCF; --borde: #173D61;
+    --primario: #8EC3F2; --primario-hover: #B6D9FA; --sobre-primario: #032340; --acento: #5B9BE0;
+    --aurora-1: #224D73; --aurora-2: #043259; --aurora-3: #3D7CC9;
+    --borde-campo: #2A5379; --primario-suave: rgba(142, 195, 242, .16); --campo-inactivo: rgba(255, 255, 255, .05);
+    --exito: #5FD4A0; --exito-suave: rgba(95, 212, 160, .13); --exito-borde: rgba(95, 212, 160, .38);
+    --alerta: #F2C76B; --alerta-suave: rgba(242, 199, 107, .13); --alerta-borde: rgba(242, 199, 107, .38);
+    --peligro: #FF9A92; --peligro-suave: rgba(255, 154, 146, .13); --peligro-borde: rgba(255, 154, 146, .38);
+    --info: #8FB8FF; --info-suave: rgba(143, 184, 255, .13); --info-borde: rgba(143, 184, 255, .38);
+    --cristal: color-mix(in srgb, var(--superficie) 62%, transparent);
+    --cristal-denso: color-mix(in srgb, var(--superficie) 80%, transparent);
+    --cristal-borde: color-mix(in srgb, var(--borde) 70%, rgba(255, 255, 255, .10));
+    --cristal-brillo: inset 0 1px 0 rgba(255, 255, 255, .09), inset 0 0 0 .5px rgba(255, 255, 255, .05);
+    --elev-1: 0 1px 2px rgba(0, 4, 12, .45), 0 2px 10px -4px rgba(0, 4, 12, .35);
+    --elev-2: 0 14px 30px -14px rgba(0, 4, 12, .75), 0 0 0 .5px rgba(255, 255, 255, .05);
+    --elev-3: 0 34px 70px -24px rgba(0, 4, 12, .85), 0 0 0 .5px rgba(255, 255, 255, .07);
+    --grad-primario: linear-gradient(180deg, color-mix(in srgb, var(--primario) 80%, #fff 20%) 0%, var(--primario) 55%, color-mix(in srgb, var(--primario) 86%, #000 14%) 100%);
+    --grad-tarjeta: linear-gradient(180deg, color-mix(in srgb, var(--superficie) 94%, #fff 6%), var(--superficie));
+    --halo-acento: 0 0 0 1px color-mix(in srgb, var(--acento) 36%, transparent), 0 10px 30px -12px color-mix(in srgb, var(--acento) 55%, transparent);
+    --anillo-foco: 0 0 0 2px var(--superficie), 0 0 0 4.5px color-mix(in srgb, var(--acento) 70%, transparent), 0 0 18px 2px color-mix(in srgb, var(--acento) 30%, transparent);
+    color-scheme: dark;
+  }
+}

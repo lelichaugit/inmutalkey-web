@@ -1,35 +1,27 @@
 ---
-import Capturas from '../components/secciones/Capturas.astro';
-import CtaFinal from '../components/secciones/CtaFinal.astro';
-import Demo from '../components/secciones/Demo.astro';
+// Portada (IDENTIDAD_MARCA §9): Hero → Pilares → Cómo funciona → Recetas → Fundadores → Seguridad →
+// Testimonios (solo si hay aprobados) → Preguntas → Contacto.
+import Cierre from '../components/secciones/Cierre.astro';
+import ComoFunciona from '../components/secciones/ComoFunciona.astro';
 import Faq from '../components/secciones/Faq.astro';
 import Fundadores from '../components/secciones/Fundadores.astro';
 import Hero from '../components/secciones/Hero.astro';
-import Incluye from '../components/secciones/Incluye.astro';
-import Integridad from '../components/secciones/Integridad.astro';
-import Pasos from '../components/secciones/Pasos.astro';
-import Problema from '../components/secciones/Problema.astro';
-import Resenas from '../components/secciones/Resenas.astro';
-import Signos from '../components/secciones/Signos.astro';
+import Pilares from '../components/secciones/Pilares.astro';
+import Recetas from '../components/secciones/Recetas.astro';
+import Seguridad from '../components/secciones/Seguridad.astro';
 import TestimoniosVivos from '../components/secciones/TestimoniosVivos.astro';
-import ZeroCloud from '../components/secciones/ZeroCloud.astro';
 import Base from '../layouts/Base.astro';
 import { sitio } from '../site.config';
 ---
 
-<Base titulo={sitio.titulo} tituloCompleto logoDiferido riel>
+<Base titulo={sitio.titulo} tituloCompleto>
   <Hero />
-  <Resenas />
-  <TestimoniosVivos />
-  <Problema />
-  <Integridad />
-  <Demo />
-  <Signos />
-  <Capturas />
-  <Incluye />
-  <ZeroCloud />
-  <Pasos />
+  <Pilares />
+  <ComoFunciona />
+  <Recetas />
   <Fundadores />
+  <Seguridad />
+  <TestimoniosVivos />
   <Faq />
-  <CtaFinal />
+  <Cierre />
 </Base>

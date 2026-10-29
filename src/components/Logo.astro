@@ -1,42 +1,117 @@
 ---
-// Isotipo plano en SVG en línea (src/data/logo.json, generado por scripts/vectorizar-logo.py).
-// La capa base usa currentColor: azul marino sobre fondos claros, blanco sobre oscuros.
-// El logo principal del sitio es el render 3D (hero); este se usa en navegación, pie y piezas chicas.
-import logo from '../data/logo.json';
-
-type Variante = 'solido' | 'contorno' | 'linea';
+// Logotipo combinado (IDENTIDAD_MARCA §2): símbolo oficial + «InmutalKey» en Inter 700, tracking −2 %, alineado al
+// centro óptico del hexágono. El símbolo es una variante oficial de la app v0.4.0 (scripts/generar-marca.mjs):
+//   · azul metálico en temas claros, plata en temas oscuros y en láminas Marino (cambia solo con el tema);
+//   · `variante="mono-blanco"` (pie): monocromo grabado blanco.
+// Nunca se recolorea, se gira en 2D ni se estira.
+import marca from '../data/marca.json';
 
 interface Props {
-  variante?: Variante;
-  /** Nombre accesible. `null` = decorativo (aria-hidden). */
-  titulo?: string | null;
+  /** Alto del símbolo en rem (mínimo 1.5 rem = 24 px, §2). */
+  alto?: number;
+  /** `auto` sigue el tema; `plata` fuerza la plata (láminas oscuras); `mono-blanco` para el pie. */
+  variante?: 'auto' | 'plata' | 'mono-blanco';
+  /** Muestra el nombre junto al símbolo. */
+  nombre?: boolean;
+  /** Eslogan debajo del nombre (Inter 500 al 45 % del tamaño del nombre). */
+  eslogan?: boolean;
   class?: string;
 }
 
-const { variante = 'solido', titulo = 'InmutalKey', class: clase } = Astro.props;
-const capas = logo[variante];
-const [, , ancho, alto] = logo.viewBox.split(' ');
+const { alto = 2, variante = 'auto', nombre = true, eslogan = false, class: clase } = Astro.props;
+const ancho = alto / marca.plata.proporcion;
+const px = (rem: number) => Math.round(rem * 16);
 ---
 
-<svg
-  xmlns="http://www.w3.org/2000/svg"
-  viewBox={logo.viewBox}
-  width={ancho}
-  height={alto}
-  class:list={['logo', clase]}
-  role={titulo ? 'img' : undefined}
-  aria-label={titulo ?? undefined}
-  aria-hidden={titulo ? undefined : 'true'}
-  focusable="false"
->
-  {titulo && <title>{titulo}</title>}
-  {capas.map((c) => <path fill={c.color} d={c.d} />)}
-</svg>
+<span class:list={['logo', `logo-${variante}`, clase]} data-alto={alto}>
+  {
+    variante === 'mono-blanco' ? (
+      <img class="logo-simbolo" src="/brand/logo-mono-blanco.svg" alt="" width={px(ancho)} height={px(alto)} loading="lazy" decoding="async" />
+    ) : (
+      <>
+        {variante === 'auto' && (
+          <picture class="logo-simbolo logo-azul">
+            <source srcset="/brand/logo-azul-64.avif 1x, /brand/logo-azul-128.avif 2x" type="image/avif" />
+            <img src="/brand/logo-azul-64.webp" srcset="/brand/logo-azul-128.webp 2x" alt="" width={px(ancho)} height={px(alto)} decoding="async" />
+          </picture>
+        )}
+        <picture class="logo-simbolo logo-plata">
+          <source srcset="/brand/logo-plata-64.avif 1x, /brand/logo-plata-128.avif 2x" type="image/avif" />
+          <img src="/brand/logo-plata-64.webp" srcset="/brand/logo-plata-128.webp 2x" alt="" width={px(ancho)} height={px(alto)} decoding="async" />
+        </picture>
+      </>
+    )
+  }
+  {
+    nombre && (
+      <span class="logo-texto">
+        <span class="logo-nombre">InmutalKey</span>
+        {eslogan && <span class="logo-eslogan">Expediente Clínico Privado</span>}
+      </span>
+    )
+  }
+</span>
 
 <style>
   .logo {
-    height: 1em;
+    --alto: 2rem;
+    display: inline-flex;
+    align-items: center;
+    gap: calc(var(--alto) * 0.3);
+    color: var(--texto);
+    line-height: 1;
+  }
+
+  .logo[data-alto='1.5'] { --alto: 1.5rem; }
+  .logo[data-alto='2'] { --alto: 2rem; }
+  .logo[data-alto='2.5'] { --alto: 2.5rem; }
+  .logo[data-alto='3'] { --alto: 3rem; }
+
+  .logo-simbolo,
+  .logo-simbolo :global(img) {
+    display: block;
+    height: var(--alto);
     width: auto;
     flex: none;
+  }
+
+  .logo-simbolo {
+    filter: drop-shadow(0 3px 6px rgb(3 35 64 / 0.28));
+  }
+
+  .logo-mono-blanco .logo-simbolo {
+    filter: none;
+  }
+
+  /* El símbolo cambia con el tema: azul en claro, plata en oscuro (igual que la app con [data-theme^="oscuro"]). */
+  .logo-auto .logo-plata { display: none; }
+  :global(:root[data-theme='oscuro']) .logo-auto .logo-plata,
+  :global(:root[data-theme='aurora']) .logo-auto .logo-plata,
+  :global(.tema-marino) .logo-auto .logo-plata { display: block; }
+  :global(:root[data-theme='oscuro']) .logo-auto .logo-azul,
+  :global(:root[data-theme='aurora']) .logo-auto .logo-azul,
+  :global(.tema-marino) .logo-auto .logo-azul { display: none; }
+
+  @media (prefers-color-scheme: dark) {
+    :global(:root:not([data-theme])) .logo-auto .logo-plata { display: block; }
+    :global(:root:not([data-theme])) .logo-auto .logo-azul { display: none; }
+  }
+
+  .logo-texto {
+    display: grid;
+    gap: calc(var(--alto) * 0.12);
+  }
+
+  .logo-nombre {
+    font-size: calc(var(--alto) * 0.56);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+
+  .logo-eslogan {
+    font-size: calc(var(--alto) * 0.56 * 0.45);
+    font-weight: 500;
+    letter-spacing: 0;
+    color: var(--texto-2);
   }
 </style>

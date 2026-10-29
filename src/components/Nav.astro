@@ -1,290 +1,186 @@
 ---
-import { enlaceWhatsApp } from '../lib/whatsapp';
-import { sitio } from '../site.config';
-import Compartir from './Compartir.astro';
-import Contacto from './Contacto.astro';
+// Barra de navegación de cristal fija (equivale a `.barra-superior.topbar` de la app): logo, secciones, tema y CTA.
+// Cristal real (backdrop-filter): es cromo. En celular, las secciones viven en un <details> (funciona sin JS).
 import Icono from './Icono.astro';
 import Logo from './Logo.astro';
-
-interface Props {
-  /**
-   * Portada: el isotipo de la barra espera a que el logo principal (render 3D del hero,
-   * marcado con `data-isotipo-principal`) salga de la vista, como si se "acomodara" en la barra.
-   */
-  logoDiferido?: boolean;
-}
-
-const { logoDiferido = false } = Astro.props;
-const prueba = enlaceWhatsApp(sitio.contacto.whatsapp, sitio.contacto.mensajes.prueba);
+import SelectorTema from './SelectorTema.astro';
 
 const ENLACES = [
-  { id: 'integridad', texto: 'Cómo funciona' },
-  { id: 'demo', texto: 'Pruébalo' },
-  { id: 'incluye', texto: 'Qué incluye' },
+  { id: 'como-funciona', texto: 'Cómo funciona' },
+  { id: 'recetas', texto: 'Recetas' },
+  { id: 'seguridad', texto: 'Seguridad' },
   { id: 'fundadores', texto: 'Fundadores' },
   { id: 'preguntas', texto: 'Preguntas' },
 ] as const;
 ---
 
-<header class="nav" data-nav data-logo={logoDiferido ? 'diferido' : 'visible'}>
-  <div class="contenedor nav-fila">
+<header class="nav" data-nav>
+  <div class="nav-barra">
     <a class="nav-marca" href="/" aria-label="InmutalKey, ir al inicio">
-      <Logo titulo={null} class="nav-isotipo" />
-      <span class="nav-titulos" aria-hidden="true">
-        <span class="nav-nombre">InmutalKey</span>
-        <span class="nav-capitulo" data-nav-capitulo></span>
-      </span>
+      <Logo alto={2} />
     </a>
 
     <nav class="nav-enlaces" aria-label="Principal">
       <ul>
-        {ENLACES.map((e) => <li><a href={`/#${e.id}`} data-seccion={e.id} data-etiqueta={e.texto}>{e.texto}</a></li>)}
+        {ENLACES.map((e) => <li><a href={`/#${e.id}`} data-seccion={e.id}>{e.texto}</a></li>)}
       </ul>
-      <span class="nav-indicador" data-nav-indicador aria-hidden="true"></span>
     </nav>
 
-    {
-      prueba && (
-        <a class="boton boton-primario boton-chico nav-cta" href={prueba} target="_blank" rel="noopener noreferrer">
-          <Icono nombre="chat" />
-          <span>
-            Escríbenos<span class="nav-cta-largo"> por WhatsApp</span>
-          </span>
-        </a>
-      )
-    }
-
-    <details class="nav-menu" data-nav-menu>
-      <summary>
-        <Icono nombre="menu" class="nav-menu-abrir" />
-        <Icono nombre="cerrar" class="nav-menu-cerrar" />
-        <span class="visualmente-oculto">Menú</span>
-      </summary>
-      <div class="nav-hoja" data-lenis-prevent>
-        <nav aria-label="Menú">
-          <ul>
-            {ENLACES.map((e, i) => (
-              <li>
-                <a href={`/#${e.id}`} data-seccion={e.id}>
-                  <span class="nav-hoja-num" aria-hidden="true">0{i + 1}</span>
-                  {e.texto}
-                </a>
-              </li>
-            ))}
-          </ul>
-        </nav>
-        {
-          prueba && (
-            <a class="boton boton-primario nav-hoja-cta" href={prueba} target="_blank" rel="noopener noreferrer">
-              <Icono nombre="chat" /> Pide tus {sitio.licencia.diasPrueba} días de prueba
-            </a>
-          )
-        }
-        <Compartir variante="enlace" class="nav-hoja-compartir" />
-        <Contacto variante="fila" incluir={['correo', 'instagram']} class="nav-hoja-contacto" />
-        <p class="nav-hoja-pie">Sin internet · Diseñado para la NOM-004 · Windows 10 y 11</p>
-      </div>
-    </details>
+    <div class="nav-acciones">
+      <SelectorTema class="nav-tema" />
+      <a class="boton boton-primario nav-cta" href="/fundadores">
+        <span class="nav-cta-largo">Solicitar acceso Fundador</span><span class="nav-cta-corto">Acceso Fundador</span>
+      </a>
+      <details class="nav-menu" data-nav-menu>
+        <summary aria-label="Menú">
+          <Icono nombre="menu" class="nav-menu-abrir" />
+          <Icono nombre="cerrar" class="nav-menu-cerrar" />
+        </summary>
+        <div class="nav-hoja cristal">
+          <nav aria-label="Secciones">
+            <ul>
+              {ENLACES.map((e) => <li><a href={`/#${e.id}`}>{e.texto}<Icono nombre="flecha" /></a></li>)}
+              <li><a href="/descarga">Descarga<Icono nombre="flecha" /></a></li>
+              <li><a href="/contacto">Contacto<Icono nombre="flecha" /></a></li>
+            </ul>
+          </nav>
+          <SelectorTema class="nav-hoja-tema" />
+          <a class="boton boton-primario boton-grande" href="/fundadores">Solicitar acceso Fundador</a>
+        </div>
+      </details>
+    </div>
   </div>
 </header>
 
 <style>
   .nav {
-    position: sticky;
-    top: 0;
+    position: fixed;
+    inset: 0 0 auto;
     z-index: 50;
-    height: var(--altura-nav);
-    border-bottom: 1px solid transparent;
-    view-transition-name: barra;
-    transition:
-      background-color 0.35s var(--ease),
-      border-color 0.35s var(--ease),
-      transform 0.45s var(--ease);
+    padding: 0.625rem var(--medianil) 0;
+    pointer-events: none;
   }
 
-  /* Sin JS o con scroll: barra sólida translúcida. Arriba del todo: transparente sobre el hero. */
-  .nav,
-  :global(.js) .nav[data-scroll='si'] {
-    background: rgb(6 11 22 / 0.78);
-    border-bottom-color: var(--linea-oscura);
-    -webkit-backdrop-filter: blur(16px) saturate(150%);
-    backdrop-filter: blur(16px) saturate(150%);
-  }
-
-  /* Con el menú abierto, sin backdrop-filter ni transform: ambos harían de la barra el marco del panel fijo. */
-  .nav:has(.nav-menu[open]),
-  :global(.js) .nav:has(.nav-menu[open]) {
-    background: var(--medianoche);
-    border-bottom-color: var(--linea-oscura);
-    -webkit-backdrop-filter: none;
-    backdrop-filter: none;
-    transform: none;
-  }
-
-  :global(.js) .nav:not([data-scroll='si']):not(:has(.nav-menu[open])) {
-    background: transparent;
-    border-bottom-color: transparent;
-    -webkit-backdrop-filter: none;
-    backdrop-filter: none;
-  }
-
-  /* Se esconde al bajar y regresa al subir: más espacio para leer. */
-  :global(.js) .nav[data-oculta='si'] {
-    transform: translateY(-100%);
-  }
-
-  .nav-fila {
+  .nav-barra {
+    pointer-events: auto;
     display: flex;
     align-items: center;
-    gap: clamp(12px, 2.5vw, 32px);
-    height: 100%;
+    gap: 1rem;
+    width: min(100%, var(--ancho-amplio));
+    height: var(--altura-nav);
+    margin-inline: auto;
+    padding: 0 0.5rem 0 1rem;
+    border: 1px solid var(--cristal-borde);
+    border-radius: var(--radio-lg);
+    background: linear-gradient(180deg, var(--cristal-denso), var(--cristal));
+    box-shadow:
+      var(--cristal-brillo),
+      0 8px 24px -18px rgb(3 35 64 / 0.6);
+    -webkit-backdrop-filter: var(--cristal-blur);
+    backdrop-filter: var(--cristal-blur);
+    transition:
+      transform 420ms var(--curva-cristal),
+      box-shadow 240ms ease;
+  }
+
+  .nav[data-scroll='si'] .nav-barra {
+    box-shadow:
+      var(--cristal-brillo),
+      var(--elev-2);
+  }
+
+  /* Al bajar se retira; al subir vuelve (base.ts). Solo transform. */
+  .nav[data-oculta='si'] .nav-barra {
+    transform: translateY(calc(-100% - 1rem));
   }
 
   .nav-marca {
     display: inline-flex;
     align-items: center;
-    min-height: 44px;
-    gap: 0.6rem;
-    margin-right: auto;
-    color: #fff;
-    text-decoration: none;
-    font-size: 2.25rem;
-    border-radius: 8px;
-  }
-
-  /* Marca y título de sección comparten lugar: en móvil, dentro de una sección, se ve dónde estás. */
-  .nav-titulos {
-    display: grid;
-    align-items: center;
-  }
-
-  .nav-nombre,
-  .nav-capitulo {
-    grid-area: 1 / 1;
-    font-family: var(--fuente-titulo);
-    font-size: 1.3125rem;
-    font-weight: 600;
-    letter-spacing: -0.015em;
-    white-space: nowrap;
-    transition:
-      opacity 0.35s var(--ease),
-      transform 0.45s var(--ease);
-  }
-
-  .nav-capitulo {
+    min-height: 2.75rem;
+    padding: 0.25rem;
+    margin-left: -0.25rem;
     color: var(--texto);
-    font-size: 1.125rem;
-    opacity: 0;
-    transform: translateY(60%);
+    text-decoration: none;
   }
 
-  @media (max-width: 1079px) {
-    :global(.js) .nav[data-capitulo='si'] .nav-nombre {
-      opacity: 0;
-      transform: translateY(-60%);
-    }
-
-    :global(.js) .nav[data-capitulo='si'] .nav-capitulo {
-      opacity: 1;
-      transform: none;
-    }
-
-    :global(.js) .nav-capitulo:global(.es-nuevo) {
-      animation: capitulo-entra 0.45s var(--ease);
-    }
+  .nav-marca :global(.logo-simbolo) {
+    transition: transform 900ms cubic-bezier(0.45, 0, 0.2, 1);
+    transform-style: preserve-3d;
   }
 
-  @keyframes capitulo-entra {
-    from {
-      opacity: 0;
-      transform: translateY(60%);
-    }
+  /* Guiño 3D al pasar el cursor (anticipa el giro, §2). */
+  .nav-marca:hover :global(.logo-simbolo) {
+    transform: perspective(220px) rotateY(-22deg) scale(1.04);
   }
 
-  .nav-marca :global(.nav-isotipo) {
-    transition:
-      opacity 0.5s var(--ease),
-      transform 0.6s var(--ease);
-  }
-
-  :global(.js) .nav[data-logo='diferido'] .nav-marca :global(.nav-isotipo) {
-    opacity: 0;
-    transform: translateY(10px) scale(0.6);
-  }
-
-  /* ── Enlaces con indicador de sección ── */
   .nav-enlaces {
-    position: relative;
+    margin-inline: auto;
   }
 
-  .nav-enlaces ul,
-  .nav-hoja ul {
+  .nav-enlaces ul {
+    display: flex;
+    gap: 0.25rem;
     margin: 0;
     padding: 0;
     list-style: none;
   }
 
-  .nav-enlaces ul {
-    display: flex;
-    gap: 4px;
-  }
-
   .nav-enlaces a {
     display: inline-flex;
     align-items: center;
-    min-height: 40px;
-    padding: 0 12px;
-    border-radius: 999px;
-    color: var(--texto-tenue);
-    font-size: 0.975rem;
-    font-weight: 500;
+    min-height: 2.5rem;
+    padding: 0 0.875rem;
+    border-radius: var(--radio-sm);
+    color: var(--texto-2);
+    font-size: 0.9375rem;
+    font-weight: 560;
     text-decoration: none;
     transition:
-      color 0.25s var(--ease),
-      background-color 0.25s var(--ease);
+      background-color 160ms ease,
+      color 160ms ease;
   }
 
-  .nav-enlaces a:hover {
-    color: #fff;
-    background: rgb(255 255 255 / 0.05);
-  }
-
+  .nav-enlaces a:hover,
   .nav-enlaces a[aria-current='true'] {
-    color: #fff;
+    background: color-mix(in srgb, var(--texto) 6%, transparent);
+    color: var(--texto);
   }
 
-  .nav-indicador {
-    position: absolute;
-    left: 0;
-    bottom: -3px;
-    width: var(--w, 0);
-    height: 2px;
-    border-radius: 2px;
-    background: linear-gradient(90deg, var(--azul), var(--azul-vivo));
-    box-shadow: 0 0 12px rgb(46 159 224 / 0.8);
-    opacity: var(--o, 0);
-    transform: translateX(var(--x, 0));
-    transition:
-      transform 0.5s var(--ease),
-      width 0.5s var(--ease),
-      opacity 0.3s var(--ease);
-    pointer-events: none;
+  .nav-acciones {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-left: auto;
   }
 
-  .nav-cta-largo {
+  .nav-enlaces + .nav-acciones {
+    margin-left: 0;
+  }
+
+  .nav-cta {
+    min-height: 2.75rem;
+    padding-inline: 1rem;
+    font-size: 0.9375rem;
+    white-space: nowrap;
+  }
+
+  .nav-cta-corto {
     display: none;
   }
 
-  /* ── Menú móvil: hoja a pantalla completa ── */
-  .nav-menu summary {
+  .nav-menu {
     position: relative;
-    z-index: 2;
+    display: none;
+  }
+
+  .nav-menu summary {
     display: grid;
     place-items: center;
-    width: 48px;
-    height: 48px;
-    border: 1px solid var(--linea-oscura-fuerte);
-    border-radius: 999px;
+    width: 2.75rem;
+    height: 2.75rem;
+    border-radius: var(--radio-sm);
+    color: var(--texto);
     cursor: pointer;
     list-style: none;
   }
@@ -293,9 +189,8 @@ const ENLACES = [
     display: none;
   }
 
-  .nav-menu summary :global(.icono) {
-    width: 22px;
-    height: 22px;
+  .nav-menu summary:hover {
+    background: color-mix(in srgb, var(--texto) 6%, transparent);
   }
 
   .nav-menu :global(.nav-menu-cerrar),
@@ -308,144 +203,104 @@ const ENLACES = [
   }
 
   .nav-hoja {
-    position: fixed;
-    inset: var(--altura-nav) 0 0;
-    z-index: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 28px;
-    padding: 28px var(--margen) calc(28px + env(safe-area-inset-bottom));
-    background:
-      radial-gradient(80% 50% at 100% 100%, rgb(1 120 176 / 0.35), transparent 70%),
-      var(--medianoche);
-    overflow-y: auto;
-    animation: hoja 0.45s var(--ease);
+    position: absolute;
+    top: calc(100% + 0.875rem);
+    right: -0.5rem;
+    display: grid;
+    gap: 1rem;
+    width: min(22rem, calc(100vw - 2 * var(--medianil)));
+    padding: 0.75rem;
+    border-radius: var(--radio-xl);
+    /* Dentro de la barra (que ya es la raíz del desenfoque) el blur no alcanza la página: superficie casi opaca. */
+    background: color-mix(in srgb, var(--superficie) 97%, transparent);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    animation: hoja-entrada 300ms var(--curva-cristal);
   }
 
-  @keyframes hoja {
+  @keyframes hoja-entrada {
     from {
       opacity: 0;
-      transform: translateY(-12px);
+      transform: translateY(-6px) scale(0.98);
     }
   }
 
-  .nav-hoja li {
-    border-bottom: 1px solid var(--linea-oscura);
-    animation: hoja-enlace 0.5s var(--ease) backwards;
+  .nav-hoja ul {
+    display: grid;
+    margin: 0;
+    padding: 0;
+    list-style: none;
   }
 
-  .nav-hoja li:nth-child(2) {
-    animation-delay: 0.04s;
-  }
-  .nav-hoja li:nth-child(3) {
-    animation-delay: 0.08s;
-  }
-  .nav-hoja li:nth-child(4) {
-    animation-delay: 0.12s;
-  }
-  .nav-hoja li:nth-child(5) {
-    animation-delay: 0.16s;
+  .nav-hoja li + li {
+    border-top: 1px solid var(--linea);
   }
 
-  @keyframes hoja-enlace {
-    from {
-      opacity: 0;
-      transform: translateY(14px);
-    }
-  }
-
-  .nav-hoja a[data-seccion] {
+  .nav-hoja a:not(.boton) {
     display: flex;
-    align-items: baseline;
-    gap: 14px;
-    padding: 18px 0;
-    font-family: var(--fuente-titulo);
-    font-size: clamp(1.75rem, 7vw, 2.25rem);
-    font-weight: 600;
-    letter-spacing: -0.02em;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 3rem;
+    padding: 0 0.75rem;
+    border-radius: var(--radio-sm);
+    color: var(--texto);
+    font-size: 1.0625rem;
+    font-weight: 560;
     text-decoration: none;
   }
 
-  .nav-hoja a[aria-current='true'] {
-    color: var(--azul-vivo);
+  .nav-hoja a:not(.boton) :global(.icono) {
+    color: var(--texto-2);
   }
 
-  .nav-hoja-num {
-    font-family: var(--fuente-texto);
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: var(--texto-tenue);
+  .nav-hoja > :global(.nav-hoja-tema) {
+    justify-self: center;
   }
 
-  .nav-hoja-cta {
-    align-self: stretch;
-  }
-
-  .nav-hoja :global(.nav-hoja-compartir) {
-    align-self: center;
-  }
-
-  .nav-hoja :global(.nav-hoja-contacto) {
-    justify-content: center;
-  }
-
-  /* Celulares de pantalla baja: renglones más compactos para que botón, compartir y contacto quepan sin desplazar. */
-  @media (max-height: 820px) {
-    .nav-hoja {
-      gap: 18px;
-      padding-top: 12px;
-    }
-
-    .nav-hoja a[data-seccion] {
-      padding: 11px 0;
-      font-size: clamp(1.5rem, 6.4vw, 1.875rem);
-    }
-
-    .nav-hoja-pie {
-      display: none;
-    }
-  }
-
-  .nav-hoja-pie {
-    margin-top: auto;
-    color: var(--texto-tenue);
-    font-size: 0.9375rem;
-  }
-
-  @media (max-width: 1079px) {
+  @media (max-width: 68rem) {
     .nav-enlaces {
       display: none;
     }
-  }
 
-  @media (max-width: 380px) {
-    .nav-nombre {
-      font-size: 1.125rem;
-    }
-    .nav-capitulo {
-      font-size: 1rem;
-    }
-    .nav-cta {
-      padding-inline: 0.9em;
-    }
-  }
-
-  @media (min-width: 1080px) {
     .nav-menu {
+      display: block;
+    }
+
+    .nav-acciones > :global(.nav-tema) {
+      display: none !important;
+    }
+  }
+
+  @media (max-width: 30rem) {
+    .nav-barra {
+      padding-left: 0.75rem;
+      gap: 0.5rem;
+    }
+
+    .nav-cta-largo {
+      display: none;
+    }
+
+    .nav-cta-corto {
+      display: inline;
+    }
+
+    .nav-cta {
+      padding-inline: 0.75rem;
+    }
+  }
+
+  @media (max-width: 23.5rem) {
+    .nav-marca :global(.logo-nombre) {
       display: none;
     }
   }
 
-  @media (min-width: 1280px) {
-    .nav-cta-largo {
-      display: inline;
-    }
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .nav-hoja,
-    .nav-hoja li {
-      animation: none;
+  @media (prefers-reduced-transparency: reduce) {
+    .nav-barra {
+      background: var(--superficie);
+      -webkit-backdrop-filter: none;
+      backdrop-filter: none;
     }
   }
 </style>

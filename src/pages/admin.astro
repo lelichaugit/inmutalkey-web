@@ -6,6 +6,9 @@ import '../styles/global.css';
 
 import { UTM_FUENTES } from '../compartido/eventos';
 import { ESTATUS_LEAD } from '../compartido/leads';
+import { paquete, sitio } from '../site.config';
+
+const instalador = paquete('instalador');
 ---
 
 <!doctype html>
@@ -116,10 +119,10 @@ import { ESTATUS_LEAD } from '../compartido/leads';
           <code>Get-FileHash .\archivo.exe -Algorithm SHA256</code> y pégalo aquí: es el que verán los médicos en /verificar.
         </p>
         <form class="panel-formulario" data-form-version>
-          <label>Versión <input name="version" required placeholder="0.3.0" maxlength="32" /></label>
-          <label>Ruta en R2 <input name="clave_r2" required placeholder="instaladores/InmutalKey_0.3.0_x64-setup.exe" maxlength="200" /></label>
-          <label>Nombre del archivo <input name="nombre_archivo" required placeholder="InmutalKey_0.3.0_x64-setup.exe" maxlength="120" /></label>
-          <label class="panel-ancho">SHA-256 <input name="sha256" required minlength="64" maxlength="64" spellcheck="false" /></label>
+          <label>Versión <input name="version" required placeholder={sitio.version.numero} maxlength="32" /></label>
+          <label>Ruta en R2 <input name="clave_r2" required placeholder={instalador.claveR2} maxlength="200" /></label>
+          <label>Nombre del archivo <input name="nombre_archivo" required placeholder={instalador.archivo} maxlength="120" /></label>
+          <label class="panel-ancho">SHA-256 <input name="sha256" required minlength="64" maxlength="64" spellcheck="false" placeholder={instalador.sha256} /></label>
           <label class="panel-casilla"><input type="checkbox" name="vigente" checked /> Es la versión que se envía al aprobar pruebas</label>
           <button type="submit">Registrar</button>
         </form>
@@ -165,15 +168,15 @@ import { ESTATUS_LEAD } from '../compartido/leads';
   body.panel {
     min-height: 100vh;
     margin: 0;
-    background: var(--medianoche);
+    background: var(--fondo);
     color: var(--texto);
-    font-family: var(--fuente-texto);
+    font-family: var(--fuente);
     font-size: 0.9375rem;
   }
 
   .panel :is(h1, h2) {
     margin: 32px 0 8px;
-    font-family: var(--fuente-titulo);
+    font-family: var(--fuente);
     font-size: 1.25rem;
   }
 
@@ -187,19 +190,19 @@ import { ESTATUS_LEAD } from '../compartido/leads';
     justify-content: space-between;
     gap: 12px;
     padding: 12px var(--margen);
-    border-bottom: 1px solid var(--linea-oscura-fuerte);
-    background: var(--navy);
+    border-bottom: 1px solid var(--borde);
+    background: var(--marca-marino);
   }
 
   .panel-marca {
     margin: 0;
-    font-family: var(--fuente-titulo);
+    font-family: var(--fuente);
     font-weight: 600;
   }
 
   .panel-sesion {
     margin: 0;
-    color: var(--texto-tenue);
+    color: var(--texto-2);
     font-size: 0.8125rem;
   }
 
@@ -213,7 +216,7 @@ import { ESTATUS_LEAD } from '../compartido/leads';
   .panel-boton-secundario {
     min-height: 40px;
     padding: 0 14px;
-    border: 1px solid var(--linea-oscura-fuerte);
+    border: 1px solid var(--borde);
     border-radius: 999px;
     background: transparent;
     color: var(--texto);
@@ -227,19 +230,19 @@ import { ESTATUS_LEAD } from '../compartido/leads';
 
   .panel button:hover,
   .panel-boton-secundario:hover {
-    border-color: var(--azul-vivo);
+    border-color: var(--primario);
   }
 
   .panel button[aria-pressed='true'],
   .panel button[type='submit'] {
     border-color: transparent;
-    background: var(--azul);
+    background: var(--primario);
     color: #fff;
   }
 
   .panel button.peligro {
-    border-color: var(--error);
-    color: var(--error);
+    border-color: var(--peligro);
+    color: var(--peligro);
     background: transparent;
   }
 
@@ -263,7 +266,7 @@ import { ESTATUS_LEAD } from '../compartido/leads';
 
   .panel-aviso.error {
     background: rgb(255 107 107 / 0.15);
-    color: var(--error);
+    color: var(--peligro);
   }
 
   .panel-filtros,
@@ -279,7 +282,7 @@ import { ESTATUS_LEAD } from '../compartido/leads';
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
     padding: 16px;
-    border: 1px solid var(--linea-oscura);
+    border: 1px solid var(--linea);
     border-radius: 14px;
   }
 
@@ -290,7 +293,7 @@ import { ESTATUS_LEAD } from '../compartido/leads';
   .panel label {
     display: grid;
     gap: 4px;
-    color: var(--texto-tenue);
+    color: var(--texto-2);
     font-size: 0.8125rem;
   }
 
@@ -303,7 +306,7 @@ import { ESTATUS_LEAD } from '../compartido/leads';
   .panel :is(input, select, textarea) {
     min-height: 40px;
     padding: 6px 10px;
-    border: 1px solid var(--linea-oscura-fuerte);
+    border: 1px solid var(--borde);
     border-radius: 8px;
     background: var(--medianoche-2, #0b1324);
     color: var(--texto);
@@ -316,7 +319,7 @@ import { ESTATUS_LEAD } from '../compartido/leads';
 
   .panel-nota {
     margin: 4px 0 12px;
-    color: var(--texto-tenue);
+    color: var(--texto-2);
     font-size: 0.8125rem;
   }
 
@@ -328,29 +331,29 @@ import { ESTATUS_LEAD } from '../compartido/leads';
 
   .panel-tarjeta {
     padding: 14px;
-    border: 1px solid var(--linea-oscura);
+    border: 1px solid var(--linea);
     border-radius: 14px;
     background: rgb(255 255 255 / 0.03);
   }
 
   .panel-tarjeta strong {
     display: block;
-    font-family: var(--fuente-titulo);
+    font-family: var(--fuente);
     font-size: 1.75rem;
   }
 
   .panel-tarjeta span {
-    color: var(--texto-tenue);
+    color: var(--texto-2);
     font-size: 0.8125rem;
   }
 
   .panel-tarjeta.alerta {
-    border-color: var(--error);
+    border-color: var(--peligro);
   }
 
   .panel-tabla-marco {
     overflow-x: auto;
-    border: 1px solid var(--linea-oscura);
+    border: 1px solid var(--linea);
     border-radius: 12px;
   }
 
@@ -361,7 +364,7 @@ import { ESTATUS_LEAD } from '../compartido/leads';
 
   .panel :is(th, td) {
     padding: 8px 10px;
-    border-bottom: 1px solid var(--linea-oscura);
+    border-bottom: 1px solid var(--linea);
     text-align: left;
     vertical-align: top;
     white-space: nowrap;
@@ -373,7 +376,7 @@ import { ESTATUS_LEAD } from '../compartido/leads';
   }
 
   .panel th {
-    color: var(--texto-tenue);
+    color: var(--texto-2);
     font-weight: 600;
   }
 
@@ -395,7 +398,7 @@ import { ESTATUS_LEAD } from '../compartido/leads';
   }
 
   .panel-detalle dt {
-    color: var(--texto-tenue);
+    color: var(--texto-2);
     font-size: 0.75rem;
   }
 
@@ -423,11 +426,11 @@ import { ESTATUS_LEAD } from '../compartido/leads';
   }
 
   .panel .si {
-    color: var(--esmeralda-vivo);
+    color: var(--exito);
   }
 
   .panel .no {
-    color: var(--texto-tenue);
+    color: var(--texto-2);
   }
 
   .panel code {

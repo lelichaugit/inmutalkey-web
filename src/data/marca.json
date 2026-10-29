@@ -1,16 +1,40 @@
 {
- "llave": {
-  "disponible": true,
-  "ancho": 304,
-  "alto": 724,
-  "anchos": [
-   152,
-   304,
-   456,
-   608
+ "plata": {
+  "proporcion": 2.8048,
+  "tamanos": [
+   {
+    "alto": 64,
+    "ancho": 23
+   },
+   {
+    "alto": 128,
+    "ancho": 46
+   },
+   {
+    "alto": 280,
+    "ancho": 100
+   },
+   {
+    "alto": 420,
+    "ancho": 150
+   },
+   {
+    "alto": 560,
+    "ancho": 200
+   }
   ]
  },
- "avatar": {
-  "disponible": false
+ "azul": {
+  "proporcion": 2.8048,
+  "tamanos": [
+   {
+    "alto": 64,
+    "ancho": 23
+   },
+   {
+    "alto": 128,
+    "ancho": 46
+   }
+  ]
  }
 }

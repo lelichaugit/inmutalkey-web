@@ -15,45 +15,47 @@ import PasosRegistro from '../components/PasosRegistro.astro';
 import PaginaTexto from '../layouts/PaginaTexto.astro';
 import { detectarEntorno, siteKeyTurnstile } from '../lib/entorno';
 import { enlaceWhatsApp } from '../lib/whatsapp';
-import { estaDefinido, sitio } from '../site.config';
+import { estaDefinido, paquete, sitio } from '../site.config';
 
 const entorno = detectarEntorno(process.env, { servidorDev: import.meta.env.DEV });
 const sitekey = siteKeyTurnstile(entorno, estaDefinido(sitio.turnstile.siteKey) ? sitio.turnstile.siteKey : null);
 const conGoogle = sitio.google.habilitado || entorno !== 'produccion';
-const { instalador, licencia } = sitio;
-const version = estaDefinido(instalador.version) ? instalador.version : null;
-const huella = estaDefinido(instalador.sha256) ? instalador.sha256.toUpperCase() : null;
-const archivo = estaDefinido(instalador.archivo) ? instalador.archivo : 'InmutalKey*setup.exe';
+const { licencia } = sitio;
+const instalador = paquete('instalador');
+const version = sitio.version.numero;
+const huella = instalador.sha256;
+const archivo = instalador.archivo;
 const comando = `Get-FileHash "$env:USERPROFILE\\Downloads\\${archivo}" -Algorithm SHA256`;
 const ayuda = enlaceWhatsApp(sitio.contacto.whatsapp, 'Hola, estoy instalando la prueba de InmutalKey y necesito ayuda.');
 const correo = estaDefinido(sitio.contacto.correo) ? sitio.contacto.correo : null;
 ---
 
 <PaginaTexto
-  titulo="Instala tu prueba de InmutalKey"
-  descripcion={`Te guiamos paso a paso. Son unos 5 minutos en la computadora de tu consultorio y tienes ${licencia.diasPrueba} días con todas las funciones.`}
-  antetitulo={version ? `Beta ${version} · ${licencia.diasPrueba} días de prueba` : `${licencia.diasPrueba} días de prueba`}
+  titulo="Instale su prueba de InmutalKey"
+  descripcion={`Le guiamos paso a paso. Son unos 5 minutos en la computadora de su consultorio y tiene ${licencia.diasPrueba} días con todas las funciones.`}
+  antetitulo={`Versión ${version} · ${licencia.diasPrueba} días de prueba`}
   indexar={false}
-  amplio
+  estrecho
 >
   <div class="instalacion" data-pagina-descarga data-sitekey={sitekey ?? undefined}>
     <PasosRegistro actual={3} />
 
-    <section class="tarjeta-instalador" aria-labelledby="instalador-titulo">
+    <section class="tarjeta-instalador cristal" aria-labelledby="instalador-titulo">
       <div class="instalador-cabecera">
-        <span class="instalador-sello" aria-hidden="true"><Icono nombre="computadora" /></span>
+        <span class="sello" aria-hidden="true"><Icono nombre="computadora" /></span>
         <div>
-          <h2 id="instalador-titulo">InmutalKey <span data-version>{version ?? ''}</span> para Windows</h2>
+          <h2 id="instalador-titulo">InmutalKey <span class="cifras" data-version>{version}</span> para Windows</h2>
           <p class="instalador-meta">
-            <span data-archivo>Instalador para Windows 10 y 11 (64 bits)</span>
+            <span data-archivo>{archivo}</span>
+            <span>Windows 10 y 11 (64 bits)</span>
             <span data-tamano></span>
           </p>
         </div>
       </div>
 
       <div data-paso="cargando">
-        <p class="tenue">Preparando tu enlace…</p>
-        <noscript><p>Para descargar necesitas JavaScript activado. También puedes escribirnos y te ayudamos.</p></noscript>
+        <p class="tenue">Preparando su enlace…</p>
+        <noscript><p>Para descargar necesita JavaScript activado. También puede escribirnos y le ayudamos.</p></noscript>
       </div>
 
       <div data-paso="descargar" hidden>
@@ -70,51 +72,48 @@ const correo = estaDefinido(sitio.contacto.correo) ? sitio.contacto.correo : nul
 
       <div data-paso="movil" hidden>
         <p>
-          Parece que estás en un celular o en una Mac. InmutalKey se instala en la computadora con Windows de tu
-          consultorio: te mandamos este mismo enlace a tu correo para que lo abras allá.
+          Parece que está en un celular o en una Mac. InmutalKey se instala en la computadora con Windows de su consultorio: le enviamos este mismo enlace a su correo para que lo abra allá.
         </p>
         <div class="instalador-acciones">
-          <button type="button" class="boton boton-primario" data-a-mi-correo><Icono nombre="correo" /> Mandármelo al correo</button>
+          <button type="button" class="boton boton-primario" data-a-mi-correo><Icono nombre="correo" /> Enviármelo al correo</button>
           <button type="button" class="enlace-boton" data-forzar>Descargar aquí de todos modos</button>
         </div>
       </div>
 
       <div data-paso="enviado" hidden>
         <p class="instalador-listo">
-          <Icono nombre="check" /> Listo: lo enviamos a <strong data-correo-enmascarado></strong>. Ábrelo en tu computadora;
-          el enlace sigue sin usarse.
+          <Icono nombre="check" /> Listo: lo enviamos a <strong data-correo-enmascarado></strong>. Ábralo en su computadora; el enlace sigue sin usarse.
         </p>
       </div>
 
       <div data-paso="iniciada" tabindex="-1" hidden>
         <p class="instalador-listo">
-          <Icono nombre="check" /> Tu descarga empezó. Revisa la carpeta <strong>Descargas</strong> y sigue los pasos de abajo.
+          <Icono nombre="check" /> Su descarga empezó. Revise la carpeta <strong>Descargas</strong> y siga los pasos de abajo.
         </p>
       </div>
 
       <div data-paso="sin-enlace" hidden>
-        <p data-motivo="sin-token">Para descargar necesitas tu enlace personal. Si aún no te registras, toma un minuto.</p>
+        <p data-motivo="sin-token">Para descargar necesita su enlace personal. Si aún no se registra, toma un minuto.</p>
         <p data-motivo="vencido" hidden>
-          Este enlace ya se usó o venció (duran 72 horas y descargan una vez). Pide uno nuevo con el correo con que te
-          registraste.
+          Este enlace ya se usó o venció (duran 72 horas y descargan una vez). Pida uno nuevo con el correo con el que se registró.
         </p>
         <div class="instalador-acciones">
-          <a class="boton boton-primario" href="/fundadores"><Icono nombre="usuario" /> Registrarme gratis</a>
+          <a class="boton boton-primario" href="/fundadores"><Icono nombre="usuario" /> Solicitar acceso Fundador</a>
         </div>
         {conGoogle && <div class="instalador-google"><BotonGoogle /></div>}
         <form class="formulario formulario-compacto" data-formulario="reenviar" data-sitekey={sitekey ?? undefined}>
           <label class="campo">
-            <span>¿Ya te registraste? Pide un enlace nuevo</span>
-            <input name="correo" type="email" required maxlength="160" autocomplete="email" inputmode="email" placeholder="tu@correo.com" />
+            <span>¿Ya se registró? Pida un enlace nuevo</span>
+            <input name="correo" type="email" required maxlength="160" autocomplete="email" inputmode="email" placeholder="nombre@correo.com" />
           </label>
           <div class="turnstile" data-turnstile></div>
-          <button type="submit" class="boton boton-secundario" disabled={!sitekey}><Icono nombre="enviar" /> Enviarme un enlace</button>
+          <button type="submit" class="boton" disabled={!sitekey}><Icono nombre="enviar" /> Enviarme un enlace</button>
           <p class="formulario-estado" data-estado role="status" aria-live="polite"></p>
         </form>
       </div>
 
       <div data-paso="error" hidden>
-        <p>No pudimos preparar la descarga. Revisa tu conexión y vuelve a intentarlo, o escríbenos.</p>
+        <p>No pudimos preparar la descarga. Revise su conexión y vuelva a intentarlo, o escríbanos.</p>
       </div>
     </section>
 
@@ -125,10 +124,10 @@ const correo = estaDefinido(sitio.contacto.correo) ? sitio.contacto.correo : nul
         <div>
           <h3>Antes de empezar</h3>
           <ul>
-            <li>Una computadora con <strong>Windows 10 u 11 de 64 bits</strong> (la de tu consultorio).</li>
-            <li>No necesitas permisos de administrador: InmutalKey se instala solo para tu usuario de Windows.</li>
+            <li>Una computadora con <strong>Windows 10 u 11 de 64 bits</strong> (la de su consultorio).</li>
+            <li>No necesita permisos de administrador: InmutalKey se instala solo para su usuario de Windows.</li>
             <li>
-              Mantén internet durante la instalación: si tu Windows no tiene el componente WebView2 (Windows 11 ya lo
+              Mantenga internet durante la instalación: si su Windows no tiene el componente WebView2 (Windows 11 ya lo
               trae), el instalador lo descarga. Después, el programa funciona sin internet.
             </li>
           </ul>
@@ -138,21 +137,21 @@ const correo = estaDefinido(sitio.contacto.correo) ? sitio.contacto.correo : nul
       <li class="guia-paso">
         <span class="guia-numero" aria-hidden="true">2</span>
         <div>
-          <h3>Descarga el instalador</h3>
-          <p>Con el botón de arriba. El archivo llega a tu carpeta <strong>Descargas</strong>. No lo abras desde otro lugar.</p>
+          <h3>Descargue el instalador</h3>
+          <p>Con el botón de arriba. El archivo <code>{archivo}</code> llega a su carpeta <strong>Descargas</strong>.</p>
         </div>
       </li>
 
       <li class="guia-paso">
         <span class="guia-numero" aria-hidden="true">3</span>
         <div>
-          <h3>Comprueba que es el original <span class="pildora pildora-opcional">1 minuto · recomendado</span></h3>
+          <h3>Compruebe que es el original <span class="pildora">1 minuto · recomendado</span></h3>
           <p>
             La huella SHA-256 es como una firma del archivo: si alguien le cambiara un solo byte, la huella sería otra.
           </p>
           <ol>
-            <li>Abre el menú Inicio, escribe <strong>PowerShell</strong> y ábrelo.</li>
-            <li>Pega este comando y presiona Enter:</li>
+            <li>Abra el menú Inicio, escriba <strong>PowerShell</strong> y ábralo.</li>
+            <li>Pegue este comando y presione Enter:</li>
           </ol>
           <div class="codigo-copiable">
             <pre><code id="comando-huella">{comando}</code></pre>
@@ -160,10 +159,10 @@ const correo = estaDefinido(sitio.contacto.correo) ? sitio.contacto.correo : nul
           </div>
           <p>El valor de <strong>Hash</strong> debe ser igual a la huella oficial:</p>
           <div class="codigo-copiable">
-            <pre><code id="huella-oficial" data-huella>{huella ?? 'Te la enviamos en el correo de descarga.'}</code></pre>
+            <pre><code id="huella-oficial" data-huella>{huella}</code></pre>
             <button type="button" class="copiar" data-copiar="huella-oficial" hidden><Icono nombre="nota" /> <span data-copiar-texto>Copiar</span></button>
           </div>
-          <p class="guia-alerta"><Icono nombre="alerta" /> Si no coinciden, no lo instales y escríbenos.</p>
+          <p class="guia-alerta"><Icono nombre="alerta" /> Si no coinciden, no lo instale y escríbanos.</p>
         </div>
       </li>
 
@@ -176,8 +175,8 @@ const correo = estaDefinido(sitio.contacto.correo) ? sitio.contacto.correo : nul
             que Windows SmartScreen lo marca como poco conocido. Con la huella ya comprobada:
           </p>
           <ol>
-            <li>Haz clic en <strong>Más información</strong>.</li>
-            <li>Elige <strong>Ejecutar de todas formas</strong>.</li>
+            <li>Haga clic en <strong>Más información</strong>.</li>
+            <li>Elija <strong>Ejecutar de todas formas</strong>.</li>
           </ol>
         </div>
       </li>
@@ -185,10 +184,9 @@ const correo = estaDefinido(sitio.contacto.correo) ? sitio.contacto.correo : nul
       <li class="guia-paso">
         <span class="guia-numero" aria-hidden="true">5</span>
         <div>
-          <h3>Instala</h3>
+          <h3>Instale</h3>
           <p>
-            Abre el archivo desde Descargas y sigue el asistente en español hasta <strong>Terminar</strong>. Al final
-            queda un acceso a InmutalKey en el menú Inicio.
+            Abra el archivo desde Descargas y siga el asistente en español hasta <strong>Terminar</strong>. Al final queda un acceso a InmutalKey en el escritorio y en el menú Inicio.
           </p>
         </div>
       </li>
@@ -198,8 +196,9 @@ const correo = estaDefinido(sitio.contacto.correo) ? sitio.contacto.correo : nul
         <div>
           <h3>Primer inicio</h3>
           <ul>
-            <li>Crea tu usuario y tu <strong>contraseña maestra</strong>. Con ella se cifran tus expedientes en tu computadora: guárdala en un lugar seguro.</li>
-            <li>¿Quieres explorar sin capturar pacientes reales? Entra al <strong>modo demostración</strong>: usa una base aparte que puedes borrar cuando quieras.</li>
+            <li>Cree su usuario y su <strong>contraseña</strong>. Con ella se cifran sus expedientes en su computadora.</li>
+            <li>Active su <strong>Clave de Rescate</strong> (Configuración → Seguridad): es la única forma de entrar si algún día olvida la contraseña.</li>
+            <li>¿Quiere practicar sin capturar pacientes reales? Cargue los <strong>pacientes de demostración</strong>: viven en una base aparte que puede purgar cuando quiera.</li>
           </ul>
         </div>
       </li>
@@ -207,27 +206,26 @@ const correo = estaDefinido(sitio.contacto.correo) ? sitio.contacto.correo : nul
       <li class="guia-paso">
         <span class="guia-numero guia-numero-final" aria-hidden="true"><Icono nombre="check" /></span>
         <div>
-          <h3>Tus {licencia.diasPrueba} días de prueba</h3>
+          <h3>Sus {licencia.diasPrueba} días de prueba</h3>
           <ul>
             <li>Empiezan con el primer inicio, con todas las funciones y sin tarjeta.</li>
             <li>
-              Al terminar, tus expedientes siguen ahí: puedes consultar, buscar, imprimir, respaldar y registrar
-              pacientes. Para seguir firmando notas y agendando, activas tu licencia de fundador.
+              Al terminar, sus expedientes siguen ahí: puede consultar, buscar, imprimir y respaldar. Para seguir firmando notas y agendando, active su licencia de fundador (sin internet).
             </li>
-            <li>Si desinstalas el programa, tus expedientes no se borran.</li>
+            <li>Si desinstala el programa, sus expedientes no se borran.</li>
           </ul>
         </div>
       </li>
     </ol>
 
-    <aside class="guia-ayuda" aria-labelledby="ayuda-titulo">
-      <h2 id="ayuda-titulo">¿Te atoraste en algún paso?</h2>
-      <p>Te ayuda una persona del equipo, no un robot.</p>
+    <aside class="tarjeta guia-ayuda" aria-labelledby="ayuda-titulo">
+      <h2 id="ayuda-titulo">¿Se detuvo en algún paso?</h2>
+      <p>Le ayuda una persona del equipo, no un robot.</p>
       <div class="instalador-acciones">
-        {ayuda && <a class="boton boton-secundario" href={ayuda} target="_blank" rel="noopener noreferrer"><Icono nombre="chat" /> WhatsApp</a>}
-        {correo && <a class="boton boton-secundario" href={`mailto:${correo}`}><Icono nombre="correo" /> {correo}</a>}
+        {ayuda && <a class="boton" href={ayuda} target="_blank" rel="noopener noreferrer"><Icono nombre="chat" /> WhatsApp</a>}
+        {correo && <a class="boton" href={`mailto:${correo}`}><Icono nombre="correo" /> {correo}</a>}
       </div>
-      <p class="tenue"><a href="/verificar">Más detalles sobre la huella y el aviso de Windows</a></p>
+      <p class="tenue"><a href="/verificar">Huellas oficiales de la versión {version} y el aviso de Windows</a></p>
     </aside>
     <p class="visualmente-oculto" role="status" aria-live="polite" data-copiar-aviso></p>
   </div>

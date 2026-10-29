@@ -31,12 +31,14 @@ const selecciona = (opciones: readonly (readonly [string, string])[]) => opcione
 ---
 
 <PaginaTexto
-  titulo="Prueba InmutalKey 30 días"
-  descripcion="Regístrate en un minuto y descarga la beta con todas sus funciones. Solo datos de tu consultorio: nada de pacientes."
+  titulo="Solicite su acceso Fundador"
+  descripcion="Regístrese en un minuto y descargue la beta con todas sus funciones. Solo pedimos datos de su consultorio, nunca de sus pacientes."
   antetitulo="Programa Fundadores"
+  estrecho
 >
   <PasosRegistro actual={1} />
-  <p class="cupo-vivo" data-cupo hidden></p>
+  <p class="pildora cupo-vivo" data-cupo hidden></p>
+  <div class="tarjeta panel-formulario">
   <p class="aviso-paso" data-aviso-google role="status" hidden></p>
 
   {
@@ -44,17 +46,16 @@ const selecciona = (opciones: readonly (readonly [string, string])[]) => opcione
       <div class="registro-rapido" data-registro-rapido>
         <BotonGoogle />
         <p class="registro-nota">
-          Usamos solo tu nombre y tu correo verificado; nunca tu contraseña ni tus contactos.
+          Usamos solo su nombre y su correo verificado; nunca su contraseña ni sus contactos.
         </p>
-        <p class="separador" aria-hidden="true"><span>o con tu correo</span></p>
+        <p class="separador" aria-hidden="true"><span>o con su correo</span></p>
       </div>
     )
   }
 
   <div class="aviso-paso exito conectado" data-conectado hidden>
     <p>
-      <Icono nombre="check" /> Conectado con Google como <strong data-conectado-correo></strong>. Completa los datos de tu
-      consultorio y descarga.
+      <Icono nombre="check" /> Conectado con Google como <strong data-conectado-correo></strong>. Complete los datos de su consultorio y descargue.
     </p>
     <button type="button" class="enlace-boton" data-usar-otro>Usar otro correo</button>
   </div>
@@ -64,8 +65,8 @@ const selecciona = (opciones: readonly (readonly [string, string])[]) => opcione
       <div class="aviso-paso">
         <p>
           El registro con correo se habilita muy pronto.
-          {whatsapp ? <a href={whatsapp} target="_blank" rel="noopener noreferrer"> Mientras tanto, escríbenos por WhatsApp</a> : ' Mientras tanto, escríbenos'}
-          y te apartamos tu lugar.
+          {whatsapp ? <a href={whatsapp} target="_blank" rel="noopener noreferrer"> Mientras tanto, escríbanos por WhatsApp</a> : ' Mientras tanto, escríbanos'}
+          y le apartamos su lugar.
         </p>
       </div>
     )
@@ -85,7 +86,7 @@ const selecciona = (opciones: readonly (readonly [string, string])[]) => opcione
       <label class="campo">
         <span>Correo</span>
         <input name="correo" type="email" required maxlength="160" autocomplete="email" inputmode="email" />
-        <small data-nota-correo>Te enviaremos un enlace para confirmarlo.</small>
+        <small data-nota-correo>Le enviaremos un enlace para confirmarlo.</small>
       </label>
       <label class="campo">
         <span>Teléfono <span class="opcional">(opcional)</span></span>
@@ -98,7 +99,7 @@ const selecciona = (opciones: readonly (readonly [string, string])[]) => opcione
       <label class="campo">
         <span>Estado</span>
         <select name="estado" required>
-          <option value="">Elige…</option>
+          <option value="">Elija…</option>
           {ESTADOS_MX.map((e) => <option value={e}>{e}</option>)}
         </select>
       </label>
@@ -107,37 +108,37 @@ const selecciona = (opciones: readonly (readonly [string, string])[]) => opcione
         <input name="ciudad" required minlength="2" maxlength="80" autocomplete="address-level2" />
       </label>
       <label class="campo">
-        <span>¿Dónde das consulta?</span>
+        <span>¿Dónde da consulta?</span>
         <select name="tipo_practica" required>
-          <option value="">Elige…</option>
+          <option value="">Elija…</option>
           {selecciona(TIPOS_PRACTICA).map(([v, t]) => <option value={v}>{t}</option>)}
         </select>
       </label>
       <label class="campo">
         <span>Pacientes por semana</span>
         <select name="pacientes_semana_rango" required>
-          <option value="">Elige…</option>
+          <option value="">Elija…</option>
           {selecciona(RANGOS_PACIENTES).map(([v, t]) => <option value={v}>{t}</option>)}
         </select>
       </label>
       <label class="campo">
-        <span>¿Qué usas hoy para tus expedientes?</span>
+        <span>¿Qué usa hoy para sus expedientes?</span>
         <select name="usa_hoy" required>
-          <option value="">Elige…</option>
+          <option value="">Elija…</option>
           {selecciona(USA_HOY).map(([v, t]) => <option value={v}>{t}</option>)}
         </select>
       </label>
       <label class="campo">
-        <span>¿Cómo te enteraste?</span>
+        <span>¿Cómo se enteró?</span>
         <select name="como_se_entero" required>
-          <option value="">Elige…</option>
+          <option value="">Elija…</option>
           {selecciona(COMO_SE_ENTERO).map(([v, t]) => <option value={v}>{t}</option>)}
         </select>
       </label>
     </div>
 
     <fieldset class="campo">
-      <legend>Tu computadora del consultorio</legend>
+      <legend>La computadora de su consultorio</legend>
       <div class="opciones">
         {
           selecciona(SISTEMAS_OPERATIVOS).map(([v, t]) => (
@@ -152,7 +153,7 @@ const selecciona = (opciones: readonly (readonly [string, string])[]) => opcione
     </fieldset>
 
     <div class="trampa" aria-hidden="true">
-      <label>No llenes este campo <input name="sitio_web" tabindex="-1" autocomplete="off" /></label>
+      <label>No llene este campo <input name="sitio_web" tabindex="-1" autocomplete="off" /></label>
     </div>
 
     <label class="casilla">
@@ -166,48 +167,55 @@ const selecciona = (opciones: readonly (readonly [string, string])[]) => opcione
     <div class="turnstile" data-turnstile></div>
 
     <button type="submit" class="boton boton-primario" disabled={!sitekey} data-enviar>
-      <Icono nombre="enviar" /> <span data-enviar-texto>Registrarme</span>
+      <span data-enviar-texto>Solicitar acceso Fundador</span>
     </button>
     <p class="formulario-estado" data-estado role="status" aria-live="polite"></p>
-    <noscript><p>Para enviar este formulario necesitas JavaScript activado. También puedes escribirnos por WhatsApp.</p></noscript>
+    <noscript><p>Para enviar este formulario necesita JavaScript activado. También puede escribirnos por WhatsApp.</p></noscript>
   </form>
 
   <div class="aviso-paso exito" data-enviado tabindex="-1" hidden>
-    <h2>Revisa tu correo</h2>
+    <h2>Revise su correo</h2>
     <p>
-      Te enviamos un enlace (vence en 72 horas). Ábrelo de preferencia en la computadora de tu consultorio: al
-      confirmar, pasas directo a tu instalación guiada. Si no lo ves en unos minutos, busca en correo no deseado o
-      promociones.
+      Le enviamos un enlace (vence en 72 horas). Ábralo de preferencia en la computadora de su consultorio: al confirmar, pasa directo a su instalación guiada. Si no lo ve en unos minutos, busque en correo no deseado o promociones.
     </p>
-    <p>¿Ya te habías registrado? Entonces lo que te llegó es tu enlace de descarga.</p>
+    <p>¿Ya se había registrado? Entonces lo que le llegó es su enlace de descarga.</p>
+  </div>
   </div>
 </PaginaTexto>
 
 <style>
+  .panel-formulario {
+    display: grid;
+    gap: 1.25rem;
+  }
+
+  .cupo-vivo {
+    margin-bottom: 1rem;
+  }
+
   .registro-rapido[hidden] {
     display: none;
   }
 
   .registro-rapido {
     display: grid;
-    gap: 12px;
-    margin-bottom: 8px;
+    gap: 0.75rem;
   }
 
   .registro-nota {
     margin: 0;
-    color: var(--texto-tenue);
-    font-size: 0.9375rem;
+    color: var(--texto-2);
+    font-size: 0.875rem;
     text-align: center;
   }
 
   .separador {
     display: flex;
     align-items: center;
-    gap: 16px;
-    margin: 12px 0 8px;
-    color: var(--texto-tenue);
-    font-size: 0.9375rem;
+    gap: 1rem;
+    margin: 0.5rem 0 0;
+    color: var(--texto-2);
+    font-size: 0.875rem;
   }
 
   .separador::before,
@@ -215,7 +223,7 @@ const selecciona = (opciones: readonly (readonly [string, string])[]) => opcione
     content: '';
     flex: 1;
     height: 1px;
-    background: var(--linea-oscura-fuerte);
+    background: var(--linea);
   }
 
   .conectado {
@@ -223,35 +231,18 @@ const selecciona = (opciones: readonly (readonly [string, string])[]) => opcione
     flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
-    gap: 8px 16px;
-    margin-bottom: 20px;
+    gap: 0.5rem 1rem;
   }
 
   .conectado[hidden] {
     display: none;
   }
 
-  .conectado p {
-    margin: 0;
-  }
-
   .conectado :global(.icono) {
     display: inline-block;
-    width: 20px;
-    height: 20px;
-    vertical-align: -4px;
-    color: var(--esmeralda-vivo);
-  }
-
-  .enlace-boton {
-    min-height: 44px;
-    padding: 0 4px;
-    border: 0;
-    background: none;
-    color: var(--azul-vivo);
-    font: inherit;
-    font-weight: 600;
-    text-decoration: underline;
-    cursor: pointer;
+    width: 1.25rem;
+    height: 1.25rem;
+    vertical-align: -0.25rem;
+    color: var(--exito);
   }
 </style>
