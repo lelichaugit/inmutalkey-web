@@ -159,3 +159,29 @@ WhatsApp `522291525847` **confirmado** · textos prellenados (provisionales) · 
 - Pendiente de Alan: cliente OAuth en Google Cloud (README_DEPLOY §16), logotipo oficial «G» en
   `public/brand/terceros/google-g.svg`, subir el instalador 0.3.2 a R2 y registrarlo en el panel.
 - Sin verificar en este entorno: inicio real con Google y envío real de correos (sin acceso de red a esos servicios).
+
+## Estado 29-oct (rebrand «Cristal Sellado», v0.4.0)
+
+- Rama `feat/rebrand-web-v040`, creada desde `claude/backend-fase-c` (la Fase C es un avance lineal sobre la rama de
+  producción y contiene /descarga y el registro). Backend, Worker, D1 y secretos sin cambios funcionales.
+- Marca de la app v0.4.0 (`docs/MARCA_WEB.md`): tokens §8, temas Niebla/Marino/Aurora con selector, Inter 4.1
+  autoalojada con `cv05`, activos oficiales en `marca/`. Voz en **usted** en todo el sitio público (incluidos los
+  mensajes de validación de `src/compartido/leads.ts`; los mensajes del Worker siguen en tú: ver pendientes).
+- Portada nueva según IDENTIDAD_MARCA §9: Hero → Pilares → Cómo funciona → Recetas → Fundadores → Seguridad, en claro
+  → Testimonios (solo aprobados) → Preguntas → Contacto. Se retiraron el simulador, las escenas de scroll y Lenis.
+- PortaVault fuera del sitio por decisión de Alan (29-oct): aún no existe como producto.
+- Versión y huellas centralizadas en `site.config.ts` → `version` (prueba en `tests/marca.test.ts`).
+- Lighthouse 12.8 contra `wrangler dev`: portada móvil 99/100/100/100 (LCP 1.9–2.1 s simulado, CLS 0, TBT ≤ 60 ms),
+  escritorio 100/100/100/100. SEO 69 solo en páginas `noindex` a propósito.
+
+## 4. Funciones verificadas contra clinica-nom004 v0.4.0 (29-oct)
+
+| Afirmación del sitio | Evidencia |
+|---|---|
+| Clave de Rescate (24 caracteres) para crear una contraseña nueva | `src/guiaRapida.ts`, `ModalClaveRescate.tsx`, `docs/DISTRIBUCION.md` |
+| Respaldo cifrado con frase de paso que incluye sal y llaves Ed25519; se restaura en otra computadora | `src-tauri/src/respaldo.rs` (AES-256-GCM, Argon2id), `restaurar_respaldo` en `comandos.rs`, guía rápida |
+| Recetas en media hoja, Carta vertical u horizontal; si no cabe pasa a Carta vertical y avisa | `src/formatoHoja.ts` |
+| Semáforo con 7 requisitos (etiquetas del mockup) | `src/utilidades/semaforoNom004.ts` |
+| 50 pacientes de demostración en base aparte | `docs/DEMO_CONGRESO.md`, guía rápida |
+| Instalador por usuario, sin administrador | `src-tauri/tauri.conf.json` (`installMode: currentUser`) |
+| Licencia que se activa sin internet | guía rápida («Periodo de prueba y licencia») |
