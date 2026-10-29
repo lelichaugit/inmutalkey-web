@@ -2,7 +2,7 @@
 
 Todo lo necesario para seguir está en el repositorio `lelichaugit/inmutalkey-web`: el código, `GEMINI.md` (contexto que
 Gemini CLI carga solo), `docs/TRASPASO.md` (estado, decisiones y funciones verificadas de la app),
-`docs/ANIMACIONES.md` (API de scroll y animación), `README_DEPLOY.md` (Cloudflare) y `npm run revisar` (la revisión
+`docs/MARCA_WEB.md` (marca y movimiento), `README_DEPLOY.md` (Cloudflare) y `npm run revisar` (la revisión
 multi-dispositivo que se usó para validar el sitio).
 
 ## 1. Elige cómo trabajar
@@ -25,7 +25,7 @@ multi-dispositivo que se usó para validar el sitio).
 ### Opción B — Chat de Gemini
 
 1. Si tu Gemini permite importar un repositorio de GitHub o adjuntar una carpeta, adjunta `lelichaugit/inmutalkey-web`.
-   Si no, adjunta `GEMINI.md`, `docs/TRASPASO.md`, `docs/ANIMACIONES.md` y los archivos que vayas a cambiar.
+   Si no, adjunta `GEMINI.md`, `docs/TRASPASO.md`, `docs/MARCA_WEB.md` y los archivos que vayas a cambiar.
 2. Pega el mensaje inicial de la §2.
 3. Pídele cambios como **archivos completos** (no fragmentos sueltos). Aplícalos en GitHub: abre el archivo → lápiz
    (Edit) → pega → *Commit changes* en tu rama de trabajo.
@@ -36,7 +36,7 @@ multi-dispositivo que se usó para validar el sitio).
 
 ```text
 Vas a continuar el desarrollo del sitio inmutalkey.com (repositorio lelichaugit/inmutalkey-web). Antes de proponer
-nada, lee GEMINI.md, docs/TRASPASO.md y docs/ANIMACIONES.md: ahí están el producto, las reglas, la arquitectura y el
+nada, lee GEMINI.md, docs/TRASPASO.md y docs/MARCA_WEB.md: ahí están el producto, las reglas, la arquitectura y el
 estado actual. Resumen:
 
 - InmutalKey es un expediente clínico de escritorio (Windows) para consultorios privados en México: cada nota firmada

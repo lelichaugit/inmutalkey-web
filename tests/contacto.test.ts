@@ -86,9 +86,9 @@ describe('/contacto', () => {
 
   it('correo como canal principal antes de las redes, y QR con su texto alternativo', () => {
     expect(html.indexOf('mailto:contacto@inmutalkey.com')).toBeGreaterThan(-1);
-    expect(html.indexOf('Contacto directo')).toBeLessThan(html.indexOf('Síguenos'));
+    expect(html.indexOf('Contacto directo')).toBeLessThan(html.indexOf('Síganos'));
     expect(html).toContain('alt="Código QR para abrir el perfil @inmutalkey en Instagram"');
-    expect(html).toContain('Escanea para seguirnos en Instagram');
+    expect(html).toContain('Escanee para seguirnos en Instagram');
   });
 
   it('head: rel="me" y JSON-LD Organization/Person', () => {

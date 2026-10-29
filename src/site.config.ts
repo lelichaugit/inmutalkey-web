@@ -11,6 +11,18 @@ export function estaDefinido<T>(valor: Valor<T>): valor is T {
   return valor !== TODO_DEFINIR;
 }
 
+export interface Paquete {
+  readonly id: 'instalador' | 'zip';
+  readonly titulo: string;
+  readonly descripcion: string;
+  /** Nombre exacto del archivo que recibe el médico. */
+  readonly archivo: string;
+  /** SHA-256 en hexadecimal (minúsculas), igual a SHA256.txt del paquete de distribución. */
+  readonly sha256: string;
+  /** Objeto esperado en R2 (bucket `inmutalkey-instaladores`). */
+  readonly claveR2: string;
+}
+
 export interface ConfigSitio {
   readonly nombre: string;
   /** Título de la portada: es el que muestran los marcadores de Chrome y la vista previa al compartir el enlace. */
@@ -49,10 +61,16 @@ export interface ConfigSitio {
     readonly despuesDeLaPrueba: Valor<string>;
     readonly soporteFueraDeFundadores: Valor<string>;
   };
-  readonly instalador: {
-    readonly archivo: Valor<string>;
-    readonly version: Valor<string>;
-    readonly sha256: Valor<string>;
+  /**
+   * Versión vigente de la app y sus paquetes: ÚNICA fuente para /descarga, /verificar, la portada y el pie.
+   * La descarga real es personal (enlace firmado de R2 que emite el Worker): al publicar una versión, sube cada archivo
+   * a `claveR2` en el bucket `inmutalkey-instaladores` y regístrala en /admin → Instaladores con la misma huella.
+   */
+  readonly version: {
+    readonly numero: string;
+    /** Nombre de la edición (IDENTIDAD_MARCA.md). */
+    readonly nombre: string;
+    readonly paquetes: readonly Paquete[];
   };
   /**
    * Botón "Continuar con Google" en el registro. Enciéndelo cuando el cliente OAuth y los secretos estén cargados
@@ -80,7 +98,7 @@ export const sitio: ConfigSitio = {
   url: 'https://inmutalkey.com',
   idioma: 'es-MX',
   descripcion:
-    'Expediente clínico para consultorio privado, diseñado para la NOM-004. Cada nota queda sellada y no se puede alterar. Funciona en tu computadora, sin internet.',
+    'Expediente Clínico Privado conforme a la NOM-004. Cada nota queda sellada al firmarla, sus datos no salen de su computadora y funciona sin internet.',
   contacto: {
     whatsapp: '522291525847',
     mensajeWhatsApp: 'Hola, vi InmutalKey en inmutalkey.com y quiero información para mi consultorio.',
@@ -107,12 +125,30 @@ export const sitio: ConfigSitio = {
     despuesDeLaPrueba: TODO_DEFINIR,
     soporteFueraDeFundadores: TODO_DEFINIR,
   },
-  // Versión beta vigente (ESTADO_PROYECTO, 27-oct). La fuente en vivo es el panel (/admin → Instaladores, que alimenta
-  // /api/versiones); esto solo es el respaldo del build. Al publicar otra versión, actualiza ambos.
-  instalador: {
-    archivo: TODO_DEFINIR,
-    version: '0.3.2',
-    sha256: 'aa255d5881107c7be2e135c49b7fedb9e1d21da3b8e0911968ed7857bce284d5',
+  // Versión vigente (v0.4.0 «Cristal Sellado», 28-oct-2026). La fuente en vivo de lo que se descarga es el panel
+  // (/admin → Instaladores, que alimenta /api/versiones); esto es lo que el sitio publica. Al cambiar de versión,
+  // actualiza ambos con las mismas huellas.
+  version: {
+    numero: '0.4.0',
+    nombre: 'Cristal Sellado',
+    paquetes: [
+      {
+        id: 'instalador',
+        titulo: 'Instalador para Windows',
+        descripcion: 'Un solo archivo en español. Se instala para su usuario, sin permisos de administrador.',
+        archivo: 'InmutalKey_0.4.0_Instalador.exe',
+        sha256: 'd8cf81a06db3214e7ff460b1446aa533e44a893a84cd302efd77cc467516190e',
+        claveR2: 'instaladores/0.4.0/InmutalKey_0.4.0_Instalador.exe',
+      },
+      {
+        id: 'zip',
+        titulo: 'Paquete completo (ZIP)',
+        descripcion: 'El instalador con su huella (SHA256.txt) y la guía imprimible «Léame primero».',
+        archivo: 'InmutalKey_0.4.0_Beta.zip',
+        sha256: '1f7c72d1111fca139b269f8f5abd1fad783a6efb5721e137decad1fba82f8d67',
+        claveR2: 'instaladores/0.4.0/InmutalKey_0.4.0_Beta.zip',
+      },
+    ],
   },
   google: {
     habilitado: false,
@@ -128,6 +164,13 @@ export const sitio: ConfigSitio = {
     revisadoPorAbogado: false,
   },
 };
+
+/** Paquete por id (siempre existe: el tipo lo garantiza). */
+export function paquete(id: Paquete['id']): Paquete {
+  const p = sitio.version.paquetes.find((x) => x.id === id);
+  if (!p) throw new Error(`site.config: falta el paquete ${id}`);
+  return p;
+}
 
 /** Rutas (`precios.fundadores`, …) de los valores aún sin definir. */
 export function pendientes(valor: unknown = sitio, prefijo = ''): string[] {

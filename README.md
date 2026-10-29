@@ -2,7 +2,7 @@
 
 Sitio público de **InmutalKey**, el expediente clínico para consultorio privado con notas selladas.
 Astro 5 estático publicado como Worker con Static Assets en Cloudflare; JavaScript mínimo y diferido; CSP estricta sin `unsafe-inline`.
-Scroll: Lenis en escritorio, nativo en táctil, y un motor propio de escenas fijadas (`docs/ANIMACIONES.md`).
+Marca «Cristal Sellado» de la app v0.4.0 (`docs/MARCA_WEB.md`): tokens en `src/styles/tokens.css`, tema claro, oscuro y Aurora.
 
 ## Comandos
 
@@ -16,12 +16,11 @@ Scroll: Lenis en escritorio, nativo en táctil, y un motor propio de escenas fij
 | `npm run revisar` | Revisión multi-dispositivo con Playwright (desbordes, errores, CSP, CLS, escenas) contra `npx wrangler dev` o una URL |
 | `npm test` | Pruebas Vitest |
 | `npm run activos` | `marca` + `capturas` |
-| `npm run marca` | Favicons, iconos de app, OG y versiones del render 3D desde `capturas/` |
+| `npm run marca` | Logos oficiales, favicon e iconos desde `marca/` (activos de la app v0.4.0) |
+| `npm run og` | Imagen Open Graph 1200×630 (Chromium local; el PNG se versiona) |
 | `npm run capturas` | Capturas de `capturas/` → `public/capturas/` + `src/data/capturas.json` |
 | `npm run redes` | Logos de redes (simple-icons → SVGO) → `src/assets/redes/*.svg` |
 | `npm run qr` | QR propio del perfil de Instagram → `public/img/qr-instagram.svg` |
-| `npm run vectorizar` | Vectoriza el logo plano (requiere `pip install potracer pillow numpy`) |
-| `npm run vectorizar:llave` | Vectoriza el contorno de la llave 3D ("plano técnico") desde `capturas/logomain-contorno.png` |
 
 ## Entornos
 
@@ -33,7 +32,7 @@ terceros, `<script>` en línea o atributos `style=`.
 
 - `src/site.config.ts`: el único lugar con datos variables (`TODO_DEFINIR`).
 - `src/data/socials.ts`: redes sociales (única fuente de verdad) y el interruptor `WHATSAPP_ENABLED`.
-- `src/components/secciones/`: secciones de la portada. `Demo.astro` + `src/scripts/demo.ts` es el simulador.
+- `src/components/secciones/`: secciones de la portada (IDENTIDAD_MARCA §9).
 - `src/lib/`: reglas compartidas y probadas (semáforo NOM-004, IMC, CIE-10, reseñas, entorno, guardian).
 - `src/scripts/`: `base.ts` (todas las páginas) y módulos que se cargan solo al acercarse a su sección.
 - `docs/TRASPASO.md`: estado, decisiones y funciones verificadas contra el código de la app.

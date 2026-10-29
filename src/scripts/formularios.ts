@@ -77,10 +77,10 @@ async function esperarToken(widget: Widget | null): Promise<string | undefined> 
 }
 
 const AVISOS_GOOGLE: Record<string, string> = {
-  cancelado: 'Cancelaste el inicio con Google. Puedes intentarlo de nuevo o registrarte con tu correo.',
-  error: 'No pudimos completar el inicio con Google. Intenta de nuevo o regístrate con tu correo.',
-  'no-disponible': 'El inicio con Google se habilita muy pronto. Mientras tanto, regístrate con tu correo.',
-  espera: 'Recibimos varios intentos seguidos. Espera un minuto y vuelve a intentarlo.',
+  cancelado: 'Se canceló el inicio con Google. Puede intentarlo de nuevo o registrarse con su correo.',
+  error: 'No pudimos completar el inicio con Google. Intente de nuevo o regístrese con su correo.',
+  'no-disponible': 'El inicio con Google se habilita muy pronto. Mientras tanto, regístrese con su correo.',
+  espera: 'Recibimos varios intentos seguidos. Espere un minuto y vuelva a intentarlo.',
 };
 
 /** Registro con Google en curso: correo verificado y bloqueado, nombre sugerido, sin Turnstile. */
@@ -101,7 +101,7 @@ async function prepararGoogle(form: HTMLFormElement): Promise<boolean> {
     const r = await fetch('/api/auth/sesion', { credentials: 'same-origin' });
     if (r.status !== 200) {
       if (aviso) {
-        aviso.textContent = 'Tu sesión con Google venció (duran 30 minutos). Vuelve a pulsar «Continuar con Google».';
+        aviso.textContent = 'Su sesión con Google venció (duran 30 minutos). Pulse de nuevo «Continuar con Google».';
         aviso.classList.add('problema');
         aviso.hidden = false;
       }
@@ -186,7 +186,7 @@ function iniciarFundadores(form: HTMLFormElement): void {
         const { destino } = (await respuesta.json().catch(() => ({}))) as { destino?: string };
         // Con Google: directo a la instalación guiada (o a gracias si aún no hay instalador publicado).
         if (destino && destino.startsWith('/')) {
-          estado(form, 'Listo. Abriendo tu instalación guiada…');
+          estado(form, 'Listo. Abriendo su instalación guiada…');
           window.location.assign(destino);
           return;
         }
@@ -196,24 +196,24 @@ function iniciarFundadores(form: HTMLFormElement): void {
           listo.hidden = false;
           listo.focus();
         } else {
-          estado(form, 'Listo. Revisa tu correo para confirmar tu registro.');
+          estado(form, 'Listo. Revise su correo para confirmar su registro.');
         }
         return;
       }
       widget?.reiniciar();
       if (respuesta.status === 429) {
-        estado(form, 'Recibimos varios envíos seguidos. Espera un minuto y vuelve a intentarlo.', 'error');
+        estado(form, 'Recibimos varios envíos seguidos. Espere un minuto y vuelva a intentarlo.', 'error');
         return;
       }
       const error = (await respuesta.json().catch(() => ({}))) as RespuestaError;
       if (error.campos && Object.keys(error.campos).length) {
         pintarErrores(form, error.campos);
-        estado(form, 'Revisa los campos marcados.', 'error');
+        estado(form, 'Faltan o no cuadran algunos datos: los marcamos abajo de cada campo.', 'error');
       } else {
-        estado(form, 'No pudimos enviar tu registro. Intenta de nuevo o escríbenos por WhatsApp.', 'error');
+        estado(form, 'No pudimos enviar su registro. Intente de nuevo o escríbanos por WhatsApp.', 'error');
       }
     } catch {
-      estado(form, 'Sin conexión. Revisa tu internet e intenta de nuevo.', 'error');
+      estado(form, 'Sin conexión. Revise su internet e intente de nuevo.', 'error');
     } finally {
       if (boton) boton.disabled = false;
     }
@@ -250,16 +250,16 @@ function iniciarArco(form: HTMLFormElement): void {
         form.reset();
         estado(
           form,
-          `Recibimos tu solicitud (folio ${folio}). Te responderemos al correo que escribiste en un máximo de 20 días hábiles; antes podemos pedirte confirmar tu identidad.`,
+          `Recibimos su solicitud (folio ${folio}). Le responderemos al correo que escribió en un máximo de 20 días hábiles; antes podemos pedirle confirmar su identidad.`,
         );
         return;
       }
       widget?.reiniciar();
       const error = (await respuesta.json().catch(() => ({}))) as RespuestaError;
       if (error.campos && Object.keys(error.campos).length) pintarErrores(form, error.campos);
-      estado(form, respuesta.status === 429 ? 'Espera un minuto y vuelve a intentarlo.' : 'Revisa los datos e intenta de nuevo.', 'error');
+      estado(form, respuesta.status === 429 ? 'Espere un minuto y vuelva a intentarlo.' : 'Revise los datos e intente de nuevo.', 'error');
     } catch {
-      estado(form, 'Sin conexión. Revisa tu internet e intenta de nuevo.', 'error');
+      estado(form, 'Sin conexión. Revise su internet e intente de nuevo.', 'error');
     } finally {
       if (boton) boton.disabled = false;
     }
@@ -441,14 +441,14 @@ function iniciarReenviar(form: HTMLFormElement): void {
       });
       if (r.status === 202) {
         form.reset();
-        estado(form, 'Si ese correo está registrado y confirmado, en un minuto te llega tu enlace nuevo. Revisa también correo no deseado.');
+        estado(form, 'Si ese correo está registrado y confirmado, en un minuto le llega su enlace nuevo. Revise también correo no deseado.');
         return;
       }
       const error = (await r.json().catch(() => ({}))) as RespuestaError;
       if (error.campos && Object.keys(error.campos).length) pintarErrores(form, error.campos);
-      estado(form, r.status === 429 ? 'Espera un minuto y vuelve a intentarlo.' : 'Revisa tu correo e intenta de nuevo.', 'error');
+      estado(form, r.status === 429 ? 'Espere un minuto y vuelva a intentarlo.' : 'Revise el correo e intente de nuevo.', 'error');
     } catch {
-      estado(form, 'Sin conexión. Revisa tu internet e intenta de nuevo.', 'error');
+      estado(form, 'Sin conexión. Revise su internet e intente de nuevo.', 'error');
     } finally {
       if (boton) boton.disabled = false;
     }
@@ -493,7 +493,7 @@ async function iniciarCupo(nodo: HTMLElement): Promise<void> {
     if (!r.ok) return;
     const { total, restantes } = (await r.json()) as { total: number; restantes: number };
     if (total <= 0) return;
-    nodo.textContent = restantes > 0 ? `Quedan ${restantes} de ${total} lugares de fundador.` : 'Los lugares de fundador se agotaron. Regístrate para la lista de espera.';
+    nodo.textContent = restantes > 0 ? `Quedan ${restantes} de ${total} lugares de fundador.` : 'Los lugares de fundador se agotaron. Regístrese para la lista de espera.';
     nodo.hidden = false;
   } catch {
     // Sin dato: no se muestra.

@@ -19,7 +19,7 @@ const qr = buscarQrInstagram();
 
 <PaginaTexto
   titulo="Contacto"
-  descripcion="Escríbenos para resolver dudas, pedir una demostración o recibir el instalador. También puedes seguir el avance de InmutalKey en redes."
+  descripcion="Escríbanos para resolver dudas, pedir una demostración o recibir ayuda con la instalación. También puede seguir el avance de InmutalKey en redes."
   antetitulo="Hablemos"
   amplio
 >
@@ -66,13 +66,13 @@ const qr = buscarQrInstagram();
   </section>
 
   <section class="contacto-bloque" aria-labelledby="contacto-redes">
-    <h2 id="contacto-redes" class="contacto-titulo">Síguenos</h2>
+    <h2 id="contacto-redes" class="contacto-titulo">Síganos</h2>
     <p class="contacto-intro">Novedades del producto, noticias y el perfil profesional de quien lo construye.</p>
 
     <SocialLinks variant="cards" />
 
     <div class="contacto-extra">
-      <figure class="qr">
+      <figure class="tarjeta qr">
         <img
           class="qr-imagen"
           src={qr.src}
@@ -83,17 +83,17 @@ const qr = buscarQrInstagram();
           loading="lazy"
         />
         <figcaption>
-          <span class="qr-titulo">Escanea para seguirnos en Instagram</span>
+          <span class="qr-titulo">Escanee para seguirnos en Instagram</span>
           <span class="qr-handle">{instagram.handle}</span>
         </figcaption>
       </figure>
 
-      <div class="privacidad">
+      <div class="tarjeta privacidad">
         <Icono nombre="escudo" class="privacidad-icono" />
         <h3>Enlaces directos, sin rastreadores</h3>
         <p>
           No incrustamos publicaciones, botones ni píxeles de redes sociales. Navegar por inmutalkey.com no le avisa a
-          ninguna red que estuviste aquí; solo al abrir un perfil sales a su sitio, con sus propias reglas de privacidad.
+          ninguna red que usted estuvo aquí; solo al abrir un perfil sale a su sitio, con sus propias reglas de privacidad.
         </p>
       </div>
     </div>
@@ -102,286 +102,167 @@ const qr = buscarQrInstagram();
 
 <style>
   .contacto-bloque + .contacto-bloque {
-    margin-top: clamp(56px, 7vw, 96px);
+    margin-top: clamp(3.5rem, 7vw, 6rem);
   }
 
-  /* Mismo lenguaje que los títulos de las páginas de lectura: marca azul corta encima. */
   .contacto-titulo {
-    position: relative;
-    padding-top: 18px;
     font-size: clamp(1.5rem, 1.25rem + 1vw, 2rem);
   }
 
-  .contacto-titulo::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 28px;
-    height: 2px;
-    border-radius: 2px;
-    background: var(--azul-vivo);
-  }
-
   .contacto-intro {
-    max-width: 60ch;
-    margin: 0.6em 0 1.6em;
-    color: var(--texto-tenue);
+    max-width: 40rem;
+    margin: 0.5rem 0 1.5rem;
+    color: var(--texto-2);
   }
-
-  /* ── Canales directos ── */
 
   .canales {
     display: grid;
-    gap: 16px;
+    gap: 1rem;
     margin: 0;
     padding: 0;
     list-style: none;
   }
 
-  @media (min-width: 900px) {
-    .canales-dos {
-      grid-template-columns: 1.4fr 1fr;
-      gap: 20px;
-    }
+  .canales-dos {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
   }
 
   .canales li {
     display: flex;
-    min-width: 0;
   }
 
   .canal {
     display: grid;
-    grid-template-columns: auto 1fr;
-    grid-template-areas:
-      'sello tipo'
-      'sello valor'
-      'accion accion';
-    align-items: center;
-    column-gap: 16px;
-    width: 100%;
-    padding: 22px;
-    border: 1px solid var(--linea-oscura-fuerte);
-    border-radius: 20px;
-    background: rgb(255 255 255 / 0.03);
+    flex: 1;
+    gap: 0.25rem;
+    align-content: start;
+    padding: clamp(1.25rem, 3vw, 2rem);
+    border: 1px solid var(--cristal-borde);
+    border-radius: var(--radio-lg);
+    background: var(--grad-tarjeta);
     color: var(--texto);
     text-decoration: none;
+    box-shadow: var(--cristal-brillo), var(--elev-1);
     transition:
-      border-color 0.2s var(--ease),
-      background-color 0.2s var(--ease),
-      transform 0.2s var(--ease);
-  }
-
-  /* En celular el valor (correo, teléfono) toma todo el ancho para no partirse a media palabra. */
-  @media (max-width: 479px) {
-    .canal {
-      grid-template-areas:
-        'sello tipo'
-        'valor valor'
-        'accion accion';
-    }
-
-    .canal .canal-tipo {
-      align-self: center;
-    }
-
-    .canal .canal-valor {
-      margin-top: 14px;
-    }
-  }
-
-  .canal-principal {
-    border-color: rgb(46 159 224 / 0.45);
-    background:
-      radial-gradient(90% 140% at 0% 0%, rgb(46 159 224 / 0.16), transparent 70%),
-      rgb(255 255 255 / 0.04);
-  }
-
-  .canal:focus-visible {
-    outline-offset: 4px;
-    border-radius: 20px;
-  }
-
-  .canal-sello {
-    grid-area: sello;
-    display: grid;
-    place-items: center;
-    width: 64px;
-    height: 64px;
-    border: 1px solid var(--linea-oscura-fuerte);
-    border-radius: 16px;
-    background: rgb(255 255 255 / 0.04);
-    color: var(--azul-vivo);
-    font-size: 30px;
-  }
-
-  .canal-sello :global(.icono) {
-    width: 30px;
-    height: 30px;
-  }
-
-  .canal-whatsapp .canal-sello {
-    color: var(--texto);
-  }
-
-  .canal-tipo {
-    grid-area: tipo;
-    align-self: end;
-    color: var(--texto-tenue);
-    font-size: 0.9375rem;
-  }
-
-  .canal-valor {
-    grid-area: valor;
-    align-self: start;
-    font-family: var(--fuente-titulo);
-    font-size: clamp(1.125rem, 1rem + 0.6vw, 1.5rem);
-    font-weight: 600;
-    letter-spacing: -0.01em;
-    line-height: 1.25;
-    overflow-wrap: break-word;
-  }
-
-  .canal-accion {
-    grid-area: accion;
-    justify-self: start;
-    display: inline-flex;
-    align-items: center;
-    min-height: 44px;
-    margin-top: 18px;
-    padding: 0 20px;
-    border: 1px solid var(--linea-oscura-fuerte);
-    border-radius: 999px;
-    font-weight: 600;
-    transition:
-      background-color 0.2s var(--ease),
-      border-color 0.2s var(--ease);
-  }
-
-  .canal-principal .canal-accion {
-    border-color: transparent;
-    background: var(--azul);
-    color: #fff;
+      transform 240ms var(--curva-cristal),
+      box-shadow 240ms var(--curva-cristal),
+      border-color 200ms ease;
   }
 
   .canal:hover,
   .canal:focus-visible {
-    border-color: rgb(46 159 224 / 0.6);
-    background-color: rgb(255 255 255 / 0.06);
-  }
-
-  .canal:hover .canal-accion,
-  .canal:focus-visible .canal-accion {
-    border-color: var(--azul-vivo);
-    background: var(--azul);
-    color: #fff;
-  }
-
-  /* Más oscuro, no más claro, al pasar el cursor: blanco sobre #016a9c = 5.9:1 (sobre #0a87c4 serían 3.98:1). */
-  .canal-principal:hover .canal-accion,
-  .canal-principal:focus-visible .canal-accion {
-    background: #016a9c;
+    color: var(--texto);
+    transform: translateY(-2px);
+    border-color: color-mix(in srgb, var(--acento) 42%, var(--borde));
+    box-shadow: var(--cristal-brillo), var(--elev-2), var(--halo-acento);
   }
 
   .canal:active {
-    transform: scale(0.985);
+    transform: scale(0.99);
   }
 
-  @media (hover: hover) and (prefers-reduced-motion: no-preference) {
-    .canal:hover {
-      transform: translateY(-2px);
-    }
+  .canal-sello {
+    display: inline-grid;
+    place-items: center;
+    width: 3rem;
+    height: 3rem;
+    margin-bottom: 0.75rem;
+    border-radius: var(--radio);
+    background: var(--grad-primario);
+    color: var(--sobre-primario);
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.35), 0 6px 14px -6px color-mix(in srgb, var(--primario) 60%, transparent);
   }
 
-  /* ── QR + nota de privacidad ── */
+  .canal-sello :global(.icono),
+  .canal-sello :global(.icono-marca) {
+    width: 1.375rem;
+    height: 1.375rem;
+  }
+
+  .canal-tipo {
+    color: var(--texto-2);
+    font-size: 0.8125rem;
+    font-weight: 650;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+  }
+
+  .canal-valor {
+    font-size: clamp(1.25rem, 1.1rem + 0.8vw, 1.625rem);
+    font-weight: 650;
+    letter-spacing: -0.02em;
+    overflow-wrap: anywhere;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .canal-accion {
+    margin-top: 0.75rem;
+    color: var(--primario);
+    font-weight: 600;
+  }
+
+  .sin-corte {
+    white-space: nowrap;
+  }
 
   .contacto-extra {
     display: grid;
-    gap: 16px;
-    margin-top: 20px;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 1rem;
+    margin-top: 1rem;
   }
 
-  @media (min-width: 900px) {
-    .contacto-extra {
-      grid-template-columns: auto 1fr;
-      gap: 20px;
-    }
-  }
-
-  /* Fondo blanco siempre: el QR necesita contraste máximo para escanear bien sobre el tema oscuro. */
   .qr {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 16px 24px;
+    display: grid;
+    justify-items: center;
+    gap: 0.75rem;
     margin: 0;
-    padding: 20px;
-    border-radius: 20px;
-    background: #fff;
-    color: var(--tinta);
+    padding: 1.5rem;
+    text-align: center;
   }
 
   .qr-imagen {
-    display: block;
-    flex: none;
-    width: 180px;
+    width: 11.25rem;
     height: auto;
-    border-radius: 12px;
-    image-rendering: pixelated;
+    padding: 0.5rem;
+    border-radius: var(--radio);
+    background: #fff;
   }
 
   .qr figcaption {
     display: grid;
-    gap: 4px;
-    max-width: 22ch;
+    gap: 0.125rem;
   }
 
   .qr-titulo {
-    font-family: var(--fuente-titulo);
-    font-size: 1.25rem;
     font-weight: 600;
-    line-height: 1.2;
   }
 
   .qr-handle {
-    color: var(--tinta-tenue);
-    font-weight: 500;
+    color: var(--primario);
+    font-weight: 560;
   }
 
   .privacidad {
-    padding: 22px;
-    border: 1px solid var(--linea-oscura-fuerte);
-    border-left: 3px solid var(--esmeralda-vivo);
-    border-radius: 20px;
-    background: rgb(255 255 255 / 0.03);
+    display: grid;
+    align-content: center;
+    gap: 0.75rem;
+    padding: clamp(1.25rem, 3vw, 2rem);
   }
 
   .privacidad :global(.privacidad-icono) {
-    width: 28px;
-    height: 28px;
-    color: var(--esmeralda-vivo);
-  }
-
-  .privacidad h3 {
-    margin-top: 12px;
-    font-size: var(--h3);
+    width: 1.75rem;
+    height: 1.75rem;
+    color: var(--primario);
   }
 
   .privacidad p {
-    max-width: 60ch;
-    margin: 0.6em 0 0;
-    color: var(--texto-tenue);
+    color: var(--texto-2);
   }
 
-  @media (prefers-reduced-motion: reduce) {
-    .canal,
-    .canal-accion {
-      transition: none;
-    }
-
-    .canal:active {
-      transform: none;
+  @media (max-width: 40rem) {
+    .contacto-extra {
+      grid-template-columns: minmax(0, 1fr);
     }
   }
 </style>

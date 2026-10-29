@@ -1,12 +1,9 @@
 ---
 import '../styles/global.css';
 
-import Icono from '../components/Icono.astro';
 import Nav from '../components/Nav.astro';
 import Pie from '../components/Pie.astro';
-import Riel from '../components/Riel.astro';
 import { correoContacto, FUNDADOR, REDES, redPorId } from '../data/socials';
-import { enlaceWhatsApp } from '../lib/whatsapp';
 import { sitio } from '../site.config';
 
 interface Props {
@@ -17,12 +14,10 @@ interface Props {
   indexar?: boolean;
   /** Ruta de la imagen OG relativa al sitio. */
   imagenOg?: string;
-  /** Portada: el isotipo de la barra espera a que salga de vista el logo 3D del hero. */
-  logoDiferido?: boolean;
   /** Portada: título sin el sufijo "· InmutalKey". */
   tituloCompleto?: boolean;
-  /** Portada: riel lateral de secciones (escritorio ancho) y título de sección en la barra del celular. */
-  riel?: boolean;
+  /** Imagen a precargar (el LCP de la página), con su srcset en AVIF. */
+  precarga?: { srcset: string; sizes: string };
 }
 
 const {
@@ -30,13 +25,11 @@ const {
   descripcion = sitio.descripcion,
   indexar = true,
   imagenOg = '/og.png',
-  logoDiferido = false,
   tituloCompleto = false,
-  riel = false,
+  precarga,
 } = Astro.props;
 
 const tituloFinal = tituloCompleto ? titulo : `${titulo} · ${sitio.nombre}`;
-const prueba = enlaceWhatsApp(sitio.contacto.whatsapp, sitio.contacto.mensajes.prueba);
 const canonica = new URL(Astro.url.pathname.replace(/\.html$/, '').replace(/\/index$/, '/'), sitio.url).href;
 const og = new URL(imagenOg, sitio.url).href;
 
@@ -56,7 +49,7 @@ const jsonLd = {
       '@id': idOrganizacion,
       name: sitio.nombre,
       url: sitio.url,
-      logo: new URL('/brand/logo-solido.svg', sitio.url).href,
+      logo: new URL('/icon-512.png', sitio.url).href,
       ...(correo ? { email: correo } : {}),
       sameAs: REDES.filter((r) => r.id !== 'linkedin').map((r) => r.url),
       founder: { '@id': idFundador },
@@ -77,7 +70,8 @@ const jsonLd = {
       applicationCategory: 'MedicalApplication',
       operatingSystem: 'Windows 10, Windows 11',
       inLanguage: sitio.idioma,
-      image: new URL('/brand/logo-solido.svg', sitio.url).href,
+      image: new URL('/icon-512.png', sitio.url).href,
+      softwareVersion: sitio.version.numero,
       publisher: { '@id': idOrganizacion },
     },
   ],
@@ -95,15 +89,16 @@ const jsonLd = {
     <link rel="canonical" href={canonica} />
     {!indexar && <meta name="robots" content="noindex, nofollow" />}
 
-    <link rel="preload" href="/fonts/outfit-variable-latin.woff2" as="font" type="font/woff2" crossorigin />
-    <link rel="preload" href="/fonts/inter-variable-latin.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/fonts/inter-variable.woff2" as="font" type="font/woff2" crossorigin />
+    {precarga && <link rel="preload" as="image" type="image/avif" imagesrcset={precarga.srcset} imagesizes={precarga.sizes} fetchpriority="high" />}
 
-    <link rel="icon" href="/favicon.ico" sizes="32x32" />
-    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="/favicon.ico" sizes="16x16 32x32 48x48" />
+    <link rel="icon" href="/favicon-32.png" type="image/png" sizes="32x32" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/site.webmanifest" />
-    <meta name="theme-color" content="#060b16" />
-    <meta name="color-scheme" content="dark light" />
+    <meta name="theme-color" content="#EEF1F5" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#021A30" media="(prefers-color-scheme: dark)" />
+    <meta name="color-scheme" content="light dark" />
     <meta name="format-detection" content="telephone=no" />
 
     <meta property="og:type" content="website" />
@@ -130,25 +125,11 @@ const jsonLd = {
   </head>
   <body>
     <a class="saltar" href="#contenido">Saltar al contenido</a>
-    <div class="barra-progreso" data-barra-progreso aria-hidden="true"></div>
-    <Nav logoDiferido={logoDiferido} />
-    {riel && <Riel />}
+    <Nav />
     <main id="contenido" tabindex="-1">
       <slot />
     </main>
     <Pie />
-    <div class="flotante" data-arriba data-visible="no">
-      {
-        prueba && (
-          <a class="flotante-cta" href={prueba} target="_blank" rel="noopener noreferrer" aria-label="Escríbenos por WhatsApp">
-            <Icono nombre="chat" />
-          </a>
-        )
-      }
-      <a class="flotante-arriba" href="#contenido" aria-label="Volver arriba">
-        <Icono nombre="arriba" />
-      </a>
-    </div>
     <script>
       import '../scripts/base';
     </script>

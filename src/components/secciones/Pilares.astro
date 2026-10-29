@@ -1,0 +1,91 @@
+---
+// Tres pilares (IDENTIDAD_MARCA §9.2), en el orden de la marca: Privacidad real · Inmutable · NOM-004.
+// Tarjetas de vidrio simulado (sin blur), icono de trazo en sello, título H3 y dos líneas.
+import Icono from '../Icono.astro';
+
+const PILARES = [
+  {
+    icono: 'sin-nube',
+    titulo: 'Privacidad real',
+    texto: 'Sus expedientes viven en su computadora, cifrados. No hay nube ni telemetría clínica: nadie más ve a sus pacientes.',
+    etiqueta: 'Cifrado · SQLCipher AES-256',
+  },
+  {
+    icono: 'sello',
+    titulo: 'Inmutable y verificable',
+    texto: 'Cada nota se sella al firmarla y se encadena con la anterior. Las correcciones son adendas, nunca borrones.',
+    etiqueta: 'Firma · Ed25519',
+  },
+  {
+    icono: 'nota',
+    titulo: 'Conforme a la NOM-004',
+    texto: 'Un semáforo revisa los 7 requisitos de la nota antes de firmar. Recetas y documentos con los datos que pide la norma.',
+    etiqueta: 'NOM-004-SSA3-2012',
+  },
+] as const;
+---
+
+<section class="seccion pilares" id="pilares" aria-labelledby="pilares-titulo">
+  <div class="contenedor">
+    <div class="seccion-cabecera centrada">
+      <p class="antetitulo">Cristal Sellado</p>
+      <h2 id="pilares-titulo">Transparente para usted. Impenetrable para cualquier otro.</h2>
+      <p>Tres principios guían cada pantalla de InmutalKey. Y uno más: que nada estorbe su consulta.</p>
+    </div>
+    <ul class="pilares-lista" data-escalonar>
+      {
+        PILARES.map((p) => (
+          <li class="tarjeta tarjeta-viva pilar revelar">
+            <span class="sello">
+              <Icono nombre={p.icono} />
+            </span>
+            <h3>{p.titulo}</h3>
+            <p>{p.texto}</p>
+            <p class="pilar-etiqueta">{p.etiqueta}</p>
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+</section>
+
+<style>
+  .pilares {
+    padding-top: var(--seccion);
+  }
+
+  .pilares-lista {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+    gap: 1.25rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .pilar {
+    display: grid;
+    align-content: start;
+    gap: 0.75rem;
+    padding: clamp(1.5rem, 2.5vw, 2rem);
+  }
+
+  .pilar h3 {
+    margin-top: 0.5rem;
+    font-size: 1.25rem;
+  }
+
+  .pilar p {
+    color: var(--texto-2);
+  }
+
+  .pilar .pilar-etiqueta {
+    margin-top: 0.5rem;
+    padding-top: 0.875rem;
+    border-top: 1px solid var(--linea);
+    color: var(--texto-2);
+    font-family: var(--mono);
+    font-size: 0.8125rem;
+    letter-spacing: 0.01em;
+  }
+</style>
