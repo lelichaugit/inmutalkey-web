@@ -30,19 +30,22 @@ Node 22 (`.nvmrc`).
 
 - `src/pages/` — portada (`index.astro`), `/fundadores` (+ `confirmar`, `gracias`), `/descarga`, `/verificar`,
   `/contacto`, `/privacidad`, `/terminos-fundadores`, `/derechos`, `/resena`, `/admin`, 404, `sitemap.xml.ts`.
-- `src/components/secciones/` — portada según IDENTIDAD_MARCA §9: Hero, Pilares, ComoFunciona, Recetas, Fundadores,
-  Seguridad, TestimoniosVivos (solo si hay aprobados), Faq, Cierre (contacto).
+- `src/components/secciones/` — portada (orden confirmado el 15-nov): Hero, Problema, Integridad, Simulador, Signos,
+  Dia («Un día en su consultorio»), Recetas, Boveda, Bento («Todo lo que incluye»), Fundadores, Seguridad,
+  TestimoniosVivos (solo si hay aprobados), Faq, Cierre (contacto).
 - `src/components/` — Nav (cristal fijo + SelectorTema), Pie (lámina Abismo, logo mono blanco), Logo (variantes
   oficiales), MockupApp (maqueta HTML de la app con expedientes ficticios), PasosRegistro, BotonGoogle, Contacto,
   SocialLinks, Icono/IconoMarca.
 - `src/scripts/` — `base.ts` (todas las páginas: barra, menú, revelado), `tema.ts` (selector de tema) y módulos
-  diferidos (`formularios.ts`, `eventos.ts`, `turnstile.ts`, `admin.ts`).
+  diferidos: `suave.ts` (Lenis, solo escritorio), `escenas.ts` (escenas por pasos), `brillo.ts` (brillo del cursor),
+  `simulador.ts`, `signos.ts`, `formularios.ts`, `eventos.ts`, `turnstile.ts`, `admin.ts`.
 - `src/styles/` — `tokens.css` (IDENTIDAD_MARCA §8 tal cual + temas Niebla/Marino/Aurora), `global.css` (aurora,
   cristal, botones, campos, avisos), `formularios.css`, `instalacion.css`. Guía visual del sitio: `docs/MARCA_WEB.md`.
 - `src/site.config.ts` — **único** lugar con datos variables, incluida la **versión vigente y sus huellas**
   (`version.paquetes`). `TODO_DEFINIR` = sin definir: nunca se muestra en el sitio.
 - `src/data/` — FAQ, redes (`socials.ts`, con el interruptor `WHATSAPP_ENABLED`), dimensiones del logo (`marca.json`).
-- `src/lib/` — reglas probadas (guardian, whatsapp, semáforo NOM-004, IMC, reseñas, entorno, QR).
+- `src/lib/` — reglas probadas (guardian, whatsapp, semáforo NOM-004, IMC, CIE-10, trazos del monitor, reseñas,
+  entorno, QR).
 - `src/worker/` — backend (rutas públicas, panel, retención); `src/compartido/` — validación y eventos que usan el
   sitio y el Worker; `migrations/` — D1 (solo aditivas, nunca `DROP TABLE`); `tests/worker/` — pruebas con Miniflare.
 - `marca/` — activos oficiales copiados de clinica-nom004 v0.4.0 → `npm run marca` (logos, favicon, iconos) y
@@ -60,7 +63,8 @@ Node 22 (`.nvmrc`).
    solo en la barra y 1–2 paneles por vista; tarjetas repetidas con vidrio simulado; sombras tintadas en Abismo;
    radios 9/13/18/24; foco doble (`--anillo-foco`). El logo es siempre una variante oficial (`npm run marca`).
 4. **Solo `transform`, `opacity`, `clip-path`** para animar (filtros, sombras grandes y `mix-blend-mode` sobre capas que
-   cambian en cada cuadro arruinan el rendimiento; hay prueba que lo vigila).
+   cambian en cada cuadro arruinan el rendimiento; hay pruebas que lo vigilan). Las escenas de la portada van **por
+   pasos** (`docs/MARCA_WEB.md`, «Escenas»): el HTML trae el estado final y el motor solo decide el paso.
 5. **`@property` es global**: el nombre debe ser único en todo `src/` (hay prueba). `:global()` para contenido creado por
    JS y para el SVG de `Icono` dentro de estilos con alcance. No uses `:global()` dentro de `:not()` (Astro lo rompe).
 6. **Celular primero**: texto de cuerpo ≥ 16 px, toques ≥ 44 px, sin desplazamiento horizontal a 360 px; de 360 a
@@ -73,6 +77,8 @@ Node 22 (`.nvmrc`).
 8. **No toques** la lógica de envío de `/resena` (deshabilitado hasta la Fase C) ni el contenido legal sin indicación
    de Alan.
 9. Sin dependencias nuevas sin una razón fuerte (nada de GSAP, three.js, frameworks de UI). Versiones exactas.
+   Única librería de movimiento: **Lenis**, por decisión de Alan (15-nov), y solo en escritorio (puntero fino, sin
+   «reducir movimiento»); en táctiles ni se descarga.
 
 ## Flujo de trabajo (una tarea a la vez)
 

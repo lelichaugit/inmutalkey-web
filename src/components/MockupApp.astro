@@ -2,16 +2,15 @@
 // Maqueta fiel de InmutalKey v0.4.0 (tema Marino) dibujada con HTML y CSS: nítida en cualquier pantalla, sin peso de
 // imagen y sin datos reales. Todos los pacientes son ficticios (como la bóveda demo de la app) y los códigos son
 // CIE-10 oficiales de la OMS. Escala completa con el ancho (unidades de contenedor): nunca se recorta ni se desborda.
-//   variante="directorio" · directorio de pacientes con barra lateral y agenda (hero)
-//   variante="nota"       · consulta con signos vitales, semáforo NOM-004 y firma (cómo funciona)
+// Muestra el directorio de pacientes con barra lateral y agenda (hero). La consulta con su semáforo vive, interactiva,
+// en el simulador (secciones/Simulador.astro).
 import Icono from './Icono.astro';
 
 interface Props {
-  variante?: 'directorio' | 'nota';
   class?: string;
 }
 
-const { variante = 'directorio', class: clase } = Astro.props;
+const { class: clase } = Astro.props;
 
 const PACIENTES = [
   { ini: 'MR', nombre: 'María Fernanda Ruiz Cano', exp: '000124', edad: 58, dx: 'E11.9', dxTexto: 'Diabetes mellitus tipo 2', ultima: 'Hoy', alergia: 'Penicilina' },
@@ -29,11 +28,9 @@ const CITAS = [
   { hora: '12:30', nombre: 'Ana S. Navarro', estado: 'Programada' },
 ] as const;
 
-// Los 7 requisitos del semáforo de la app (src/utilidades/semaforoNom004.ts), con sus etiquetas.
-const REQUISITOS = ['Motivo de consulta', 'Evolución / padecimiento actual', 'Signos vitales completos', 'Exploración física', 'Diagnóstico con clave CIE-10', 'Pronóstico', 'Plan de tratamiento e indicaciones'] as const;
 ---
 
-<figure class:list={['mockup', `mockup-${variante}`, clase]}>
+<figure class:list={['mockup', clase]}>
   <div class="mk tema-marino" aria-hidden="true">
     <div class="mk-titulo">
       <span>InmutalKey</span>
@@ -49,99 +46,53 @@ const REQUISITOS = ['Motivo de consulta', 'Evolución / padecimiento actual', 'S
       <span class="mk-medico">AR</span>
     </div>
 
-    {
-      variante === 'directorio' ? (
-        <div class="mk-cuerpo">
-          <div class="mk-lateral">
-            <p class="mk-micro">Carpetas</p>
-            <p class="mk-item activo"><i class="c1"></i>Todos <span>50</span></p>
-            <p class="mk-item"><i class="c2"></i>Seguimiento <span>14</span></p>
-            <p class="mk-item"><i class="c3"></i>Crónicos <span>21</span></p>
-            <p class="mk-item"><i class="c4"></i>Cirugía <span>6</span></p>
-            <p class="mk-micro">Vistas</p>
-            <p class="mk-item"><Icono nombre="calendario" />Citas de hoy <span>5</span></p>
-            <p class="mk-item"><Icono nombre="alerta" />Con alergias <span>9</span></p>
-          </div>
-          <div class="mk-directorio">
-            <div class="mk-encabezado">
-              <b>Pacientes</b>
-              <span class="mk-contador">50</span>
-              <span class="mk-segmento"><i class="on">Auto</i><i>2</i><i>3</i><i>Lista</i></span>
-            </div>
-            <div class="mk-tarjetas">
-              {PACIENTES.map((p) => (
-                <div class="mk-tarjeta">
-                  <span class="mk-avatar">{p.ini}</span>
-                  <span class="mk-id">
-                    <b>{p.nombre}</b>
-                    <small>Exp. {p.exp} · {p.edad} años · {p.ultima}</small>
-                  </span>
-                  <span class="mk-clinica">
-                    <span class="mk-dx">{p.dx}</span> {p.dxTexto}
-                    {'alergia' in p && <span class="mk-alergia"><Icono nombre="alerta" />{p.alergia}</span>}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-          <div class="mk-agenda">
-            <p class="mk-micro">Hoy · 5 citas</p>
-            {CITAS.map((c) => (
-              <div class:list={['mk-cita', { activa: c.estado === 'En atención' }]}>
-                <span class="mk-hora">{c.hora}</span>
-                <span>
-                  <b>{c.nombre}</b>
-                  <small>{c.estado}</small>
-                </span>
-              </div>
-            ))}
-            <span class="mk-boton">+ Agendar cita</span>
-          </div>
+    <div class="mk-cuerpo">
+      <div class="mk-lateral">
+        <p class="mk-micro">Carpetas</p>
+        <p class="mk-item activo"><i class="c1"></i>Todos <span>50</span></p>
+        <p class="mk-item"><i class="c2"></i>Seguimiento <span>14</span></p>
+        <p class="mk-item"><i class="c3"></i>Crónicos <span>21</span></p>
+        <p class="mk-item"><i class="c4"></i>Cirugía <span>6</span></p>
+        <p class="mk-micro">Vistas</p>
+        <p class="mk-item"><Icono nombre="calendario" />Citas de hoy <span>5</span></p>
+        <p class="mk-item"><Icono nombre="alerta" />Con alergias <span>9</span></p>
+      </div>
+      <div class="mk-directorio">
+        <div class="mk-encabezado">
+          <b>Pacientes</b>
+          <span class="mk-contador">50</span>
+          <span class="mk-segmento"><i class="on">Auto</i><i>2</i><i>3</i><i>Lista</i></span>
         </div>
-      ) : (
-        <div class="mk-cuerpo mk-cuerpo-nota">
-          <div class="mk-nota">
-            <div class="mk-paciente">
-              <span class="mk-avatar">JH</span>
+        <div class="mk-tarjetas">
+          {PACIENTES.map((p) => (
+            <div class="mk-tarjeta">
+              <span class="mk-avatar">{p.ini}</span>
               <span class="mk-id">
-                <b>José Luis Herrera Mota</b>
-                <small>Exp. 000131 · 64 años · Nota de evolución</small>
+                <b>{p.nombre}</b>
+                <small>Exp. {p.exp} · {p.edad} años · {p.ultima}</small>
               </span>
-              <span class="mk-borrador">Borrador guardado</span>
+              <span class="mk-clinica">
+                <span class="mk-dx">{p.dx}</span> {p.dxTexto}
+                {'alergia' in p && <span class="mk-alergia"><Icono nombre="alerta" />{p.alergia}</span>}
+              </span>
             </div>
-            <div class="mk-signos">
-              <span><small>TA</small><b>128/82</b></span>
-              <span><small>FC</small><b>74</b></span>
-              <span><small>FR</small><b>16</b></span>
-              <span><small>Temp</small><b>36.6</b></span>
-              <span><small>SpO₂</small><b>97 %</b></span>
-              <span><small>IMC</small><b>27.4</b></span>
-            </div>
-            <div class="mk-campo">
-              <small>Subjetivo</small>
-              <p>Acude a control. Refiere apego al tratamiento y cefalea ocasional matutina.</p>
-            </div>
-            <div class="mk-campo">
-              <small>Diagnóstico</small>
-              <p><span class="mk-dx">I10</span> Hipertensión esencial (primaria)</p>
-            </div>
-            <div class="mk-campo">
-              <small>Plan</small>
-              <p>Continuar losartán 50 mg cada 24 h. Control en 4 semanas con perfil de lípidos.</p>
-            </div>
-          </div>
-          <div class="mk-semaforo">
-            <p class="mk-micro">Semáforo NOM-004</p>
-            <p class="mk-cumple"><span class="mk-luces"><i></i><i></i><i class="on"></i></span> 7 de 7 requisitos</p>
-            <ul>
-              {REQUISITOS.map((r) => <li><Icono nombre="check" />{r}</li>)}
-            </ul>
-            <span class="mk-boton mk-boton-primario"><Icono nombre="firma" /> Firmar y sellar</span>
-            <p class="mk-sello"><Icono nombre="sello" /> Ed25519 · SHA-256 encadenado</p>
-          </div>
+          ))}
         </div>
-      )
-    }
+      </div>
+      <div class="mk-agenda">
+        <p class="mk-micro">Hoy · 5 citas</p>
+        {CITAS.map((c) => (
+          <div class:list={['mk-cita', { activa: c.estado === 'En atención' }]}>
+            <span class="mk-hora">{c.hora}</span>
+            <span>
+              <b>{c.nombre}</b>
+              <small>{c.estado}</small>
+            </span>
+          </div>
+        ))}
+        <span class="mk-boton">+ Agendar cita</span>
+      </div>
+    </div>
   </div>
   <figcaption class="mockup-pie">Ilustración de la app con expedientes ficticios.</figcaption>
 </figure>
@@ -173,11 +124,6 @@ const REQUISITOS = ['Motivo de consulta', 'Evolución / padecimiento actual', 'S
       0 2.5em 5em -2em rgb(0 4 12 / 0.7),
       0 0 0 0.5px rgb(255 255 255 / 0.08);
     user-select: none;
-  }
-
-  /* La nota tiene menos columnas: letra más grande para el mismo ancho. */
-  .mockup-nota .mk {
-    --u: calc(100cqi / 46);
   }
 
   .mk :global(.icono) {
@@ -321,8 +267,7 @@ const REQUISITOS = ['Motivo de consulta', 'Evolución / padecimiento actual', 'S
   }
 
   .mk-lateral,
-  .mk-agenda,
-  .mk-semaforo {
+  .mk-agenda {
     display: grid;
     align-content: start;
     gap: 0.35em;
@@ -540,114 +485,6 @@ const REQUISITOS = ['Motivo de consulta', 'Evolución / padecimiento actual', 'S
     font-weight: 600;
   }
 
-  .mk-boton-primario {
-    border-color: transparent;
-    background: var(--grad-primario);
-    color: var(--sobre-primario);
-    font-size: 1em;
-    box-shadow:
-      inset 0 1px 0 rgb(255 255 255 / 0.28),
-      0 0.6em 1.4em -0.6em color-mix(in srgb, var(--acento) 80%, transparent);
-  }
-
-  /* ── Nota de evolución ── */
-  .mk-cuerpo-nota {
-    grid-template-columns: minmax(0, 1fr) 17em;
-  }
-
-  .mk-nota {
-    display: grid;
-    gap: 0.8em;
-    padding: 1.1em;
-    border: 1px solid var(--cristal-borde);
-    border-radius: 1em;
-    background: var(--grad-tarjeta);
-    box-shadow: var(--cristal-brillo), var(--elev-1);
-  }
-
-  .mk-paciente {
-    display: flex;
-    align-items: center;
-    gap: 0.8em;
-  }
-
-  .mk-borrador {
-    margin-left: auto;
-    color: var(--texto-suave);
-    font-size: 0.82em;
-  }
-
-  .mk-signos {
-    display: grid;
-    grid-template-columns: repeat(6, minmax(0, 1fr));
-    gap: 0.5em;
-  }
-
-  .mk-signos span {
-    padding: 0.5em 0.6em;
-    border: 1px solid var(--cristal-borde);
-    border-radius: 0.6em;
-    background: rgb(255 255 255 / 0.03);
-  }
-
-  .mk-signos b {
-    font-size: 1.1em;
-    font-variant-numeric: tabular-nums;
-  }
-
-  .mk-campo {
-    padding: 0.6em 0.8em;
-    border: 1px solid var(--borde-campo);
-    border-radius: 0.6em;
-    background: rgb(255 255 255 / 0.025);
-  }
-
-  .mk-campo small {
-    margin-bottom: 0.2em;
-  }
-
-  .mk-campo p {
-    font-size: 0.95em;
-  }
-
-  .mk-cumple {
-    display: flex;
-    align-items: center;
-    gap: 0.5em;
-    color: var(--exito);
-    font-weight: 600;
-  }
-
-  .mk-semaforo ul {
-    display: grid;
-    gap: 0.35em;
-    margin: 0.3em 0 0;
-    padding: 0;
-    list-style: none;
-    font-size: 0.9em;
-  }
-
-  .mk-semaforo li {
-    display: flex;
-    align-items: center;
-    gap: 0.5em;
-    color: var(--texto-suave);
-  }
-
-  .mk-semaforo li :global(.icono) {
-    color: var(--exito);
-  }
-
-  .mk-sello {
-    display: flex;
-    align-items: center;
-    gap: 0.4em;
-    margin-top: 0.3em;
-    color: var(--texto-suave);
-    font-family: var(--mono);
-    font-size: 0.75em;
-  }
-
   .mockup-pie {
     margin-top: 0.75rem;
     color: var(--texto-2);
@@ -689,10 +526,6 @@ const REQUISITOS = ['Motivo de consulta', 'Evolución / padecimiento actual', 'S
 
     .mk-marca b {
       display: none;
-    }
-
-    .mk-signos {
-      grid-template-columns: repeat(3, minmax(0, 1fr));
     }
   }
 </style>

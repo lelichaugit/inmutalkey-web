@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { esquemaLead, normalizarCorreo } from '../../src/compartido/leads';
+import { esquemaLead, normalizarCorreo, VERSION_AVISO_VIGENTE } from '../../src/compartido/leads';
 import { esTokenValido, llaveLimite, sha256Hex, tokenNuevo } from '../../src/worker/lib/cripto';
 import { escaparHtml } from '../../src/worker/lib/plantillas';
 import { diasHabilesEntre, esFechaCorta, fechaMexico } from '../../src/worker/lib/tiempo';
@@ -61,7 +61,7 @@ describe('validación compartida del formulario', () => {
       como_se_entero: 'redes',
       usa_hoy: 'papel',
       consentimiento: true,
-      version_aviso: '2026-10-27-borrador',
+      version_aviso: VERSION_AVISO_VIGENTE,
     });
     expect(r.success).toBe(true);
     if (r.success) {

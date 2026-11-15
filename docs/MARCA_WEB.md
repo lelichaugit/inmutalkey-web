@@ -45,6 +45,35 @@ identidad difieren, gana la identidad; si la identidad y el código de la app di
   cada cuadro de deriva obliga a recalcular el desenfoque (+540 ms de bloqueo medido en Lighthouse móvil).
 - Sombra del logo del hero: halo radial, no `filter: drop-shadow` (el filtro inflaba su área y lo volvía el LCP).
 - Revelado: `.revelar` (+ `data-escalonar` en el contenedor para la cascada).
+- Desplazamiento: Lenis (`src/scripts/suave.ts`) solo con puntero fino y sin «reducir movimiento»; en táctiles, scroll
+  nativo (el módulo no se descarga). Los saltos a secciones los hace Lenis y el foco pasa al destino.
+- Brillo del cursor: grupo `data-brillo` con celdas `.brillo`; `src/scripts/brillo.ts` escribe `--mx`/`--my` por celda
+  una vez por cuadro. Solo puntero fino. En reposo el halo no se pinta (ni ocupa capa).
+
+## Escenas por pasos (`src/scripts/escenas.ts`)
+
+Problema, Integridad, «Un día en su consultorio» y Bóveda. Regla de oro: **el HTML y el CSS por omisión son el estado
+final** (lo que se ve sin JS, con «reducir movimiento» o si el motor no carga). El motor solo decide el paso.
+
+```html
+<div data-escena data-escena-marcas="0.2 0.5 0.8" data-escena-auto="1700">
+  <div data-escenario>… <div data-escena-vista>ilustración</div> …</div>
+</div>
+```
+
+| Qué | Cómo |
+|---|---|
+| Fijar | El **componente** decide con CSS dónde `[data-escenario]` es `position: sticky` (siempre bajo `.movimiento`). Fijada → el paso sale del scroll |
+| Sin fijar | Con `data-escena-auto` (ms por paso) se reproduce sola, una vez, cuando `[data-escena-vista]` entra en vista; `[data-escena-repetir]` la repite. Sin `auto`, estado final |
+| Estado | La raíz recibe `.escena-lista`, `data-paso="n"`, `.alcanzo-1…n` y el evento `escena:paso` |
+| CSS | Oculto «aún no llega» con `.escena-lista …`, mostrado con `.alcanzo-N …` (misma especificidad, después). Lo que solo vive en un paso, con `.escena-lista[data-paso='n']` |
+| Avance continuo | `--p` (0 → 1) se escribe **solo** en los `[data-p]` (barra de progreso, carril, filas): una variable heredada recalcula todo el subárbol en cada cuadro |
+| Huella | `data-huella="…" data-huella-paso="n"` se decodifica al llegar a su paso |
+| Estilos | `<style is:global>` con prefijo por sección (`pb-`, `ig-`, `sim-`, `sg-`, `dia-`, `bv-`): las clases de estado las pone el motor y no llevan el atributo de alcance de Astro |
+
+Dónde se fija cada una: Integridad en cualquier ancho (si la ventana mide ≥ 35 rem de alto); Problema, «Un día» y Bóveda
+solo en escritorio (≥ 62 rem). En celular, Problema y Bóveda se reproducen solas y «Un día» son tarjetas apiladas.
+`npm run revisar` comprueba que cada escena fijada se queda pegada mientras cruza la ventana.
 
 ## Escala
 
@@ -57,6 +86,8 @@ lo escala. La maqueta de la app usa unidades de contenedor (`cqi`) y se reacomod
 - La maqueta de la app (`MockupApp.astro`) es HTML/CSS con pacientes ficticios y códigos CIE-10 oficiales, rotulada
   «Ilustración de la app con expedientes ficticios». Si se usan capturas reales, solo de la bóveda demo
   (Ctrl+Shift+D en la app), subidas a `capturas/`.
+- El simulador, las escenas y el monitor de signos también son HTML/CSS con los mismos pacientes ficticios. **Sin
+  cédulas ni teléfonos**, ni siquiera de ejemplo (hay prueba en `tests/portada.test.ts`).
 - Nunca fotos de pacientes ni pantallas con datos reales.
 
 ## Voz

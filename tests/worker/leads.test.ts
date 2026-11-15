@@ -1,5 +1,6 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
+import { VERSION_AVISO_VIGENTE } from '../../src/compartido/leads';
 import { crearBanco, leadValido, ORIGEN, tokenDe, type Banco } from './ayudante';
 
 let banco: Banco;
@@ -21,7 +22,7 @@ describe('POST /api/leads', () => {
       telefono: '2291525800',
       estatus: 'nuevo',
       utm_source: 'tarjeta',
-      version_aviso: '2026-10-27-borrador',
+      version_aviso: VERSION_AVISO_VIGENTE,
       confirmado_utc: null,
     });
     expect(lead?.consentimiento_utc).toEqual(lead?.creado_utc);

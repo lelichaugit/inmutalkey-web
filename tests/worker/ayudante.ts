@@ -10,6 +10,7 @@ import type { D1Database, R2Bucket, RateLimit } from '@cloudflare/workers-types/
 import { vi } from 'vitest';
 import { getPlatformProxy } from 'wrangler';
 
+import { VERSION_AVISO_VIGENTE } from '../../src/compartido/leads';
 import type { Env, EnvioCorreo } from '../../src/worker/env';
 import { crearApp } from '../../src/worker/index';
 import { base64url } from '../../src/worker/lib/cripto';
@@ -246,7 +247,7 @@ export function leadValido(cambios: Record<string, unknown> = {}): Record<string
     como_se_entero: 'tarjeta',
     usa_hoy: 'papel',
     consentimiento: true,
-    version_aviso: '2026-10-27-borrador',
+    version_aviso: VERSION_AVISO_VIGENTE,
     utm_source: 'tarjeta',
     turnstile: TURNSTILE_BUENO,
     ...cambios,

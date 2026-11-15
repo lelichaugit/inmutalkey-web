@@ -185,3 +185,41 @@ WhatsApp `522213453487` **confirmado** · textos prellenados (provisionales) · 
 | 50 pacientes de demostración en base aparte | `docs/DEMO_CONGRESO.md`, guía rápida |
 | Instalador por usuario, sin administrador | `src-tauri/tauri.conf.json` (`installMode: currentUser`) |
 | Licencia que se activa sin internet | guía rápida («Periodo de prueba y licencia») |
+
+## Estado 15-nov (portada plena sobre el rebrand)
+
+- Rama `feat/rebrand-web-v040-pleno`, creada desde `feat/rebrand-web-v040` (8c3541b). Backend, Worker, D1 y secretos sin
+  cambios. Vuelve a la portada lo rico de la versión original (rama `claude/compassionate-hopper-546l4v`), reescrito con
+  los tokens «Cristal Sellado» y en usted; nada se copió tal cual.
+- **Orden confirmado por Alan (15-nov):** Hero → Problema → Integridad → Simulador → Signos → Un día en su consultorio →
+  Recetas → Bóveda → Bento «Todo lo que incluye» → Fundadores → Seguridad → Testimonios → Preguntas → Contacto.
+  Pilares pasó al Bento y «Cómo funciona» se retiró de la portada (la instalación ya está guiada en /descarga).
+- **Lenis sí**, solo escritorio (puntero fino) y sin «reducir movimiento» (decisión de Alan). Versión exacta 1.3.26.
+- **Escenas por pasos** (`src/scripts/escenas.ts`, API en `docs/MARCA_WEB.md`): el HTML trae el estado final; el motor
+  decide el paso con el scroll (fijadas) o las reproduce solas al entrar en vista (celular). Sustituye al motor de
+  scroll continuo de la versión original: menos variables por cuadro y el mismo relato.
+- **Simulador** (`Simulador.astro` + `simulador.ts`): aspecto de la app v0.4.0 (tema Marino); el semáforo de 7
+  requisitos, el IMC y la búsqueda CIE-10 usan `src/lib/`. La huella al firmar es un SHA-256 real de lo escrito,
+  calculado en el navegador (no es el formato canónico de la app: es una demostración). Sin cédulas ni teléfonos.
+- **Brillo del cursor** (`brillo.ts`): Bento, Signos, «Un día», Recetas y Seguridad. Solo puntero fino.
+- **Correo saliente:** Alan eligió Workers Paid + Email Sending (5 USD/mes) para no tocar el aviso de privacidad
+  (Resend sería un encargado más que declarar). `wrangler.toml` queda como estaba.
+- WhatsApp: `522213453487` en `site.config.ts`. El número anterior (`522291525847`) ya no aparece en esta rama ni en la
+  de producción; solo queda en `claude/backend-fase-c`, que no se fusiona por separado (esta rama la contiene).
+- **Medido** (Lighthouse 12.8.2 contra `wrangler dev`, Chromium sin GPU): portada móvil 98–99/100/100/100 (LCP
+  2.0–2.2 s, CLS 0, TBT 10–120 ms); escritorio 90–99 (en este mismo entorno la rama base da 94–99: la variación es
+  una tarea de composición sin GPU que aparece igual con las secciones nuevas ocultas). /fundadores, /descarga y
+  /verificar: 99. `npm run revisar`: sin problemas en los 10 perfiles. CSS único: 23.1 KB comprimido (antes 17.8).
+- **Sin verificar:** no hubo acceso a `clinica-nom004` en esta sesión. Todo lo que afirma la portada sale de las tablas
+  §1 y §4 de este documento; lo que cambió entre la 0.4.0 y la 0.4.3 no está comprobado. Tampoco se probó en un iPhone
+  ni un Mac reales con Safari (solo Chromium).
+- **Costo honesto:** la portada mide unas 29 pantallas en celular (antes ~9). El Hero y la barra conservan el llamado a
+  Fundadores; conviene mirar en Web Analytics cuánta gente llega a Fundadores antes de decidir si se recorta.
+
+### Pendiente de Alan (bloquea B y C)
+
+- **B · Legal:** razón social, domicilio y correo de privacidad (`site.config.ts` → `legal`, hoy `TODO_DEFINIR`) y el
+  texto aprobado por el abogado si cambió. Hasta tenerlos, `legal.revisadoPorAbogado` sigue en `false` (cinta «Versión
+  preliminar», sin indexar, fuera del sitemap) y `VERSION_AVISO_VIGENTE` sigue en `2026-10-27-borrador`. Las pruebas ya
+  leen la versión desde `src/compartido/leads.ts`: cambiarla es una sola línea.
+- **C · App 0.4.3:** nombre de archivo y SHA-256 del instalador y del ZIP. Hasta tenerlos, el sitio anuncia la 0.4.0.
