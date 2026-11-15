@@ -1,0 +1,924 @@
+---
+// Integridad: la escena central. Una nota de evolución se escribe, pasa el semáforo, se sella, se encadena con las
+// anteriores, resiste una alteración por fuera del programa y se corrige con una adenda. Escena por pasos fijada
+// (src/scripts/escenas.ts): el paso sale del scroll y el CSS anima cada cambio con transiciones.
+//
+//   paso 0 Escribir   las filas de la nota aparecen con el avance (--p, solo en .ig-filas)
+//   paso 1 Revisar    sube el semáforo: 7 requisitos se encienden, rojo → ámbar → verde
+//   paso 2 Firmar     cae el sello; la huella se decodifica; «Sellada 10:14»
+//   paso 3 Encadenar  aparecen las notas anteriores y el hilo que las une a la de hoy
+//   paso 4 Detectar   alguien cambia el tratamiento por fuera: la huella ya no coincide
+//   paso 5 Corregir   la original sigue intacta y se suma la adenda, enlazada a su huella
+//
+// Sin JS, con «reducir movimiento» o en ventanas muy bajas no se fija: se lee la lista completa de pasos y la
+// ilustración queda en su estado final (nota sellada, encadenada y con su adenda). La ilustración es decorativa
+// (aria-hidden); el contenido real son los seis pasos. Paciente ficticia (la misma de MockupApp.astro) y huellas de
+// ejemplo abreviadas. Las etiquetas del semáforo salen de src/lib/semaforo.ts (mismas reglas que la app).
+// Estilos globales con prefijo `ig-`: las clases de estado las pone el motor en la raíz de la escena.
+import { requisitos, type DatosNota } from '../../lib/semaforo';
+import Icono from '../Icono.astro';
+
+const VACIA: DatosNota = {
+  motivo: '', evolucion: '', taSistolica: '', taDiastolica: '', fc: '', fr: '', temperatura: '', peso: '', talla: '',
+  omisionSignos: '', exploracion: '', diagnostico: '', cie10: '', pronostico: '', plan: '',
+};
+const REQUISITOS = requisitos(VACIA).map((r) => r.etiqueta);
+
+const HUELLA = { nota10: 'bd12c0e7…d679', anterior: '35d2e1a4…f0bd', actual: '9f2c41e8…b07a', alterada: '002f7968…21b3' };
+
+const FILAS = [
+  { etiqueta: 'Motivo', valor: 'Dolor de garganta y fiebre' },
+  { etiqueta: 'Evolución', valor: '2 días, sin mejoría' },
+  { etiqueta: 'Signos', valor: 'TA 118/76 · FC 92 · T 38.2 °C' },
+  { etiqueta: 'Exploración', valor: 'Faringe hiperémica, sin exudado' },
+  { etiqueta: 'Diagnóstico', valor: 'J02.9 Faringitis aguda' },
+  { etiqueta: 'Pronóstico', valor: 'Favorable' },
+  { etiqueta: 'Plan', valor: 'Paracetamol 500 mg c/8 h', alterado: 'Ibuprofeno 400 mg c/8 h' },
+] as const;
+
+const PASOS = [
+  {
+    corto: 'Escribir',
+    titulo: 'Usted escribe su nota como siempre.',
+    texto: 'Motivo, signos vitales, exploración, diagnóstico y plan. Mientras escribe, el borrador se guarda solo.',
+  },
+  {
+    corto: 'Revisar',
+    titulo: 'Un semáforo la revisa.',
+    texto: 'Antes de firmar comprueba los 7 requisitos de la NOM-004. Si falta algo, le dice qué; en verde, está lista.',
+  },
+  {
+    corto: 'Firmar',
+    titulo: 'Al firmar, queda sellada.',
+    texto: 'InmutalKey calcula una huella única del contenido y la firma con una llave que solo existe en su computadora. Ya no se puede modificar ni borrar.',
+    tecnico: 'Huella · SHA-256 · Firma · Ed25519',
+  },
+  {
+    corto: 'Encadenar',
+    titulo: 'Cada nota se encadena con la anterior.',
+    texto: 'La huella de la nota anterior del mismo paciente forma parte de la nueva. Si alguien quitara o cambiara una, la cadena dejaría de coincidir.',
+  },
+  {
+    corto: 'Detectar',
+    titulo: 'Si alguien la altera por fuera, se nota.',
+    texto: 'Si alguien modificara la base por fuera del programa, la huella dejaría de coincidir y la auditoría de integridad lo señalaría.',
+  },
+  {
+    corto: 'Corregir',
+    titulo: '¿Un error? Agregue una adenda.',
+    texto: 'Se suma con su motivo, fecha, hora y firma, enlazada a la nota. La original no cambia: el expediente muestra las dos.',
+  },
+] as const;
+---
+
+<section class="banda lamina tema-marino cuadricula ig" id="integridad" aria-labelledby="ig-titulo">
+  <div class="contenedor">
+    <div class="seccion-cabecera">
+      <p class="antetitulo">Integridad</p>
+      <h2 id="ig-titulo">Así protege InmutalKey cada nota que usted firma.</h2>
+      <p>Sin tecnicismos: usted escribe, firma y la nota queda sellada. Esto es lo que pasa por dentro.</p>
+    </div>
+  </div>
+
+  <div class="ig-historia" data-escena data-escena-marcas="0.15 0.32 0.48 0.64 0.82">
+    <div class="ig-escenario" data-escenario>
+      <div class="contenedor ig-rejilla">
+        <div class="ig-visor" aria-hidden="true">
+          <div class="ig-mq">
+            <div class="ig-cadena">
+              <span class="ig-eslabon">Nota 10 · 12 sep <b><Icono nombre="check" />{HUELLA.nota10}</b></span>
+              <span class="ig-eslabon">Nota 11 · 3 oct <b><Icono nombre="check" />{HUELLA.anterior}</b></span>
+              <i class="ig-hilo"></i>
+            </div>
+
+            <article class="ig-nota">
+              <header class="ig-cabeza">
+                <span class="ig-id">
+                  <strong>Nota de evolución · n.º 12</strong>
+                  <small>Ana Sofía Navarro Díaz · Exp. 000142</small>
+                </span>
+                <span class="ig-estado">
+                  <span class="ig-e-borrador">Borrador</span>
+                  <span class="ig-e-sellada"><Icono nombre="candado" /> Sellada 10:14</span>
+                  <span class="ig-e-alterada"><Icono nombre="alerta" /> Alterada</span>
+                </span>
+              </header>
+
+              <div class="ig-filas" data-p>
+                {
+                  FILAS.map((f) => (
+                    <p class="ig-fila">
+                      <small>{f.etiqueta}</small>
+                      {'alterado' in f ? (
+                        <span class="ig-plan">
+                          <span class="ig-original">{f.valor}</span>
+                          <span class="ig-alterado">{f.alterado}</span>
+                        </span>
+                      ) : (
+                        <span>{f.valor}</span>
+                      )}
+                    </p>
+                  ))
+                }
+              </div>
+
+              <footer class="ig-pie">
+                <span class="ig-anterior"><small>Anterior</small>{HUELLA.anterior}</span>
+                <span><small>Huella</small><b data-huella={HUELLA.actual} data-huella-paso="2">{HUELLA.actual}</b></span>
+                <span class="ig-firmada"><Icono nombre="check" /> Firmada <em>Ed25519</em></span>
+              </footer>
+
+              <div class="ig-semaforo">
+                <p class="ig-semaforo-cabeza">
+                  <span class="ig-luces"><i class="ig-luz-r"></i><i class="ig-luz-a"></i><i class="ig-luz-v"></i></span>
+                  <strong>Semáforo NOM-004</strong>
+                  <span class="ig-cuenta">7 de 7</span>
+                </p>
+                <ul>
+                  {REQUISITOS.map((r) => <li><Icono nombre="check" />{r}</li>)}
+                </ul>
+              </div>
+
+              <span class="ig-sello"><img src="/brand/logo-mono-blanco.svg" alt="" width="10" height="27" loading="lazy" decoding="async" /></span>
+              <span class="ig-marco"></span>
+            </article>
+
+            <div class="ig-bajo">
+              <p class="ig-lupa">
+                <strong><Icono nombre="alerta" /> Auditoría de integridad: la huella no coincide</strong>
+                <span>{HUELLA.actual} <b>≠</b> <span data-huella={HUELLA.alterada} data-huella-paso="4">{HUELLA.alterada}</span></span>
+              </p>
+              <article class="ig-adenda">
+                <strong>Adenda 1 · Corrección de captura</strong>
+                <span class="ig-chip"><Icono nombre="check" /> Sellada</span>
+                <span>Temperatura: 38.4 °C</span>
+                <small>↳ enlazada a {HUELLA.actual}</small>
+              </article>
+            </div>
+          </div>
+        </div>
+
+        <div class="ig-relato">
+          <ol class="ig-indice" aria-hidden="true">
+            {PASOS.map((p) => <li>{p.corto}</li>)}
+          </ol>
+          <div class="ig-barra" aria-hidden="true"><i data-p></i></div>
+          <ol class="ig-pasos">
+            {
+              PASOS.map((p, i) => (
+                <li>
+                  <span class="ig-num cifras" aria-hidden="true">{String(i + 1).padStart(2, '0')}</span>
+                  <h3>{p.titulo}</h3>
+                  <p>{p.texto}</p>
+                  {'tecnico' in p && <p class="tecnico">{p.tecnico}</p>}
+                </li>
+              ))
+            }
+          </ol>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="contenedor">
+    <details class="ig-detalles">
+      <summary><Icono nombre="computadora" /> Detalles técnicos, por si su área de sistemas pregunta <Icono nombre="mas" class="ig-signo" /></summary>
+      <ul>
+        <li>Cada nota firmada guarda una huella SHA-256 de su contenido y de la huella de la nota anterior del mismo paciente.</li>
+        <li>Esa huella se firma con Ed25519; la llave privada no vive en la base de datos.</li>
+        <li>Las correcciones son adendas enlazadas a la nota: nunca se reescribe el original.</li>
+        <li>La base completa está cifrada con SQLCipher (AES-256) y la clave se deriva de su contraseña con Argon2id.</li>
+        <li>La auditoría de integridad recorre la cadena desde la propia app y señala cualquier huella que no coincida.</li>
+      </ul>
+    </details>
+  </div>
+</section>
+
+<style is:global>
+  .ig-rejilla {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: clamp(1.25rem, 3vw, 3rem);
+    align-items: center;
+  }
+
+  /* ── Ilustración: todo en em y el em sale del ancho del visor (y del alto de la ventana): escala entera ── */
+
+  .ig-visor {
+    container-type: inline-size;
+    width: min(100%, 36rem);
+    margin-inline: auto;
+  }
+
+  .ig-mq {
+    display: grid;
+    gap: 0.7em;
+    font-size: min(calc(100cqi / 26), calc((100svh - var(--ig-reserva, 20rem)) / 33));
+    line-height: 1.35;
+    letter-spacing: -0.01em;
+    user-select: none;
+  }
+
+  .ig-mq .icono {
+    width: 1.05em;
+    height: 1.05em;
+  }
+
+  .ig-mq small {
+    color: var(--texto-suave);
+    font-size: 0.82em;
+  }
+
+  .ig-cadena {
+    position: relative;
+    display: flex;
+    gap: 0.6em;
+    padding-bottom: 0.9em;
+  }
+
+  .ig-eslabon {
+    display: grid;
+    flex: 1;
+    gap: 0.1em;
+    padding: 0.45em 0.7em;
+    border: 1px solid var(--cristal-borde);
+    border-radius: 0.8em;
+    background: var(--grad-tarjeta);
+    color: var(--texto-suave);
+    font-size: 0.82em;
+    transition: opacity 500ms ease, transform 500ms var(--curva-cristal);
+  }
+
+  .ig-eslabon b {
+    display: flex;
+    align-items: center;
+    gap: 0.3em;
+    color: var(--exito);
+    font-family: var(--mono);
+    font-weight: 500;
+  }
+
+  /* El hilo que une la nota 11 con la de hoy. */
+  .ig-hilo {
+    position: absolute;
+    right: 24%;
+    bottom: -0.7em;
+    width: 2px;
+    height: 1.6em;
+    border-radius: 1px;
+    background: linear-gradient(var(--exito), color-mix(in srgb, var(--exito) 40%, transparent));
+    transform-origin: top;
+    transition: transform 500ms var(--curva-cristal) 350ms;
+  }
+
+  .ig-nota {
+    position: relative;
+    display: grid;
+    gap: 0.75em;
+    padding: 1em 1.1em;
+    overflow: clip;
+    border: 1px solid var(--cristal-borde);
+    border-radius: 1.2em;
+    background: var(--grad-tarjeta);
+    box-shadow: var(--cristal-brillo), var(--elev-2);
+  }
+
+  .ig-cabeza {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.6em;
+    padding-bottom: 0.7em;
+    border-bottom: 1px solid var(--linea);
+  }
+
+  .ig-id {
+    display: grid;
+    min-width: 0;
+  }
+
+  .ig-id small {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .ig-estado {
+    display: grid;
+    flex: none;
+    justify-items: end;
+  }
+
+  .ig-estado > span {
+    grid-area: 1 / 1;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3em;
+    padding: 0.15em 0.65em;
+    border: 1px solid var(--cristal-borde);
+    border-radius: 999px;
+    color: var(--texto-suave);
+    font-size: 0.82em;
+    font-weight: 600;
+    white-space: nowrap;
+    transition: opacity 320ms ease;
+  }
+
+  .ig-e-borrador,
+  .ig-e-alterada {
+    opacity: 0;
+  }
+
+  .ig-estado .ig-e-sellada {
+    border-color: var(--exito-borde);
+    background: var(--exito-suave);
+    color: var(--exito);
+  }
+
+  .ig-estado .ig-e-alterada {
+    border-color: var(--peligro-borde);
+    background: var(--peligro-suave);
+    color: var(--peligro);
+  }
+
+  .ig-filas {
+    display: grid;
+    gap: 0.42em;
+  }
+
+  /* Cada fila se «escribe» con el avance de la escena: --p vive solo en .ig-filas (7 filas que recalcular). */
+  .ig-fila {
+    --t: clamp(0, (var(--p, 1) - (var(--i, 0) - 2) * 0.02) / 0.02, 1);
+    display: grid;
+    grid-template-columns: 5.6em minmax(0, 1fr);
+    gap: 0.5em;
+    align-items: baseline;
+    clip-path: inset(0 calc((1 - var(--t)) * 100%) 0 0);
+  }
+
+  .ig-fila:nth-child(2) { --i: 1; }
+  .ig-fila:nth-child(3) { --i: 2; }
+  .ig-fila:nth-child(4) { --i: 3; }
+  .ig-fila:nth-child(5) { --i: 4; }
+  .ig-fila:nth-child(6) { --i: 5; }
+  .ig-fila:nth-child(7) { --i: 6; }
+
+  .ig-plan {
+    display: grid;
+  }
+
+  .ig-plan > span {
+    grid-area: 1 / 1;
+    justify-self: start;
+    transition: opacity 300ms ease;
+  }
+
+  .ig-alterado {
+    padding: 0 0.3em;
+    border-radius: 0.3em;
+    background: var(--peligro-suave);
+    color: var(--peligro);
+    font-weight: 600;
+    opacity: 0;
+  }
+
+  .ig-pie {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.3em 1.1em;
+    padding-top: 0.7em;
+    border-top: 1px solid var(--linea);
+    font-family: var(--mono);
+    font-size: 0.82em;
+    transition: opacity 400ms ease;
+  }
+
+  .ig-pie > span {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.45em;
+    transition: opacity 400ms ease;
+  }
+
+  .ig-pie small {
+    font-family: var(--fuente);
+    font-size: 1em;
+  }
+
+  .ig-pie b {
+    font-weight: 500;
+  }
+
+  .ig-firmada {
+    align-items: center !important;
+    margin-left: auto;
+    color: var(--exito);
+    font-family: var(--fuente);
+    font-weight: 600;
+  }
+
+  .ig-firmada em {
+    color: var(--texto-suave);
+    font-family: var(--mono);
+    font-style: normal;
+    font-weight: 400;
+  }
+
+  /* Semáforo: la hoja que sube sobre la nota antes de firmar (solo en el paso 1). */
+  .ig-semaforo {
+    position: absolute;
+    inset: auto 0.7em 0.7em;
+    display: grid;
+    gap: 0.5em;
+    padding: 0.8em 0.9em;
+    border: 1px solid var(--cristal-borde);
+    border-radius: 0.9em;
+    background: color-mix(in srgb, var(--marca-abismo) 94%, var(--luz-destello));
+    box-shadow: var(--cristal-brillo), var(--elev-3);
+    opacity: 0;
+    transform: translateY(1.2em);
+    visibility: hidden;
+    transition: opacity 360ms ease, transform 420ms var(--curva-cristal), visibility 0s 420ms;
+  }
+
+  .ig-semaforo-cabeza {
+    display: flex;
+    align-items: center;
+    gap: 0.6em;
+  }
+
+  .ig-cuenta {
+    margin-left: auto;
+    color: var(--exito);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .ig-luces {
+    display: inline-flex;
+    gap: 0.25em;
+    padding: 0.25em 0.4em;
+    border-radius: 999px;
+    background: rgb(0 4 12 / 0.5);
+  }
+
+  .ig-luces i {
+    width: 0.65em;
+    height: 0.65em;
+    border-radius: 50%;
+    opacity: 0.22;
+  }
+
+  .ig-luz-r { background: #ff6b61; }
+  .ig-luz-a { background: #f2c76b; }
+  .ig-luces .ig-luz-v { background: #22c55e; opacity: 1; }
+
+  .ig-semaforo ul {
+    display: grid;
+    gap: 0.28em;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-size: 0.9em;
+  }
+
+  .ig-semaforo li {
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+  }
+
+  .ig-semaforo li .icono {
+    flex: none;
+    color: var(--exito);
+  }
+
+  /* Sello: el logo dentro de un disco, que cae sobre la esquina de la nota al firmar. */
+  .ig-sello {
+    position: absolute;
+    right: 1em;
+    bottom: 4.9em;
+    display: grid;
+    place-items: center;
+    width: 4.2em;
+    height: 4.2em;
+    border-radius: 50%;
+    background: var(--grad-primario);
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.4),
+      0 0 0 0.3em color-mix(in srgb, var(--primario) 18%, transparent),
+      0 0.8em 1.6em -0.6em rgb(0 4 12 / 0.8);
+    transform: rotate(-12deg);
+  }
+
+  .ig-sello img {
+    width: auto;
+    height: 2.6em;
+    filter: brightness(0.25);
+  }
+
+  .ig-marco {
+    position: absolute;
+    inset: 0;
+    border: 2px solid var(--peligro);
+    border-radius: inherit;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 300ms ease;
+  }
+
+  /* Bajo la nota: la lupa de la auditoría (paso 4) y la adenda (paso 5) comparten el mismo hueco. */
+  .ig-bajo {
+    display: grid;
+  }
+
+  .ig-bajo > * {
+    grid-area: 1 / 1;
+    margin: 0;
+    padding: 0.65em 0.9em;
+    border-radius: 0.9em;
+    font-size: 0.9em;
+    transition: opacity 400ms ease, transform 450ms var(--curva-cristal);
+  }
+
+  .ig-lupa {
+    display: grid;
+    gap: 0.2em;
+    border: 1px solid var(--peligro-borde);
+    background: var(--peligro-suave);
+    color: var(--peligro);
+    opacity: 0;
+  }
+
+  .ig-lupa strong {
+    display: flex;
+    align-items: center;
+    gap: 0.4em;
+  }
+
+  .ig-lupa > span {
+    font-family: var(--mono);
+    font-size: 0.92em;
+  }
+
+  .ig-adenda {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0.15em 0.8em;
+    align-items: center;
+    border: 1px solid var(--cristal-borde);
+    background: var(--grad-tarjeta);
+    box-shadow: var(--cristal-brillo), var(--elev-1);
+  }
+
+  .ig-adenda small {
+    grid-column: 1 / -1;
+    font-family: var(--mono);
+  }
+
+  .ig-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3em;
+    color: var(--exito);
+    font-weight: 600;
+  }
+
+  /* ── Relato ── */
+
+  .ig-indice,
+  .ig-barra {
+    display: none;
+  }
+
+  .ig-pasos {
+    display: grid;
+    gap: 1.5rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .ig-pasos li {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 0.25rem 0.875rem;
+    align-content: start;
+  }
+
+  .ig-num {
+    grid-row: span 3;
+    padding-top: 0.2rem;
+    color: var(--primario);
+    font-size: 0.875rem;
+    font-weight: 650;
+  }
+
+  .ig-pasos h3 {
+    font-size: clamp(1.1875rem, 1.05rem + 0.6vw, 1.5rem);
+  }
+
+  .ig-pasos p {
+    grid-column: 2;
+    color: var(--texto-2);
+  }
+
+  .ig-detalles {
+    max-width: 46rem;
+    margin-top: clamp(2rem, 4vw, 3rem);
+    border: 1px solid var(--cristal-borde);
+    border-radius: var(--radio);
+    background: var(--cristal);
+  }
+
+  .ig-detalles summary {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    min-height: 3.25rem;
+    padding: 0.5rem 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    list-style: none;
+  }
+
+  .ig-detalles summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .ig-signo {
+    margin-left: auto;
+    transition: transform 240ms var(--curva-cristal);
+  }
+
+  .ig-detalles[open] .ig-signo {
+    transform: rotate(45deg);
+  }
+
+  .ig-detalles ul {
+    display: grid;
+    gap: 0.5rem;
+    margin: 0;
+    padding: 0.25rem 1rem 1.125rem 2.25rem;
+    color: var(--texto-2);
+    font-size: 0.9375rem;
+  }
+
+  /* ── Estados por paso (solo con el motor: sin él queda el estado final) ── */
+
+  .escena-lista .ig-eslabon {
+    opacity: 0;
+    transform: translateY(0.5em);
+  }
+
+  .escena-lista .ig-hilo {
+    transform: scaleY(0);
+  }
+
+  .escena-lista .ig-e-sellada,
+  .escena-lista .ig-pie > span,
+  .escena-lista .ig-adenda {
+    opacity: 0;
+  }
+
+  .escena-lista .ig-adenda {
+    transform: translateY(0.6em);
+  }
+
+  .escena-lista .ig-e-borrador {
+    opacity: 1;
+  }
+
+  .escena-lista .ig-sello {
+    opacity: 0;
+  }
+
+  .escena-lista[data-paso='1'] .ig-semaforo {
+    opacity: 1;
+    transform: none;
+    visibility: visible;
+    transition-delay: 0s;
+  }
+
+  .escena-lista[data-paso='1'] .ig-luz-r { animation: ig-roja 1500ms ease both; }
+  .escena-lista[data-paso='1'] .ig-luz-a { animation: ig-ambar 1500ms ease both; }
+  .escena-lista[data-paso='1'] .ig-luz-v { animation: ig-verde 1500ms ease both; }
+  .escena-lista[data-paso='1'] .ig-cuenta { animation: ig-verde 1500ms ease both; }
+
+  .escena-lista[data-paso='1'] .ig-semaforo li .icono {
+    animation: ig-palomita 380ms var(--curva-cristal) both;
+  }
+
+  .escena-lista[data-paso='1'] .ig-semaforo li:nth-child(1) .icono { animation-delay: 200ms; }
+  .escena-lista[data-paso='1'] .ig-semaforo li:nth-child(2) .icono { animation-delay: 340ms; }
+  .escena-lista[data-paso='1'] .ig-semaforo li:nth-child(3) .icono { animation-delay: 480ms; }
+  .escena-lista[data-paso='1'] .ig-semaforo li:nth-child(4) .icono { animation-delay: 620ms; }
+  .escena-lista[data-paso='1'] .ig-semaforo li:nth-child(5) .icono { animation-delay: 760ms; }
+  .escena-lista[data-paso='1'] .ig-semaforo li:nth-child(6) .icono { animation-delay: 900ms; }
+  .escena-lista[data-paso='1'] .ig-semaforo li:nth-child(7) .icono { animation-delay: 1040ms; }
+
+  .alcanzo-2 .ig-e-borrador {
+    opacity: 0;
+  }
+
+  .alcanzo-2 .ig-e-sellada,
+  .alcanzo-2 .ig-pie > span:not(.ig-anterior) {
+    opacity: 1;
+  }
+
+  .alcanzo-2 .ig-sello {
+    opacity: 1;
+    animation: ig-sellar 620ms var(--curva-cristal) both;
+  }
+
+  .alcanzo-3 .ig-eslabon {
+    opacity: 1;
+    transform: none;
+  }
+
+  .alcanzo-3 .ig-eslabon + .ig-eslabon {
+    transition-delay: 160ms;
+  }
+
+  .alcanzo-3 .ig-hilo {
+    transform: none;
+  }
+
+  .alcanzo-3 .ig-pie > .ig-anterior {
+    opacity: 1;
+  }
+
+  .escena-lista[data-paso='4'] .ig-original,
+  .escena-lista[data-paso='4'] .ig-e-sellada {
+    opacity: 0;
+  }
+
+  .escena-lista[data-paso='4'] .ig-alterado,
+  .escena-lista[data-paso='4'] .ig-e-alterada,
+  .escena-lista[data-paso='4'] .ig-marco,
+  .escena-lista[data-paso='4'] .ig-lupa {
+    opacity: 1;
+  }
+
+  .alcanzo-5 .ig-adenda {
+    opacity: 1;
+    transform: none;
+    transition-delay: 250ms;
+  }
+
+  @keyframes ig-sellar {
+    from {
+      opacity: 0;
+      transform: rotate(-30deg) scale(2.2);
+    }
+    60% {
+      opacity: 1;
+      transform: rotate(-9deg) scale(0.94);
+    }
+    to {
+      transform: rotate(-12deg) scale(1);
+    }
+  }
+
+  @keyframes ig-palomita {
+    from {
+      opacity: 0;
+      transform: scale(0.4);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  @keyframes ig-roja {
+    0%, 30% { opacity: 1; }
+    40%, 100% { opacity: 0.22; }
+  }
+
+  @keyframes ig-ambar {
+    0%, 30% { opacity: 0.22; }
+    40%, 68% { opacity: 1; }
+    78%, 100% { opacity: 0.22; }
+  }
+
+  @keyframes ig-verde {
+    0%, 68% { opacity: 0.22; }
+    78%, 100% { opacity: 1; }
+  }
+
+  /* ── Con movimiento y una ventana de alto razonable: la escena se fija y el relato muestra un paso a la vez ── */
+
+  @media (min-height: 35rem) {
+    .movimiento .ig-historia {
+      height: 460svh;
+    }
+
+    .movimiento .ig-escenario {
+      position: sticky;
+      top: 0;
+      display: grid;
+      align-content: center;
+      height: 100svh;
+      padding: calc(var(--altura-nav) + 0.75rem) 0 1rem;
+    }
+
+    .movimiento .ig-rejilla {
+      gap: 1rem;
+    }
+
+    .movimiento .ig-barra {
+      display: block;
+      height: 3px;
+      margin-bottom: 0.875rem;
+      overflow: hidden;
+      border-radius: 2px;
+      background: var(--linea);
+    }
+
+    .movimiento .ig-barra i {
+      display: block;
+      height: 100%;
+      background: var(--primario);
+      transform: scaleX(var(--p, 1));
+      transform-origin: left;
+    }
+
+    .movimiento .ig-pasos {
+      gap: 0;
+      min-height: 9.5rem;
+    }
+
+    .movimiento .escena-lista .ig-pasos li {
+      grid-area: 1 / 1;
+      opacity: 0;
+      transform: translateY(0.5rem);
+      visibility: hidden;
+      transition: opacity 320ms ease, transform 380ms var(--curva-cristal), visibility 0s 380ms;
+    }
+
+    .movimiento .escena-lista[data-paso='0'] .ig-pasos li:nth-child(1),
+    .movimiento .escena-lista[data-paso='1'] .ig-pasos li:nth-child(2),
+    .movimiento .escena-lista[data-paso='2'] .ig-pasos li:nth-child(3),
+    .movimiento .escena-lista[data-paso='3'] .ig-pasos li:nth-child(4),
+    .movimiento .escena-lista[data-paso='4'] .ig-pasos li:nth-child(5),
+    .movimiento .escena-lista[data-paso='5'] .ig-pasos li:nth-child(6) {
+      opacity: 1;
+      transform: none;
+      visibility: visible;
+      transition-delay: 0s;
+    }
+  }
+
+  @media (min-width: 62rem) {
+    .ig-rejilla {
+      grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+    }
+
+    .ig-visor {
+      --ig-reserva: 8.5rem;
+      order: 2;
+    }
+  }
+
+  @media (min-width: 62rem) and (min-height: 35rem) {
+    .movimiento .ig-historia {
+      height: 520svh;
+    }
+
+    .movimiento .ig-rejilla {
+      gap: 4rem;
+    }
+
+    .movimiento .ig-indice {
+      display: flex;
+      gap: 1rem;
+      margin: 0 0 0.75rem;
+      padding: 0;
+      list-style: none;
+      color: var(--texto-suave);
+      font-size: 0.8125rem;
+      font-weight: 600;
+    }
+
+    .movimiento .ig-indice li {
+      opacity: 0.55;
+      transition: opacity 300ms ease, color 300ms ease;
+    }
+
+    .movimiento [data-paso='0'] .ig-indice li:nth-child(1),
+    .movimiento [data-paso='1'] .ig-indice li:nth-child(2),
+    .movimiento [data-paso='2'] .ig-indice li:nth-child(3),
+    .movimiento [data-paso='3'] .ig-indice li:nth-child(4),
+    .movimiento [data-paso='4'] .ig-indice li:nth-child(5),
+    .movimiento [data-paso='5'] .ig-indice li:nth-child(6) {
+      color: var(--primario);
+      opacity: 1;
+    }
+
+    .movimiento .ig-pasos {
+      min-height: 13rem;
+    }
+  }
+</style>
