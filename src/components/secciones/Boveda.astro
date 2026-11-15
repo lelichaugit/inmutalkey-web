@@ -1,0 +1,596 @@
+---
+// La bóveda: dónde viven los expedientes. Tres actos sobre una banda Marino, con una escena por pasos
+// (src/scripts/escenas.ts): fijada en escritorio, reproducida sola al entrar en vista en celular.
+//
+//   paso 0  la nota recién firmada, en claro
+//   paso 1  se cifra ante sus ojos (dos capas de texto que se relevan con clip-path) y el candado cierra
+//   paso 2  la nube se corta: sin conexión, y el programa sigue sellando notas
+//   paso 3  la ventana se atenúa y llega la llave: solo su contraseña la abre
+//
+// Sin JS o con «reducir movimiento»: los tres actos se leen apilados y la ilustración queda en su estado final.
+// Verdad (clinica-nom004 v0.4.0, docs/TRASPASO.md §4): base cifrada con SQLCipher AES-256 y clave derivada de la
+// contraseña con Argon2id; sin internet ni telemetría; Clave de Rescate de 24 caracteres para crear una contraseña
+// nueva. Los detalles prácticos (respaldo, qué pasa si pierde el equipo) viven en «Seguridad, en claro».
+// Estilos globales con prefijo `bv-`: las clases de estado las pone el motor en la raíz de la escena.
+import Icono from '../Icono.astro';
+
+const NOTA = [
+  'Nota de evolución · hoy 11:24',
+  'Motivo: control de hipertensión',
+  'TA 128/82 · FC 74 · IMC 27.4',
+  'Dx: I10 Hipertensión esencial',
+  'Plan: losartán 50 mg cada 24 h',
+] as const;
+
+// Texto «cifrado» de muestra: determinista (el build es reproducible) y del mismo largo que cada renglón.
+const ALFABETO = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+function ruido(largo: number, semilla: number): string {
+  let s = semilla >>> 0;
+  let salida = '';
+  for (let i = 0; i < largo; i++) {
+    s ^= s << 13;
+    s >>>= 0;
+    s ^= s >>> 17;
+    s ^= s << 5;
+    s >>>= 0;
+    salida += ALFABETO.charAt(s % 64);
+  }
+  return salida;
+}
+const PLANO = NOTA.join('\n');
+const CIFRADO = NOTA.map((renglon, i) => ruido(Math.max(renglon.length, 30), 0x9e3779b9 + i * 7919)).join('\n');
+
+const ACTOS = [
+  {
+    titulo: 'Sus expedientes no se van a ninguna nube.',
+    texto: 'Se guardan cifrados en su computadora. Sin su contraseña, lo que usted escribió es ilegible, aunque alguien copie el archivo o se lleve el equipo.',
+    tecnico: 'Cifrado · SQLCipher AES-256 · clave derivada con Argon2id',
+  },
+  {
+    titulo: 'Sin internet. Nada sale de su equipo.',
+    texto: 'InmutalKey no envía datos a nadie, ni siquiera a nosotros. Con el wifi apagado usted consulta, firma, imprime y respalda igual.',
+  },
+  {
+    titulo: 'Usted tiene la llave.',
+    texto: 'Solo su contraseña abre sus expedientes. Si algún día la olvida, su Clave de Rescate le permite crear una nueva; sin las dos, nadie puede abrirlos. Tampoco nosotros.',
+  },
+] as const;
+---
+
+<section class="banda lamina tema-marino cuadricula bv" id="boveda" aria-labelledby="bv-titulo">
+  <div class="bv-escena" data-escena data-escena-marcas="0.18 0.46 0.74" data-escena-auto="1900">
+    <div class="bv-escenario" data-escenario>
+      <div class="contenedor bv-rejilla">
+        <div class="bv-actos">
+          <p class="antetitulo">Bóveda</p>
+          {
+            ACTOS.map((a, i) => (
+              <div class={`bv-acto bv-acto-${i + 1}`}>
+                {i === 0 ? <h2 id="bv-titulo">{a.titulo}</h2> : <h3>{a.titulo}</h3>}
+                <p>{a.texto}</p>
+                {'tecnico' in a && <p class="tecnico">{a.tecnico}</p>}
+              </div>
+            ))
+          }
+        </div>
+
+        <div class="bv-visor" aria-hidden="true" data-escena-vista>
+          <div class="bv-mq">
+            <div class="bv-nube">
+              <span class="bv-nube-icono"><Icono nombre="nube" /><i></i></span>
+              <span class="bv-relevo"><span class="bv-a">Nube</span><span class="bv-b">Sin conexión</span></span>
+            </div>
+            <div class="bv-enlaces"><i></i><i></i><i></i></div>
+
+            <div class="bv-ventana">
+              <p class="bv-barra">
+                <span><Icono nombre="respaldo" /> Expedientes · en su computadora</span>
+                <span class="bv-wifi"><Icono nombre="sin-wifi" /></span>
+                <span class="bv-candado"><Icono nombre="candado" /></span>
+              </p>
+              <div class="bv-nota">
+                <pre class="bv-capa bv-plano">{PLANO}</pre>
+                <pre class="bv-capa bv-cifra">{CIFRADO}</pre>
+                <p class="bv-aviso"><Icono nombre="check" /> <span><b>Nota sellada</b><small>sin conexión</small></span></p>
+              </div>
+              <p class="bv-pie">
+                <span class="tecnico">AES-256</span>
+                <span class="bv-relevo"><span class="bv-a">En claro mientras usted la ve</span><span class="bv-b">Cifrada en su equipo</span></span>
+              </p>
+            </div>
+
+            <div class="bv-llave">
+              <img src="/brand/logo-plata-280.webp" alt="" width="100" height="280" loading="lazy" decoding="async" />
+              <span>Solo su contraseña la abre</span>
+            </div>
+          </div>
+        </div>
+
+        <button type="button" class="enlace-boton bv-repetir" data-escena-repetir>Ver de nuevo</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style is:global>
+  .bv-rejilla {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: clamp(1.5rem, 4vw, 4rem);
+    align-items: center;
+  }
+
+  .bv-actos {
+    display: grid;
+    gap: 1.75rem;
+  }
+
+  .bv-actos .antetitulo {
+    margin: 0 0 -0.75rem;
+  }
+
+  .bv-acto {
+    display: grid;
+    gap: 0.75rem;
+    max-width: 34rem;
+  }
+
+  .bv-acto h3 {
+    font-size: clamp(1.5rem, 1.2rem + 1.4vw, 2.25rem);
+    font-weight: 680;
+    letter-spacing: -0.024em;
+    line-height: 1.12;
+  }
+
+  .bv-acto p:not(.tecnico) {
+    color: var(--texto-2);
+    font-size: clamp(1.0625rem, 1rem + 0.35vw, 1.25rem);
+  }
+
+  /* ── Ilustración (em desde el ancho del visor) ── */
+
+  .bv-visor {
+    container-type: inline-size;
+    width: min(100%, 32rem);
+    margin-inline: auto;
+  }
+
+  .bv-mq {
+    position: relative;
+    display: grid;
+    justify-items: center;
+    font-size: calc(100cqi / 25);
+    line-height: 1.4;
+    user-select: none;
+  }
+
+  .bv-mq .icono {
+    width: 1.2em;
+    height: 1.2em;
+  }
+
+  .bv-nube {
+    display: grid;
+    justify-items: center;
+    gap: 0.2em;
+    color: var(--texto-suave);
+    font-size: 0.85em;
+  }
+
+  .bv-nube-icono {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 3.2em;
+    height: 3.2em;
+    border: 1px solid var(--cristal-borde);
+    border-radius: 50%;
+    background: var(--cristal);
+  }
+
+  .bv-nube-icono .icono {
+    width: 1.6em;
+    height: 1.6em;
+  }
+
+  /* Tacha de la nube: una raya que crece (solo transform). */
+  .bv-nube-icono i {
+    position: absolute;
+    width: 2.6em;
+    height: 2px;
+    border-radius: 1px;
+    background: var(--peligro);
+    transform: rotate(-45deg);
+    transition: transform 380ms var(--curva-cristal);
+  }
+
+  /* Dos rótulos en la misma celda que se relevan. */
+  .bv-relevo {
+    display: grid;
+    justify-items: center;
+  }
+
+  .bv-relevo > span {
+    grid-area: 1 / 1;
+    transition: opacity 320ms ease;
+  }
+
+  .bv-a {
+    opacity: 0;
+  }
+
+  .bv-enlaces {
+    display: flex;
+    justify-content: center;
+    gap: 2.2em;
+    height: 2.6em;
+    margin-top: 0.3em;
+  }
+
+  .bv-enlaces i {
+    width: 2px;
+    background: repeating-linear-gradient(var(--texto-suave) 0 0.35em, transparent 0.35em 0.7em);
+    opacity: 0.25;
+    transform: scaleY(0.35);
+    transform-origin: top;
+    transition: transform 450ms var(--curva-cristal), opacity 450ms ease;
+  }
+
+  .bv-ventana {
+    width: 100%;
+    overflow: clip;
+    border: 1px solid var(--cristal-borde);
+    border-radius: 1.1em;
+    background: var(--grad-tarjeta);
+    box-shadow: var(--cristal-brillo), var(--elev-3);
+    opacity: 0.42;
+    transition: opacity 500ms ease;
+  }
+
+  .bv-barra {
+    display: flex;
+    align-items: center;
+    gap: 0.7em;
+    padding: 0.6em 0.9em;
+    border-bottom: 1px solid var(--linea);
+    color: var(--texto-suave);
+    font-size: 0.85em;
+  }
+
+  .bv-barra > span:first-child {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45em;
+    margin-right: auto;
+  }
+
+  .bv-wifi {
+    color: var(--alerta);
+    transition: opacity 320ms ease;
+  }
+
+  .bv-candado {
+    color: var(--exito);
+    transition: opacity 320ms ease, transform 420ms var(--curva-cristal);
+  }
+
+  .bv-nota {
+    position: relative;
+    display: grid;
+    padding: 0.9em;
+  }
+
+  .bv-capa {
+    grid-area: 1 / 1;
+    margin: 0;
+    overflow: hidden;
+    font-family: var(--mono);
+    font-size: 0.78em;
+    line-height: 1.75;
+    white-space: pre;
+    transition: clip-path 1300ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .bv-plano {
+    font-family: var(--fuente);
+    font-size: 0.86em;
+    line-height: 1.59;
+    clip-path: inset(0 0 0 100%);
+  }
+
+  .bv-cifra {
+    color: var(--primario);
+  }
+
+  .bv-aviso {
+    position: absolute;
+    right: 0.9em;
+    bottom: 0.9em;
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+    padding: 0.45em 0.8em;
+    border: 1px solid var(--exito-borde);
+    border-radius: 0.8em;
+    background: color-mix(in srgb, var(--marca-abismo) 90%, var(--exito));
+    color: var(--exito);
+    font-size: 0.85em;
+    line-height: 1.2;
+    opacity: 0;
+    transition: opacity 380ms ease, transform 420ms var(--curva-cristal);
+  }
+
+  .bv-aviso span {
+    display: grid;
+  }
+
+  .bv-aviso small {
+    color: var(--texto-suave);
+  }
+
+  .bv-pie {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.8em;
+    padding: 0.55em 0.9em;
+    border-top: 1px solid var(--linea);
+    color: var(--exito);
+    font-size: 0.85em;
+    font-weight: 600;
+  }
+
+  .bv-pie .tecnico {
+    font-size: 1em;
+    font-weight: 400;
+  }
+
+  .bv-pie .bv-a {
+    color: var(--texto-suave);
+    font-weight: 400;
+  }
+
+  /* La llave: el logo plata sobre la ventana atenuada. */
+  .bv-llave {
+    position: absolute;
+    inset: auto 0 0.4em;
+    display: grid;
+    justify-items: center;
+    gap: 0.6em;
+    transition: opacity 500ms ease, transform 700ms var(--curva-cristal);
+  }
+
+  .bv-llave::before {
+    content: '';
+    position: absolute;
+    inset: -8% 12% 8%;
+    z-index: -1;
+    background: radial-gradient(closest-side, color-mix(in srgb, var(--luz-destello) 55%, transparent), transparent);
+  }
+
+  .bv-llave img {
+    width: auto;
+    height: 11.5em;
+  }
+
+  .bv-llave span {
+    padding: 0.2em 0.9em;
+    border: 1px solid var(--cristal-borde);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--marca-abismo) 86%, var(--luz-destello));
+    font-size: 0.85em;
+    font-weight: 600;
+  }
+
+  .bv-repetir {
+    display: none;
+    justify-self: center;
+  }
+
+  /* ── Estados por paso (solo con el motor: sin él queda el estado final) ── */
+
+  .escena-lista .bv-nube-icono i {
+    transform: rotate(-45deg) scaleX(0);
+  }
+
+  .escena-lista .bv-a {
+    opacity: 1;
+  }
+
+  .escena-lista .bv-b,
+  .escena-lista .bv-wifi,
+  .escena-lista .bv-candado,
+  .escena-lista .bv-llave {
+    opacity: 0;
+  }
+
+  .escena-lista .bv-candado {
+    transform: scale(0.5);
+  }
+
+  .escena-lista .bv-enlaces i {
+    opacity: 0.7;
+    transform: none;
+  }
+
+  .escena-lista .bv-ventana {
+    opacity: 1;
+  }
+
+  .escena-lista .bv-plano {
+    clip-path: inset(0);
+  }
+
+  .escena-lista .bv-cifra {
+    clip-path: inset(0 100% 0 0);
+  }
+
+  .escena-lista .bv-aviso {
+    transform: translateY(0.5em);
+  }
+
+  .escena-lista .bv-llave {
+    transform: translateY(-1.5em) scale(0.86);
+  }
+
+  .alcanzo-1 .bv-plano {
+    clip-path: inset(0 0 0 100%);
+  }
+
+  .alcanzo-1 .bv-cifra {
+    clip-path: inset(0);
+  }
+
+  .alcanzo-1 .bv-candado {
+    opacity: 1;
+    transform: none;
+    transition-delay: 1100ms;
+  }
+
+  .alcanzo-1 .bv-pie .bv-a {
+    opacity: 0;
+  }
+
+  .alcanzo-1 .bv-pie .bv-b {
+    opacity: 1;
+    transition-delay: 1100ms;
+  }
+
+  .alcanzo-2 .bv-nube-icono i {
+    transform: rotate(-45deg);
+  }
+
+  .alcanzo-2 .bv-nube .bv-a {
+    opacity: 0;
+  }
+
+  .alcanzo-2 .bv-nube .bv-b,
+  .alcanzo-2 .bv-wifi {
+    opacity: 1;
+  }
+
+  .alcanzo-2 .bv-enlaces i {
+    opacity: 0.25;
+    transform: scaleY(0.35);
+  }
+
+  .alcanzo-2 .bv-enlaces i:nth-child(2) {
+    transition-delay: 120ms;
+  }
+
+  .alcanzo-2 .bv-enlaces i:nth-child(3) {
+    transition-delay: 240ms;
+  }
+
+  .alcanzo-2 .bv-aviso {
+    opacity: 1;
+    transform: none;
+    transition-delay: 500ms;
+  }
+
+  .alcanzo-3 .bv-ventana {
+    opacity: 0.42;
+  }
+
+  .alcanzo-3 .bv-aviso {
+    opacity: 0;
+    transition-delay: 0s;
+  }
+
+  .alcanzo-3 .bv-llave {
+    opacity: 1;
+    transform: none;
+  }
+
+  .movimiento .escena-lista .bv-repetir {
+    display: inline-flex;
+    align-items: center;
+  }
+
+  /* Celular y tableta: la ilustración va entre el primer acto y los otros dos. */
+  @media (max-width: 61.99rem) {
+    .bv-actos {
+      display: contents;
+    }
+
+    .bv-actos .antetitulo {
+      margin: 0 0 -1rem;
+    }
+
+    .bv-visor {
+      order: 1;
+    }
+
+    .bv-repetir {
+      order: 2;
+    }
+
+    .bv-acto-2,
+    .bv-acto-3 {
+      order: 3;
+    }
+  }
+
+  /* ── Escritorio con movimiento: la escena se fija y se muestra un acto a la vez ── */
+
+  @media (min-width: 62rem) {
+    .bv-rejilla {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    }
+  }
+
+  @media (min-width: 62rem) and (min-height: 40rem) {
+    .movimiento .bv {
+      padding-block: 0;
+    }
+
+    .movimiento .bv-escena {
+      height: 340svh;
+    }
+
+    .movimiento .bv-escenario {
+      position: sticky;
+      top: 0;
+      display: grid;
+      align-content: center;
+      height: 100svh;
+      padding-top: var(--altura-nav);
+    }
+
+    .movimiento .bv-visor {
+      width: min(100%, 32rem, (100svh - 9rem) * 0.86);
+    }
+
+    .movimiento .escena-lista .bv-repetir {
+      display: none;
+    }
+
+    .movimiento .escena-lista .bv-actos {
+      grid-template-rows: auto 1fr;
+      gap: 0;
+    }
+
+    .movimiento .escena-lista .bv-actos .antetitulo {
+      margin-bottom: 0.75rem;
+    }
+
+    .movimiento .escena-lista .bv-acto {
+      grid-area: 2 / 1;
+      align-content: start;
+      opacity: 0;
+      transform: translateY(0.6rem);
+      visibility: hidden;
+      transition: opacity 360ms ease, transform 420ms var(--curva-cristal), visibility 0s 420ms;
+    }
+
+    .movimiento .escena-lista[data-paso='0'] .bv-acto-1,
+    .movimiento .escena-lista[data-paso='1'] .bv-acto-1,
+    .movimiento .escena-lista[data-paso='2'] .bv-acto-2,
+    .movimiento .escena-lista[data-paso='3'] .bv-acto-3 {
+      opacity: 1;
+      transform: none;
+      visibility: visible;
+      transition-delay: 0s;
+    }
+  }
+</style>

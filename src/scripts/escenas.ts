@@ -8,7 +8,8 @@
 //  · Fijada: si el CSS deja `[data-escenario]` en `position: sticky`, el paso sale del scroll (avance 0 → 1 mientras
 //    el escenario está pegado). Las marcas son los avances donde empieza cada paso.
 //  · Sin fijar (celular, donde el componente no la fija): con `data-escena-auto` los pasos se reproducen solos, una
-//    vez, cuando la escena entra en vista (cada N ms); sin él, queda en su estado final.
+//    vez, cuando la escena entra en vista (cada N ms); sin él, queda en su estado final. «En vista» se mide sobre
+//    `[data-escena-vista]` (la ilustración) si existe: un escenario con mucho texto puede ser más alto que la ventana.
 //  · La raíz recibe `.escena-lista` (hay motor), `data-paso="n"`, `.alcanzo-1…n` y el evento `escena:paso`.
 //  · `--p` (avance continuo) se escribe SOLO en los descendientes `[data-p]`: una variable heredada obliga a recalcular
 //    el estilo de todo el subárbol en cada cuadro, y eso en un celular de gama media se nota.
@@ -21,6 +22,8 @@
 interface Escena {
   readonly raiz: HTMLElement;
   readonly escenario: HTMLElement | null;
+  /** Elemento cuya visibilidad dispara la reproducción automática. */
+  readonly vista: HTMLElement;
   readonly marcas: readonly number[];
   readonly destinos: readonly HTMLElement[];
   readonly autoMs: number;
@@ -99,6 +102,7 @@ export function iniciarEscenas(documento: ParentNode): MotorEscenas {
   const escenas: Escena[] = [...documento.querySelectorAll<HTMLElement>('[data-escena]')].map((raiz) => ({
     raiz,
     escenario: raiz.querySelector<HTMLElement>('[data-escenario]'),
+    vista: raiz.querySelector<HTMLElement>('[data-escena-vista]') ?? raiz.querySelector<HTMLElement>('[data-escenario]') ?? raiz,
     marcas: (raiz.dataset['escenaMarcas'] ?? '')
       .split(/[\s,]+/)
       .map(Number)
@@ -189,14 +193,14 @@ export function iniciarEscenas(documento: ParentNode): MotorEscenas {
     const io = new IntersectionObserver(
       (entradas) => {
         for (const entrada of entradas) {
-          const e = automaticas.find((x) => (x.escenario ?? x.raiz) === entrada.target);
+          const e = automaticas.find((x) => x.vista === entrada.target);
           if (!e || !entrada.isIntersecting || e.fija || e.reproducida) continue;
           reproducir(e);
         }
       },
       { threshold: 0.45 },
     );
-    automaticas.forEach((e) => io.observe(e.escenario ?? e.raiz));
+    automaticas.forEach((e) => io.observe(e.vista));
   }
 
   let medicion = false;
