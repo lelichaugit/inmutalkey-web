@@ -86,6 +86,9 @@ export default defineConfig({
     build: {
       // Nada de scripts/recursos incrustados: la CSP no permite 'unsafe-inline' ni data:.
       assetsInlineLimit: 0,
+      // Una sola hoja de estilos para todo el sitio (≈ 17 KB comprimida): un solo recurso bloqueante en lugar de 3–4
+      // por página, y en caché desde la primera visita para las demás páginas.
+      cssCodeSplit: false,
     },
   },
   integrations: [guardian()],

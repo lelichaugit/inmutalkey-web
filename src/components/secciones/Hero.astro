@@ -1,1098 +1,264 @@
 ---
-// Portada. La llave (Isotipo3D) es la protagonista del sitio: aquí se presenta, en "Cómo funciona" sella la nota y
-// vuelve en el cierre (CtaFinal).
-//
-// Intro al cargar (solo CSS, ≤ 1.8 s, no espera al scroll): la llave aparece como plano técnico azul, el escáner baja
-// materializando el render sólido (--materia 0 → 1) y una luz la recorre. El texto se ve desde el primer pintado.
-//
-// Escena fijada (scroll.ts, solo con .movimiento): el texto sube y se desvanece, la llave viaja al centro con un giro
-// 3D sutil y los aros del visor se abren; aparece la frase y, al final, la llave se hunde y se atenúa (≤ 40 %) mientras
-// Problema sube como lámina sobre el final del hero y la cubre (ver Problema.astro). Sin JS o con movimiento reducido
-// no se fija: se ve la portada completa y quieta, con la frase debajo.
-//
-// Rendimiento: el motor escribe --p/--e/--s solo en los [data-p] (texto, llave, frase, "Mira cómo funciona"); cada uno
-// declara sus propios tramos. data-paso y .alcanzo-N siguen en la raíz: con ellos, lo que ya no se ve en un tramo
-// (visor, anotaciones, el plano de la intro) sale del árbol y no se recalcula en cada cuadro.
-import { enlaceWhatsApp } from '../../lib/whatsapp';
+// Hero (IDENTIDAD_MARCA §9.1): lámina de aurora Marino con el logo plata que gira 360° sobre su eje vertical UNA vez al
+// cargar (rotateY, 900 ms, curva de marca, impulso de escala y destello de brillo a la mitad: solo transform/opacity),
+// titular, subtítulo, dos llamados, pruebas verificables y la maqueta de la app sobre un panel de cristal.
+// Sin JS o con «reducir movimiento»: todo visible y quieto desde el primer pintado.
 import { sitio } from '../../site.config';
 import Icono from '../Icono.astro';
-import Isotipo3D from '../Isotipo3D.astro';
+import MockupApp from '../MockupApp.astro';
 
-const prueba = enlaceWhatsApp(sitio.contacto.whatsapp, sitio.contacto.mensajes.prueba);
-const dias = sitio.licencia.diasPrueba;
+const PRUEBAS = [
+  { icono: 'sin-wifi', texto: 'Funciona sin internet' },
+  { icono: 'sello', texto: 'Notas firmadas e inalterables' },
+  { icono: 'usb', texto: 'Respaldos cifrados en su USB' },
+  { icono: 'media-hoja', texto: 'Recetas en media hoja o Carta' },
+] as const;
+
+const srcset = '/brand/logo-plata-280.avif 100w, /brand/logo-plata-420.avif 150w, /brand/logo-plata-560.avif 200w';
 ---
 
-<section class="hero" id="inicio" data-escena data-escena-marcas="0.22 0.3 0.8" data-hero aria-labelledby="hero-titulo">
-  <div class="hero-escenario" data-escenario>
-    <div class="hero-fondo" aria-hidden="true"></div>
-    <span class="hero-sonda" data-hero-sonda aria-hidden="true"></span>
-
-    <div class="hero-rejilla">
-      <p class="pildora hero-pildora hero-t" data-p>
-        <Icono nombre="estetoscopio" />
-        Expediente clínico para consultorio privado
-      </p>
-      <h1 id="hero-titulo" class="hero-titulo hero-t" data-p>
-        Tus notas clínicas, selladas y en{'\u00a0'}tu{'\u00a0'}computadora.
-      </h1>
-      <p class="hero-sub hero-t" data-p>
-        Cada nota que firmas queda sellada: nadie puede cambiarla sin que se note. InmutalKey está diseñado para la
-        <span class="sin-corte">NOM-004</span> y funciona sin internet.
-      </p>
-      <div class="hero-acciones hero-t" data-p>
-        {
-          prueba && (
-            <a class="boton boton-primario" href={prueba} target="_blank" rel="noopener noreferrer">
-              <Icono nombre="chat" />
-              Pide tus {dias} días de prueba
-            </a>
-          )
-        }
-        <a class="boton boton-secundario" href="#demo">
-          <Icono nombre="play" />
-          Pruébalo aquí mismo
-        </a>
-      </div>
-      <ul class="hero-confianza hero-t" data-p>
-        <li><Icono nombre="check" />Prueba completa de {dias} días</li>
-        <li><Icono nombre="check" />Windows 10 y 11</li>
-        <li><Icono nombre="check" />Licencia vitalicia</li>
-      </ul>
-
-      <div class="hero-llave" data-isotipo-principal data-hero-llave>
-        <div class="hero-llave-mov" data-p>
-          <span class="hero-foco" aria-hidden="true"></span>
-          <span class="hero-aros" aria-hidden="true">
-            <svg viewBox="0 0 200 200" fill="none" focusable="false">
-              <circle class="aro aro-exterior" cx="100" cy="100" r="99" pathLength="100"></circle>
-              <circle class="aro aro-marcas" cx="100" cy="100" r="92"></circle>
-              <circle class="aro aro-interior" cx="100" cy="100" r="78" pathLength="100"></circle>
-              <path class="aro aro-arco" d="M 100 1 A 99 99 0 0 1 185.7 50.5" pathLength="100"></path>
-              <path class="aro aro-arco" d="M 100 199 A 99 99 0 0 1 14.3 149.5" pathLength="100"></path>
-            </svg>
-          </span>
-          <span class="hero-piso" aria-hidden="true"></span>
-          <div class="hero-llave-giro">
-            <Isotipo3D
-              prioridad
-              brillo
-              plano
-              reflejo
-              sizes="(min-width: 960px) 320px, (min-width: 600px) 260px, 180px"
-              alt="Isotipo de InmutalKey: una llave con la vara de Asclepio"
-              class="hero-isotipo"
-            />
-          </div>
-          <span class="hero-visor" aria-hidden="true">
-            <span class="hero-etiqueta hero-etiqueta-a"><b>Firma</b> · Ed25519</span>
-            <span class="hero-etiqueta hero-etiqueta-b"><b>Sello</b> · SHA-256</span>
-          </span>
-          <span class="hero-nota hero-nota-firma" aria-hidden="true">
-            <span class="hero-nota-texto"><b>Firma</b> Ed25519</span>
-            <span class="hero-nota-linea"></span>
-          </span>
-          <span class="hero-nota hero-nota-sello" aria-hidden="true">
-            <span class="hero-nota-linea"></span>
-            <span class="hero-nota-texto"><b>Sello</b> SHA-256</span>
-          </span>
-        </div>
-      </div>
+<section class="hero" aria-labelledby="hero-titulo">
+  <div class="hero-lamina lamina tema-marino cuadricula" aria-hidden="true"></div>
+  <div class="contenedor hero-texto tema-marino">
+    <div class="hero-logo" aria-hidden="true">
+      <picture>
+        <source type="image/avif" srcset={srcset} sizes="(min-width: 1921px) 3vw, 57px" />
+        <img
+          src="/brand/logo-plata-280.webp"
+          srcset="/brand/logo-plata-280.webp 100w, /brand/logo-plata-420.webp 150w, /brand/logo-plata-560.webp 200w"
+          sizes="(min-width: 1921px) 3vw, 57px"
+          alt=""
+          width="100"
+          height="280"
+        />
+      </picture>
+      <picture class="hero-logo-brillo">
+        <source type="image/avif" srcset={srcset} sizes="(min-width: 1921px) 3vw, 57px" />
+        <img src="/brand/logo-plata-280.webp" alt="" width="100" height="280" decoding="async" />
+      </picture>
     </div>
-
-    <p class="hero-frase" data-p>
-      <span class="hero-frase-a">Una llave única para tu consultorio.</span>
-      <span class="hero-frase-b">Con ella se sella cada nota que firmas.</span>
+    <p class="hero-eslogan">Expediente Clínico Privado</p>
+    <h1 id="hero-titulo">Su expediente clínico, sellado y en sus manos.</h1>
+    <p class="hero-sub">
+      Expediente Clínico Privado conforme a la NOM-004. Sin nube, sin suscripciones a ciegas, sin que nadie más vea a sus
+      pacientes.
     </p>
+    <div class="acciones hero-acciones">
+      <a class="boton boton-primario boton-grande" href="/fundadores">Solicitar acceso Fundador</a>
+      <a class="boton boton-grande hero-secundario" href="#como-funciona">Ver cómo funciona <Icono nombre="flecha" /></a>
+    </div>
+    <ul class="hero-pruebas">
+      {PRUEBAS.map((p) => <li><Icono nombre={p.icono} />{p.texto}</li>)}
+    </ul>
+  </div>
 
-    <a class="hero-bajar" href="#integridad" data-p>
-      <span>Mira cómo funciona</span>
-      <span class="hero-bajar-linea" aria-hidden="true"></span>
-    </a>
+  <div class="contenedor-amplio hero-maqueta">
+    <div class="hero-cristal cristal">
+      <MockupApp variante="directorio" />
+    </div>
+    <p class="hero-version">
+      <span class="pildora"><Icono nombre="check" /> Versión <span class="cifras">{sitio.version.numero}</span> · {sitio.version.nombre}</span>
+      <span>Windows 10 y 11 · {sitio.licencia.diasPrueba} días de prueba completos</span>
+    </p>
   </div>
 </section>
 
-<script>
-  // La escena la mueve el motor (scroll.ts). Aquí solo se mide lo que el CSS no puede saber y se escribe con CSSOM:
-  //  · --dx / --dy: cuánto viaja la llave desde su lugar en la rejilla hasta el centro de la ventana con la escena fija
-  //    (el centro vertical lo fija el CSS en --centro-y, entre la barra y el borde inferior).
-  //  · --alto-esc: alto real del escenario. Si el contenido no cabe en una pantalla (celular bajo, letra grande), el
-  //    escenario se fija por su borde inferior en lugar de recortarse.
-  //  · La intro (plano → escáner) espera al render si aún no llega, para no "materializar" un hueco (máx. 2.5 s).
-  const hero = document.querySelector<HTMLElement>('[data-hero]');
-  if (hero) iniciarHero(hero);
-
-  function iniciarHero(hero: HTMLElement): void {
-    const escenario = hero.querySelector<HTMLElement>('[data-escenario]');
-    const llave = hero.querySelector<HTMLElement>('[data-hero-llave]');
-    const sonda = hero.querySelector<HTMLElement>('[data-hero-sonda]');
-    if (!escenario || !llave) return;
-
-    // Terminada la intro, el plano técnico y el escáner ya no se ven (la llave es sólida): fuera del árbol, no se
-    // recalculan en cada cuadro de la escena.
-    const giro = llave.querySelector<HTMLElement>('.hero-llave-giro');
-    giro?.addEventListener('animationend', (ev) => {
-      if (ev.target === giro && ev.animationName === 'hero-materia') hero.classList.add('hero-intro-lista');
-    });
-
-    const render = llave.querySelector<HTMLImageElement>('.llave-render img');
-    if (render && !render.complete) {
-      hero.classList.add('hero-esperando');
-      const listo = (): void => hero.classList.remove('hero-esperando');
-      render.addEventListener('load', listo, { once: true });
-      render.addEventListener('error', listo, { once: true });
-      window.setTimeout(listo, 2500);
-    }
-
-    const escritos = new Map<string, string>();
-    const escribir = (nombre: string, valor: string): void => {
-      if (escritos.get(nombre) === valor) return;
-      escritos.set(nombre, valor);
-      hero.style.setProperty(nombre, valor);
-    };
-
-    const medir = (): void => {
-      const estilo = getComputedStyle(hero);
-      const barra = Number.parseFloat(estilo.getPropertyValue('--altura-nav')) || 72;
-      const centroY = Number.parseFloat(estilo.getPropertyValue('--centro-y')) || 0.5;
-      // 100svh real (en iOS, innerHeight cambia al ocultarse la barra de Safari; el escenario usa svh).
-      const pantalla = sonda?.offsetHeight || window.innerHeight;
-      const alto = escenario.offsetHeight;
-      escribir('--alto-esc', `${alto}px`);
-
-      // Rectángulos sin transform de por medio (ni la llave ni sus ancestros hasta el escenario se transforman).
-      const e = escenario.getBoundingClientRect();
-      const l = llave.getBoundingClientRect();
-      const arriba = Math.min(0, pantalla - alto);
-      const destinoX = escenario.clientWidth / 2;
-      const destinoY = barra + (pantalla - barra) * centroY - arriba;
-      escribir('--dx', `${Math.round(destinoX - (l.left - e.left + l.width / 2))}px`);
-      escribir('--dy', `${Math.round(destinoY - (l.top - e.top + l.height / 2))}px`);
-    };
-
-    let pendiente = false;
-    const pedir = (): void => {
-      if (pendiente) return;
-      pendiente = true;
-      window.requestAnimationFrame(() => {
-        pendiente = false;
-        medir();
-      });
-    };
-    if ('ResizeObserver' in window) new ResizeObserver(pedir).observe(escenario);
-    window.addEventListener('resize', pedir, { passive: true });
-    window.addEventListener('load', pedir, { once: true });
-    void document.fonts?.ready.then(pedir);
-    medir();
-  }
-</script>
-
 <style>
-  /*
-   * Capas de la llave (de fuera hacia dentro), un transform por capa:
-   *   .hero-llave        lugar en la rejilla (alto explícito; la llave toma el alto de su contenedor)
-   *   .hero-llave-mov    escena: viaja al centro, crece y al final se encoge y baja
-   *   .hero-aros         visor circular: se abre con el scroll
-   *   .hero-llave-giro   giro 3D sutil (rotateY ≤ 12°) + intro (--materia por @keyframes)
-   * Todo lo que depende de --p vive bajo .movimiento: sin JS o con movimiento reducido la portada se ve quieta.
-   */
   .hero {
-    --nav: var(--altura-nav);
-    /* Celular: escena corta. Escritorio: ver media query. */
-    --largo: 1.6;
-    --alto-llave: clamp(200px, 36svh, 420px);
-    --crece: 1.32;
-    /* Celular: la llave al centro queda un poco abajo; arriba, bajo la barra, va la frase. */
-    --centro-y: 0.48;
-    /* Cuándo empieza a viajar la llave (tramo A): en celular, cuando los botones ya se apagaron. */
-    --ta-desde: 0.07;
-    /* Al final se hunde hacia la lámina de Problema: como máximo un 40 % del camino al borde inferior. */
-    --baja: calc((100svh - var(--nav)) * (1 - var(--centro-y)) * 0.4);
-    --aros-reposo: 0;
-    --reflejo-reposo: 0;
-    --reflejo-centro: 0.3;
     position: relative;
-    margin-top: calc(-1 * var(--nav));
-    background: var(--medianoche);
-    color: var(--texto);
+    isolation: isolate;
+    padding-top: calc(var(--altura-nav) + clamp(3rem, 7vw, 6rem));
   }
 
-  .hero-escenario {
-    position: relative;
+  /* La lámina cubre el texto y la mitad de la maqueta: la maqueta «flota» entre la noche Marino y la página. */
+  .hero-lamina {
+    position: absolute;
+    inset: 0 0 clamp(9rem, 22vw, 22rem);
+    z-index: -1;
+    border-radius: 0 0 clamp(1.5rem, 4vw, 3rem) clamp(1.5rem, 4vw, 3rem);
+  }
+
+  .hero-texto {
     display: grid;
-    align-content: center;
-    min-height: 100vh;
-    min-height: 100svh;
-    padding: calc(var(--nav) + 12px) 0 max(20px, env(safe-area-inset-bottom));
-    overflow: hidden;
-    overflow: clip;
+    justify-items: center;
+    text-align: center;
+    background: none;
   }
 
-  .hero-sonda {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 1px;
-    height: 100vh;
-    height: 100svh;
-    visibility: hidden;
-    pointer-events: none;
+  .hero-logo {
+    position: relative;
+    width: 3.6rem;
+    aspect-ratio: 100 / 280;
+    margin-bottom: 1.5rem;
   }
 
-  /* Negro con luz azul tenue y cuadrícula de instrumento; abajo se funde con la sección siguiente. */
-  .hero-fondo {
-    position: absolute;
-    inset: 0;
-    background:
-      radial-gradient(60% 45% at 50% 38%, rgb(1 120 176 / 0.16), transparent 72%),
-      linear-gradient(180deg, #02050b 0%, #030814 62%, var(--medianoche) 100%);
-    pointer-events: none;
-  }
-
-  .hero-fondo::before {
+  /* Sombra tintada como halo radial (sin filter: un drop-shadow inflaría el área del logo y lo volvería el LCP). */
+  .hero-logo::before {
     content: '';
     position: absolute;
+    inset: 12% -70% -14%;
+    z-index: -1;
+    background: radial-gradient(50% 46% at 50% 60%, rgb(0 4 12 / 0.55), transparent 72%);
+  }
+
+  .hero-logo picture,
+  .hero-logo img {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  .hero-logo-brillo {
+    position: absolute !important;
     inset: 0;
-    background-image:
-      linear-gradient(rgb(255 255 255 / 0.05) 1px, transparent 1px),
-      linear-gradient(90deg, rgb(255 255 255 / 0.05) 1px, transparent 1px);
-    background-size: 48px 48px;
-    background-position: center top;
-    -webkit-mask-image: radial-gradient(ellipse 70% 60% at 62% 45%, #000 10%, transparent 72%);
-    mask-image: radial-gradient(ellipse 70% 60% at 62% 45%, #000 10%, transparent 72%);
+    opacity: 0;
   }
 
-  /* ── Rejilla: celular primero ── */
-
-  .hero-rejilla {
-    position: relative;
-    z-index: 1;
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    grid-template-areas:
-      'pill pill'
-      'titulo llave'
-      'sub llave'
-      'acciones acciones'
-      'confianza confianza';
-    column-gap: 12px;
-    align-items: center;
-    width: min(100% - 2 * var(--margen), 1320px);
-    margin-inline: auto;
+  .hero-logo-brillo img {
+    filter: brightness(1.7) contrast(1.05);
   }
 
-  .hero-pildora {
-    grid-area: pill;
-    justify-self: start;
-    margin-bottom: 14px;
-    color: var(--texto-tenue);
-    font-size: clamp(0.8125rem, 3.5vw, 0.9375rem);
+  :global(.movimiento) .hero-logo picture:first-child {
+    animation: logo-giro 900ms cubic-bezier(0.45, 0, 0.2, 1) 120ms both;
   }
 
-  .hero-titulo {
-    grid-area: titulo;
-    align-self: end;
-    font-size: clamp(1.75rem, 0.95rem + 4vw, 3.4rem);
-    line-height: 1.06;
+  :global(.movimiento) .hero-logo-brillo {
+    animation:
+      logo-giro 900ms cubic-bezier(0.45, 0, 0.2, 1) 120ms both,
+      logo-destello 900ms ease-in-out 120ms both;
+  }
+
+  @keyframes logo-giro {
+    from {
+      transform: perspective(1100px) rotateY(0deg) scale(1);
+    }
+    50% {
+      transform: perspective(1100px) rotateY(180deg) scale(1.12);
+    }
+    to {
+      transform: perspective(1100px) rotateY(360deg) scale(1);
+    }
+  }
+
+  @keyframes logo-destello {
+    0%,
+    30% {
+      opacity: 0;
+    }
+    50% {
+      opacity: 0.85;
+    }
+    72%,
+    100% {
+      opacity: 0;
+    }
+  }
+
+  .hero-eslogan {
+    margin-bottom: 1rem;
+    color: var(--primario);
+    font-size: 0.8125rem;
+    font-weight: 650;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+  }
+
+  .hero h1 {
+    max-width: 15ch;
+    font-size: clamp(2.5rem, 1.4rem + 4.4vw, 4.5rem);
+    letter-spacing: -0.03em;
+    line-height: 1.04;
   }
 
   .hero-sub {
-    grid-area: sub;
-    align-self: start;
-    margin-top: 12px;
-    max-width: 52ch;
-    color: var(--texto-tenue);
-    font-size: 1rem;
+    max-width: 40rem;
+    margin-top: 1.5rem;
+    color: var(--texto-2);
+    font-size: clamp(1.0625rem, 1rem + 0.4vw, 1.3125rem);
     line-height: 1.55;
   }
 
   .hero-acciones {
-    grid-area: acciones;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px 12px;
-    margin-top: 22px;
+    justify-content: center;
+    margin-top: 2.25rem;
   }
 
-  .hero-confianza {
-    grid-area: confianza;
+  .hero-secundario :global(.icono) {
+    transition: transform 200ms var(--curva-cristal);
+  }
+
+  .hero-secundario:hover :global(.icono) {
+    transform: translateX(3px);
+  }
+
+  .hero-pruebas {
     display: flex;
     flex-wrap: wrap;
-    gap: 6px 18px;
-    margin: 16px 0 0;
+    justify-content: center;
+    gap: 0.5rem 1.5rem;
+    margin: 2.25rem 0 0;
     padding: 0;
     list-style: none;
-    color: var(--texto-tenue);
-    font-size: 1rem;
+    color: var(--texto-2);
+    font-size: 0.9375rem;
   }
 
-  .hero-confianza li {
+  .hero-pruebas li {
     display: inline-flex;
     align-items: center;
-    gap: 0.45em;
+    gap: 0.5rem;
   }
 
-  .hero-confianza :global(.icono) {
-    width: 1.15em;
-    height: 1.15em;
-    color: var(--azul-vivo);
+  .hero-pruebas :global(.icono) {
+    color: var(--primario);
   }
 
-  /* Celular: el titular a todo lo ancho (junto a la llave, "en tu computadora." no cabía y se encimaba con ella) y
-     el párrafo junto a la llave. */
-  @media (max-width: 559px) {
-    .hero-rejilla {
-      grid-template-areas:
-        'pill pill'
-        'titulo titulo'
-        'sub llave'
-        'acciones acciones'
-        'confianza confianza';
-      align-items: start;
-    }
-
-    .hero-titulo {
-      align-self: auto;
-    }
-
-    .hero-sub,
-    .hero-llave {
-      margin-top: 14px;
-    }
-
-    .hero-acciones .boton {
-      width: 100%;
-    }
-
-    .hero-acciones .boton-secundario {
-      min-height: 48px;
-    }
+  .hero-maqueta {
+    margin-top: clamp(3rem, 6vw, 5rem);
   }
 
-  /* ── La llave ── */
-
-  .hero-llave {
-    grid-area: llave;
-    position: relative;
-    justify-self: end;
-    width: calc(var(--alto-llave) * 304 / 724);
-    height: var(--alto-llave);
-    pointer-events: none;
+  /* Panel de cristal real (1 de 2 por vista). */
+  .hero-cristal {
+    padding: clamp(0.5rem, 1.2vw, 1rem);
+    border-radius: clamp(1.25rem, 2.4vw, 2rem);
+    background: linear-gradient(180deg, rgb(255 255 255 / 0.14), color-mix(in srgb, var(--superficie) 72%, transparent));
   }
 
-  .hero-llave-mov,
-  .hero-llave-giro {
-    position: absolute;
-    inset: 0;
+  .hero-cristal :global(.mockup-pie) {
+    margin-bottom: 0.25rem;
   }
 
-  .hero-llave-giro {
-    z-index: 2;
-  }
-
-  .hero-llave :global(.hero-isotipo) {
-    --reflejo: var(--reflejo-reposo);
-  }
-
-  /* Foco de luz azul detrás: degradado ya difuso (sin filter: más barato en celulares). */
-  .hero-foco {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: calc(var(--alto-llave) * 1.3);
-    height: calc(var(--alto-llave) * 1.3);
-    margin: calc(var(--alto-llave) * -0.65) 0 0 calc(var(--alto-llave) * -0.65);
-    border-radius: 50%;
-    background: radial-gradient(
-      closest-side,
-      rgb(46 159 224 / 0.3),
-      rgb(1 120 176 / 0.13) 45%,
-      rgb(1 120 176 / 0.04) 72%,
-      transparent
-    );
-    opacity: 0.75;
-  }
-
-  /* Visor circular: aros finos y marcas de graduación. */
-  .hero-aros {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    z-index: 1;
-    width: calc(var(--alto-llave) * 0.8);
-    height: calc(var(--alto-llave) * 0.8);
-    margin: calc(var(--alto-llave) * -0.4) 0 0 calc(var(--alto-llave) * -0.4);
-    opacity: var(--aros-reposo);
-  }
-
-  .hero-aros svg {
-    width: 100%;
-    height: 100%;
-    overflow: visible;
-  }
-
-  .aro {
-    vector-effect: non-scaling-stroke;
-    stroke-width: 1;
-  }
-
-  .aro-exterior {
-    stroke: rgb(255 255 255 / 0.14);
-  }
-
-  .aro-interior {
-    stroke: rgb(46 159 224 / 0.22);
-    stroke-dasharray: 2 3;
-  }
-
-  .aro-marcas {
-    vector-effect: none;
-    stroke: rgb(46 159 224 / 0.38);
-    stroke-width: 2.4;
-    stroke-dasharray: 0.6 4.22;
-  }
-
-  .aro-arco {
-    stroke: var(--azul-vivo);
-    stroke-linecap: round;
-    opacity: 0.8;
-  }
-
-  /* El "piso": una línea de luz bajo la llave (el reflejo lo dibuja Isotipo3D). */
-  .hero-piso {
-    position: absolute;
-    top: 100.5%;
-    left: 50%;
-    z-index: 1;
-    width: calc(var(--alto-llave) * 0.95);
-    height: 1px;
-    margin-left: calc(var(--alto-llave) * -0.475);
-    background: linear-gradient(90deg, transparent, rgb(46 159 224 / 0.55) 30%, rgb(200 235 255 / 0.7) 50%, rgb(46 159 224 / 0.55) 70%, transparent);
-    opacity: var(--reflejo-reposo);
-  }
-
-  .hero-piso::after {
-    content: '';
-    position: absolute;
-    left: 15%;
-    right: 15%;
-    top: -14px;
-    height: 28px;
-    border-radius: 50%;
-    background: radial-gradient(closest-side, rgb(46 159 224 / 0.28), transparent);
-  }
-
-  /* Esquinas tipo visor alrededor de la llave. */
-  .hero-visor {
-    --c: rgb(255 255 255 / 0.5);
-    --l: 14px;
-    --g: 1.5px;
-    position: absolute;
-    inset: -5% -10%;
-    z-index: 3;
-    background:
-      linear-gradient(var(--c) 0 0) top left / var(--l) var(--g),
-      linear-gradient(var(--c) 0 0) top left / var(--g) var(--l),
-      linear-gradient(var(--c) 0 0) top right / var(--l) var(--g),
-      linear-gradient(var(--c) 0 0) top right / var(--g) var(--l),
-      linear-gradient(var(--c) 0 0) bottom left / var(--l) var(--g),
-      linear-gradient(var(--c) 0 0) bottom left / var(--g) var(--l),
-      linear-gradient(var(--c) 0 0) bottom right / var(--l) var(--g),
-      linear-gradient(var(--c) 0 0) bottom right / var(--g) var(--l);
-    background-repeat: no-repeat;
-  }
-
-  .hero-etiqueta,
-  .hero-nota-texto {
-    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-    font-size: 0.6875rem;
-    font-weight: 500;
-    letter-spacing: 0.08em;
-    line-height: 1.3;
-    white-space: nowrap;
-    color: var(--azul-vivo);
-  }
-
-  .hero-etiqueta {
-    position: absolute;
-    display: none;
-  }
-
-  .hero-etiqueta b {
-    color: var(--texto-tenue);
-    font-weight: 500;
-    text-transform: uppercase;
-  }
-
-  .hero-etiqueta-a {
-    bottom: 100%;
-    left: 0;
-    margin-bottom: 8px;
-  }
-
-  .hero-etiqueta-b {
-    top: 100%;
-    right: 0;
-    margin-top: 8px;
-  }
-
-  /* Anotaciones del plano: aparecen con la llave al centro (solo en la escena). */
-  .hero-nota {
-    position: absolute;
-    z-index: 3;
-    display: none;
+  .hero-version {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
     align-items: center;
-    gap: 6px;
-  }
-
-  .hero-nota-texto {
-    display: grid;
-    color: var(--texto);
-    text-align: right;
-  }
-
-  .hero-nota-texto b {
-    color: var(--texto-tenue);
-    font-weight: 500;
-    text-transform: uppercase;
-  }
-
-  .hero-nota-linea {
-    position: relative;
-    width: clamp(14px, 4vw, 26px);
-    height: 1px;
-    background: var(--azul-vivo);
-  }
-
-  .hero-nota-linea::after {
-    content: '';
-    position: absolute;
-    top: -2px;
-    right: -2px;
-    width: 5px;
-    height: 5px;
-    border-radius: 50%;
-    background: var(--azul-vivo);
-    box-shadow: 0 0 8px var(--azul-vivo);
-  }
-
-  /* Cabeza hexagonal: a la izquierda. Paletón: a la derecha. */
-  .hero-nota-firma {
-    top: 16.5%;
-    right: 86%;
-    transform-origin: right center;
-  }
-
-  .hero-nota-sello {
-    top: 84%;
-    left: 74%;
-    transform-origin: left center;
-  }
-
-  .hero-nota-sello .hero-nota-texto {
-    text-align: left;
-  }
-
-  .hero-nota-sello .hero-nota-linea::after {
-    left: -2px;
-    right: auto;
-  }
-
-  /* ── Frase (sin escena: debajo de la portada, como pie) ── */
-
-  .hero-frase {
-    position: relative;
-    z-index: 1;
-    display: grid;
-    gap: 0.2em;
-    width: min(100% - 2 * var(--margen), var(--ancho));
-    margin: 40px auto 0;
-    padding-top: 22px;
-    border-top: 1px solid var(--linea-oscura);
-    color: var(--texto);
-    font-family: var(--fuente-titulo);
-    font-size: var(--h3);
-    font-weight: 500;
-    line-height: 1.25;
-    letter-spacing: -0.012em;
-    text-align: center;
-    text-wrap: balance;
-  }
-
-  .hero-frase-b {
-    color: var(--texto-tenue);
-  }
-
-  .hero-bajar {
-    position: absolute;
-    left: 50%;
-    bottom: 18px;
-    z-index: 1;
-    display: none;
-    flex-direction: column;
-    align-items: center;
-    gap: 10px;
-    min-height: 44px;
-    color: var(--texto-tenue);
+    gap: 0.5rem 1rem;
+    margin-top: 1.5rem;
+    color: var(--texto-2);
     font-size: 0.875rem;
-    text-decoration: none;
-    transform: translateX(-50%);
   }
 
-  .hero-bajar:hover {
-    color: var(--texto);
-  }
-
-  .hero-bajar-linea {
-    width: 1px;
-    height: 40px;
-    background: linear-gradient(var(--azul-vivo), transparent);
-    transform-origin: top;
-    animation: hero-bajar 2.2s var(--ease) infinite;
-  }
-
-  @keyframes hero-bajar {
-    0% {
-      transform: scaleY(0);
-      opacity: 1;
-    }
-    70% {
-      transform: scaleY(1);
-      opacity: 1;
-    }
-    100% {
-      transform: scaleY(1);
-      opacity: 0;
-    }
-  }
-
-  /* ── Tableta vertical ── */
-
-  /* Celular bajo (Safari con sus barras, 390 × 664): llave más chica para que la portada quepa en la pantalla, y al
-     centro crece menos para no tocar la frase. */
-  @media (max-width: 559px) and (max-height: 720px) {
-    .hero {
-      --alto-llave: clamp(180px, 31svh, 420px);
-      --crece: 1.25;
-    }
-  }
-
-  @media (min-width: 560px) {
-    .hero {
-      --alto-llave: clamp(200px, 44svh, 480px);
-      --centro-y: 0.42;
-      --ta-desde: 0.04;
+  @media (max-width: 40rem) {
+    .hero-logo {
+      width: 2.75rem;
+      margin-bottom: 1rem;
     }
 
-    .hero-rejilla {
-      column-gap: clamp(20px, 4vw, 40px);
+    .hero-pruebas {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      text-align: left;
+      gap: 0.75rem 1rem;
     }
 
-    .hero-titulo {
-      font-size: min(clamp(2.5rem, 0.8rem + 5vw, 3.6rem), 11svh);
-    }
-
-    .hero-sub {
-      font-size: var(--texto-grande);
-    }
-
-    .hero-visor {
-      --l: 18px;
-    }
-
-    .hero-etiqueta {
-      display: block;
-    }
-  }
-
-  /* ── Escritorio y tableta horizontal: texto a la izquierda, la llave a la derecha ── */
-
-  @media (min-width: 960px) {
-    .hero {
-      --largo: 2.2;
-      --alto-llave: min(66svh, 600px);
-      --crece: 1.08;
-      --centro-y: 0.5;
-      --aros-reposo: 0.9;
-      --reflejo-reposo: 0.28;
-      /* Al centro, la llave casi toca el borde inferior: el reflejo se atenúa para no verse como una mancha. */
-      --reflejo-centro: 0.14;
-    }
-
-    .hero-rejilla {
-      grid-template-columns: minmax(0, 1fr) calc(var(--alto-llave) * 0.8);
-      grid-template-areas:
-        'pill llave'
-        'titulo llave'
-        'sub llave'
-        'acciones llave'
-        'confianza llave';
-      align-content: center;
-      column-gap: clamp(32px, 5vw, 88px);
-    }
-
-    .hero-titulo {
-      align-self: auto;
-      max-width: 12ch;
-      font-size: min(var(--h1), 8.6svh);
-    }
-
-    .hero-sub {
-      align-self: auto;
-      margin-top: 22px;
+    .hero-pruebas li {
+      align-items: flex-start;
     }
 
     .hero-acciones {
-      margin-top: 30px;
-    }
-
-    .hero-confianza {
-      margin-top: 22px;
-    }
-
-    .hero-llave {
-      justify-self: center;
-    }
-
-    .hero-visor {
-      inset: -4% -22%;
-    }
-
-  }
-
-  /* Solo con la escena: sin ella, la frase ocupa ese lugar. */
-  @media (min-width: 960px) and (min-height: 820px) {
-    :global(.movimiento) .hero-bajar {
-      display: flex;
-    }
-  }
-
-  /* Sin escena (sin JS o con movimiento reducido): la frase queda debajo, así que sin reflejo que la cruce; en
-     escritorio, aire bajo la barra para la etiqueta del visor. */
-  :global(html:not(.movimiento)) .hero-llave :global(.hero-isotipo) {
-    --reflejo: 0;
-  }
-
-  @media (min-width: 960px) {
-    :global(html:not(.movimiento)) .hero-escenario {
-      padding-top: calc(var(--nav) + 56px);
-    }
-  }
-
-  @media (min-width: 1181px) {
-    .hero {
-      --alto-llave: min(74svh, 740px);
-    }
-
-    .hero-titulo {
-      max-width: 13ch;
-    }
-  }
-
-  /* ── Intro al cargar (por tiempo): plano técnico → escáner → brillo, en 1.8 s ── */
-
-  @media (prefers-reduced-motion: no-preference) {
-    .hero-llave-giro {
-      animation:
-        hero-aparece 0.45s ease-out backwards,
-        hero-materia 1s cubic-bezier(0.65, 0, 0.35, 1) 0.35s backwards;
-    }
-
-    .hero-llave :global(.isotipo-brillo) {
-      animation-delay: 1.2s;
-      animation-duration: 0.9s;
-    }
-
-    .hero-visor {
-      animation: hero-enfoca 0.8s var(--ease) 0.1s backwards;
-    }
-
-    .hero-etiqueta {
-      animation: hero-aparece 0.5s ease-out 1.15s backwards;
-    }
-
-    .aro-exterior,
-    .aro-arco {
-      stroke-dasharray: 100 100;
-      animation: hero-traza 1.3s var(--ease) 0.15s backwards;
-    }
-
-    .aro-arco {
-      animation-delay: 0.45s;
-    }
-
-    .aro-interior,
-    .aro-marcas {
-      animation: hero-aparece 0.9s ease-out 0.5s backwards;
-    }
-
-    .hero-foco {
-      animation: hero-aparece 1.2s ease-out backwards;
-    }
-
-    .hero-piso {
-      transform-origin: center;
-      animation: hero-piso 0.7s var(--ease) 1.05s backwards;
-    }
-
-    /* Si el render aún no llega, el plano se queda esperando (el script quita la clase). */
-    .hero-esperando .hero-llave-giro,
-    .hero-esperando .hero-llave :global(.isotipo-brillo),
-    .hero-esperando .hero-piso,
-    .hero-esperando .hero-etiqueta {
-      animation-play-state: paused;
-    }
-  }
-
-  @keyframes hero-aparece {
-    from {
-      opacity: 0;
-    }
-  }
-
-  @keyframes hero-materia {
-    from {
-      --materia: 0;
-    }
-    to {
-      --materia: 1;
-    }
-  }
-
-  @keyframes hero-enfoca {
-    from {
-      opacity: 0;
-      transform: scale(1.14);
-    }
-  }
-
-  @keyframes hero-traza {
-    from {
-      stroke-dashoffset: 100;
-    }
-  }
-
-  @keyframes hero-piso {
-    from {
-      opacity: 0;
-      transform: scaleX(0);
-    }
-  }
-
-  /* ── Escena fijada (solo con .movimiento) ── */
-
-  :global(.movimiento) .hero {
-    /* La fijación dura (--largo − 1) pantallas aunque el escenario mida más de una. */
-    height: calc(var(--alto-esc, 100svh) + (var(--largo) - 1) * 100svh);
-  }
-
-  /* Si el contenido mide más que la pantalla, se fija por su borde inferior: nada queda recortado. */
-  :global(.movimiento) .hero .hero-escenario {
-    position: sticky;
-    top: min(0px, calc(100svh - var(--alto-esc, 100svh)));
-    height: auto;
-  }
-
-  /*
-   * Tramos de --p. El motor escribe --p/--e/--s solo en los [data-p] y cada uno declara aquí los suyos (escribirlos en
-   * la raíz recalcularía el estilo de todo el hero en cada cuadro).
-   *   T  0–0.18      el texto sube y se apaga, de arriba hacia abajo (celular: botones y viñetas primero)
-   *   A  0.04–0.36   la llave viaja al centro (celular: desde 0.07, cuando los botones ya no están)
-   *   B  0.3–0.64    frase, aros, anotaciones y la luz que cruza la llave
-   *   C  0.72–0.92   la llave se hunde y se atenúa, como máximo un 40 %: nunca queda un cuadro vacío
-   *   --s (0 → 1 al soltarse la escena): la llave se queda atrás y la lámina de Problema la cubre mientras termina de
-   *   irse (Problema.astro sube sobre los últimos 22svh del hero).
-   */
-
-  /* El texto sube y se desvanece, de arriba hacia abajo. */
-  :global(.movimiento) .hero-t {
-    --sal: clamp(0, (var(--p, 1) - var(--k, 0) * 0.0153) / var(--dura, 0.1176), 1);
-    opacity: calc(1 - var(--sal));
-    transform: translate3d(0, calc(var(--sal) * -44px), 0);
-  }
-
-  .hero-titulo {
-    --k: 1;
-  }
-
-  .hero-sub {
-    --k: 2;
-  }
-
-  .hero-acciones {
-    --k: 3;
-  }
-
-  .hero-confianza {
-    --k: 4;
-  }
-
-  /* Celular: la llave baja cruzando la zona de los botones; se apagan primero y rápido, antes de que se mueva. */
-  @media (max-width: 559px) {
-    .hero-acciones,
-    .hero-confianza {
-      --k: 0;
-      --dura: 0.06;
-    }
-  }
-
-  /* Ya invisible, no recibe toques; con el teclado, el foco lo vuelve a mostrar. */
-  :global(.movimiento) .hero:global(.alcanzo-1) .hero-t {
-    pointer-events: none;
-  }
-
-  :global(.movimiento) .hero .hero-t:focus-within {
-    opacity: 1;
-    transform: none;
-    pointer-events: auto;
-  }
-
-  :global(.movimiento) .hero-llave-mov {
-    --ta: clamp(0, (var(--p, 1) - var(--ta-desde)) / 0.32, 1);
-    --tb: clamp(0, (var(--p, 1) - 0.3) / 0.34, 1);
-    --tc: clamp(0, (var(--p, 1) - 0.72) / 0.2, 1);
-    --ea: calc(var(--ta) * var(--ta) * (3 - 2 * var(--ta)));
-    --eb: calc(var(--tb) * var(--tb) * (3 - 2 * var(--tb)));
-    --ec: calc(var(--tc) * var(--tc) * (3 - 2 * var(--tc)));
-    /* Escena ya suelta: la llave baja a 55 % del ritmo de la página (se queda atrás) y se apaga mientras la cubre la
-       lámina. */
-    --tf: clamp(0, var(--s, 0) / 0.6, 1);
-    transform: translate3d(
-        calc(var(--dx, 0px) * var(--ea)),
-        calc(var(--dy, 0px) * var(--ea) + var(--ec) * var(--baja) + var(--s, 0) * 55svh),
-        0
-      )
-      scale(calc((1 + (var(--crece) - 1) * var(--ea)) * (1 - 0.3 * var(--ec))));
-    opacity: calc((1 - 0.4 * var(--ec)) * (1 - var(--tf)));
-    will-change: transform, opacity;
-  }
-
-  /* Gira mientras viaja (pico a mitad del tramo A) y se inclina un poco al irse. */
-  :global(.movimiento) .hero-llave-giro {
-    transform: perspective(900px) rotateY(calc(sin(var(--ta) * 180deg) * -12deg + var(--ec) * 9deg));
-  }
-
-  /* La luz cruza la llave mientras se presenta (tramo B). */
-  :global(.movimiento) .hero-llave :global(.hero-isotipo) {
-    --brillo: calc(1 - var(--tb));
-    --reflejo: calc((var(--reflejo-reposo) + (var(--reflejo-centro) - var(--reflejo-reposo)) * var(--ea)) * (1 - var(--tc)));
-  }
-
-  :global(.movimiento) .hero-piso {
-    opacity: calc((var(--reflejo-reposo) + (1 - var(--reflejo-reposo)) * var(--ea)) * (1 - var(--tc)));
-  }
-
-  :global(.movimiento) .hero-foco {
-    opacity: calc((0.75 + 0.25 * var(--ea)) * (1 - 0.5 * var(--tc)));
-  }
-
-  :global(.movimiento) .hero-aros {
-    transform: scale(calc(1 + 0.1 * var(--ea) + 0.32 * var(--eb)));
-    opacity: calc((var(--aros-reposo) + (1 - var(--aros-reposo)) * var(--ea)) * (1 - 0.55 * var(--eb)) * (1 - var(--tc)));
-  }
-
-  /* El visor se suelta cuando la llave empieza a viajar. */
-  :global(.movimiento) .hero-visor {
-    opacity: calc(1 - clamp(0, var(--ta) * 2.2, 1));
-  }
-
-  :global(.movimiento) .hero-nota {
-    opacity: calc(var(--eb) * (1 - clamp(0, var(--tc) * 2.5, 1)));
-  }
-
-  /* Lo que ya no se ve en un tramo sale del árbol (los pasos cambian pocas veces; --p, en cada cuadro): visor y "Mira
-     cómo funciona" desde 0.22 (ya apagados), anotaciones solo entre 0.3 y 0.8 (su tramo) y, tras la intro, el plano
-     técnico y el escáner (la llave ya es sólida). */
-  :global(.movimiento) .hero:global(.alcanzo-1) .hero-visor,
-  :global(.movimiento) .hero:global(.alcanzo-1) .hero-bajar,
-  :global(.movimiento) .hero:global(.hero-intro-lista) .hero-llave :global(.llave-plano),
-  :global(.movimiento) .hero:global(.hero-intro-lista) .hero-llave :global(.llave-escaner) {
-    display: none;
-  }
-
-  :global(.movimiento) .hero:global(.alcanzo-2):not(.alcanzo-3) .hero-nota {
-    display: flex;
-  }
-
-  :global(.movimiento) .hero-nota-linea {
-    transform: scaleX(var(--eb));
-  }
-
-  .hero-nota-firma .hero-nota-linea {
-    transform-origin: right center;
-  }
-
-  .hero-nota-sello .hero-nota-linea {
-    transform-origin: left center;
-  }
-
-  :global(.movimiento) .hero-bajar {
-    opacity: calc(1 - clamp(0, var(--p, 1) / 0.05, 1));
-  }
-
-  /* Frase, en la ventana visible bajo la barra. Celular: arriba, sobre la llave (al hundirse, la llave se aleja de
-     ella y la frase se queda hasta que el hero se va). Escritorio: a los lados de la llave. */
-  :global(.movimiento) .hero .hero-frase {
-    --fa: clamp(0, (var(--p, 1) - 0.34) / 0.16, 1);
-    --fb: clamp(0, (var(--p, 1) - 0.42) / 0.16, 1);
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    z-index: 2;
-    align-content: start;
-    height: calc(100svh - var(--nav));
-    margin: 0 auto;
-    padding: 14px 0 0;
-    border: 0;
-    font-size: clamp(1.375rem, 1rem + 1.6vw, 2.5rem);
-    pointer-events: none;
-  }
-
-  :global(.movimiento) .hero-frase-a,
-  :global(.movimiento) .hero-frase-b {
-    display: block;
-  }
-
-  :global(.movimiento) .hero-frase-a {
-    opacity: var(--fa);
-    transform: translate3d(0, calc((1 - var(--fa)) * 18px), 0);
-  }
-
-  :global(.movimiento) .hero-frase-b {
-    opacity: var(--fb);
-    transform: translate3d(0, calc((1 - var(--fb)) * 18px), 0);
-  }
-
-  /* Celular acostado: poca altura, así que la llave no crece y la frase va a los lados, como en escritorio. */
-  @media (min-width: 560px) and (max-width: 959px) and (max-height: 600px) and (orientation: landscape) {
-    .hero {
-      --crece: 1;
-      --centro-y: 0.52;
-    }
-  }
-
-  @media (min-width: 960px), (min-width: 560px) and (max-height: 600px) and (orientation: landscape) {
-    :global(.movimiento) .hero .hero-frase {
-      grid-template-columns: minmax(0, 1fr) calc(var(--alto-llave) * 0.42 * var(--crece) + 12vw) minmax(0, 1fr);
-      align-items: center;
-      align-content: center;
-      padding: 0;
-      text-align: left;
-    }
-
-    :global(.movimiento) .hero-frase-a {
-      grid-column: 1;
-      text-align: right;
-    }
-
-    :global(.movimiento) .hero-frase-b {
-      grid-column: 3;
-    }
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .hero-bajar-linea {
-      animation: none;
+      display: grid;
+      width: 100%;
     }
   }
 </style>

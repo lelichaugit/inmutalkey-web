@@ -1,0 +1,52 @@
+---
+// Contacto y cierre (IDENTIDAD_MARCA §9.8): correo, WhatsApp Business y @inmutalkey, con el llamado principal.
+// Datos desde site.config.ts y socials.ts (Contacto.astro solo imprime lo definido).
+import Contacto from '../Contacto.astro';
+---
+
+<section class="seccion cierre" id="contacto" aria-labelledby="cierre-titulo" data-sin-flotante>
+  <div class="contenedor">
+    <div class="cierre-panel lamina tema-marino cuadricula">
+      <p class="antetitulo">Contacto</p>
+      <h2 id="cierre-titulo">Hablemos de su consultorio.</h2>
+      <p class="texto-grande">
+        Le respondemos en persona: dudas, una demostración o ayuda con la instalación. Sin compromiso.
+      </p>
+      <Contacto variante="fila" incluir={['correo', 'whatsapp', 'instagram']} class="cierre-contacto" />
+      <div class="acciones cierre-acciones">
+        <a class="boton boton-primario boton-grande" href="/fundadores">Solicitar acceso Fundador</a>
+        <a class="boton boton-grande" href="/contacto">Más formas de contacto</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .cierre-panel {
+    display: grid;
+    justify-items: center;
+    gap: 1.25rem;
+    padding: clamp(2.5rem, 7vw, 5.5rem) clamp(1.25rem, 5vw, 4rem);
+    border-radius: var(--radio-xl);
+    text-align: center;
+    box-shadow: var(--elev-3);
+  }
+
+  .cierre-panel h2 {
+    max-width: 18ch;
+  }
+
+  .cierre-panel .texto-grande {
+    max-width: 36rem;
+  }
+
+  .cierre-panel :global(.cierre-contacto) {
+    justify-content: center;
+    margin-top: 0.5rem;
+  }
+
+  .cierre-acciones {
+    justify-content: center;
+    margin-top: 0.75rem;
+  }
+</style>

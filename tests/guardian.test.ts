@@ -10,7 +10,7 @@ describe('guardian · HTML', () => {
       <link rel="canonical" href="https://inmutalkey.com/">
       <link rel="stylesheet" href="/_astro/index.css">
       <script type="application/ld+json">{"@type":"SoftwareApplication"}</script>
-      </head><body><a href="https://wa.me/522291525847" target="_blank" rel="noopener noreferrer">WhatsApp</a>
+      </head><body><a href="https://wa.me/522213453487" target="_blank" rel="noopener noreferrer">WhatsApp</a>
       <img src="/brand/isotipo-3d-800.webp" srcset="/brand/isotipo-3d-480.webp 480w, /brand/isotipo-3d-800.webp 800w">
       <script type="module" src="/_astro/base.js"></script></body></html>`;
     expect(revisarHtml(html, SITIO)).toEqual([]);
@@ -67,7 +67,7 @@ describe('guardian · enlaces salientes', () => {
       `<a href="https://x.com/inmutalkey?s=11" ${rel}>a</a>
        <a href="https://www.linkedin.com/in/x?lipi=abc" ${rel}>b</a>
        <a href="https://www.instagram.com/inmutalkey/?utm_source=web" ${rel}>c</a>
-       <a href="https://wa.me/522291525847?text=Hola" ${rel}>ok</a>`,
+       <a href="https://wa.me/522213453487?text=Hola" ${rel}>ok</a>`,
       SITIO,
     );
     expect(r).toEqual([

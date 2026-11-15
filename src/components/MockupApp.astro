@@ -1,0 +1,698 @@
+---
+// Maqueta fiel de InmutalKey v0.4.0 (tema Marino) dibujada con HTML y CSS: nítida en cualquier pantalla, sin peso de
+// imagen y sin datos reales. Todos los pacientes son ficticios (como la bóveda demo de la app) y los códigos son
+// CIE-10 oficiales de la OMS. Escala completa con el ancho (unidades de contenedor): nunca se recorta ni se desborda.
+//   variante="directorio" · directorio de pacientes con barra lateral y agenda (hero)
+//   variante="nota"       · consulta con signos vitales, semáforo NOM-004 y firma (cómo funciona)
+import Icono from './Icono.astro';
+
+interface Props {
+  variante?: 'directorio' | 'nota';
+  class?: string;
+}
+
+const { variante = 'directorio', class: clase } = Astro.props;
+
+const PACIENTES = [
+  { ini: 'MR', nombre: 'María Fernanda Ruiz Cano', exp: '000124', edad: 58, dx: 'E11.9', dxTexto: 'Diabetes mellitus tipo 2', ultima: 'Hoy', alergia: 'Penicilina' },
+  { ini: 'JH', nombre: 'José Luis Herrera Mota', exp: '000131', edad: 64, dx: 'I10', dxTexto: 'Hipertensión esencial', ultima: 'Hace 3 días' },
+  { ini: 'AN', nombre: 'Ana Sofía Navarro Díaz', exp: '000142', edad: 34, dx: 'J02.9', dxTexto: 'Faringitis aguda', ultima: 'Hace 1 semana', alergia: 'AINE' },
+  { ini: 'RS', nombre: 'Roberto Salinas Ortega', exp: '000157', edad: 47, dx: 'K21.9', dxTexto: 'Reflujo gastroesofágico', ultima: 'Hace 2 semanas' },
+  { ini: 'LC', nombre: 'Lucía Campos Ibarra', exp: '000163', edad: 71, dx: 'E78.5', dxTexto: 'Hiperlipidemia', ultima: 'Hace 1 mes' },
+  { ini: 'HM', nombre: 'Héctor Medina Rangel', exp: '000170', edad: 39, dx: 'M54.5', dxTexto: 'Lumbago', ultima: 'Hace 1 mes' },
+] as const;
+
+const CITAS = [
+  { hora: '09:30', nombre: 'María F. Ruiz', estado: 'En atención' },
+  { hora: '10:15', nombre: 'Primera vez', estado: 'Programada' },
+  { hora: '11:00', nombre: 'José L. Herrera', estado: 'Programada' },
+  { hora: '12:30', nombre: 'Ana S. Navarro', estado: 'Programada' },
+] as const;
+
+// Los 7 requisitos del semáforo de la app (src/utilidades/semaforoNom004.ts), con sus etiquetas.
+const REQUISITOS = ['Motivo de consulta', 'Evolución / padecimiento actual', 'Signos vitales completos', 'Exploración física', 'Diagnóstico con clave CIE-10', 'Pronóstico', 'Plan de tratamiento e indicaciones'] as const;
+---
+
+<figure class:list={['mockup', `mockup-${variante}`, clase]}>
+  <div class="mk tema-marino" aria-hidden="true">
+    <div class="mk-titulo">
+      <span>InmutalKey</span>
+      <span class="mk-ventana-botones"><i>—</i><i>☐</i><i>✕</i></span>
+    </div>
+    <div class="mk-topbar">
+      <span class="mk-marca">
+        <img src="/brand/logo-plata-64.webp" alt="" width="23" height="64" loading="lazy" decoding="async" />
+        <b>InmutalKey</b>
+      </span>
+      <span class="mk-buscar"><Icono nombre="lupa" /> Buscar paciente, expediente o diagnóstico <kbd>Ctrl K</kbd></span>
+      <span class="mk-respaldo"><span class="mk-luces"><i></i><i></i><i class="on"></i></span> Último respaldo hace 2 días</span>
+      <span class="mk-medico">AR</span>
+    </div>
+
+    {
+      variante === 'directorio' ? (
+        <div class="mk-cuerpo">
+          <div class="mk-lateral">
+            <p class="mk-micro">Carpetas</p>
+            <p class="mk-item activo"><i class="c1"></i>Todos <span>50</span></p>
+            <p class="mk-item"><i class="c2"></i>Seguimiento <span>14</span></p>
+            <p class="mk-item"><i class="c3"></i>Crónicos <span>21</span></p>
+            <p class="mk-item"><i class="c4"></i>Cirugía <span>6</span></p>
+            <p class="mk-micro">Vistas</p>
+            <p class="mk-item"><Icono nombre="calendario" />Citas de hoy <span>5</span></p>
+            <p class="mk-item"><Icono nombre="alerta" />Con alergias <span>9</span></p>
+          </div>
+          <div class="mk-directorio">
+            <div class="mk-encabezado">
+              <b>Pacientes</b>
+              <span class="mk-contador">50</span>
+              <span class="mk-segmento"><i class="on">Auto</i><i>2</i><i>3</i><i>Lista</i></span>
+            </div>
+            <div class="mk-tarjetas">
+              {PACIENTES.map((p) => (
+                <div class="mk-tarjeta">
+                  <span class="mk-avatar">{p.ini}</span>
+                  <span class="mk-id">
+                    <b>{p.nombre}</b>
+                    <small>Exp. {p.exp} · {p.edad} años · {p.ultima}</small>
+                  </span>
+                  <span class="mk-clinica">
+                    <span class="mk-dx">{p.dx}</span> {p.dxTexto}
+                    {'alergia' in p && <span class="mk-alergia"><Icono nombre="alerta" />{p.alergia}</span>}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div class="mk-agenda">
+            <p class="mk-micro">Hoy · 5 citas</p>
+            {CITAS.map((c) => (
+              <div class:list={['mk-cita', { activa: c.estado === 'En atención' }]}>
+                <span class="mk-hora">{c.hora}</span>
+                <span>
+                  <b>{c.nombre}</b>
+                  <small>{c.estado}</small>
+                </span>
+              </div>
+            ))}
+            <span class="mk-boton">+ Agendar cita</span>
+          </div>
+        </div>
+      ) : (
+        <div class="mk-cuerpo mk-cuerpo-nota">
+          <div class="mk-nota">
+            <div class="mk-paciente">
+              <span class="mk-avatar">JH</span>
+              <span class="mk-id">
+                <b>José Luis Herrera Mota</b>
+                <small>Exp. 000131 · 64 años · Nota de evolución</small>
+              </span>
+              <span class="mk-borrador">Borrador guardado</span>
+            </div>
+            <div class="mk-signos">
+              <span><small>TA</small><b>128/82</b></span>
+              <span><small>FC</small><b>74</b></span>
+              <span><small>FR</small><b>16</b></span>
+              <span><small>Temp</small><b>36.6</b></span>
+              <span><small>SpO₂</small><b>97 %</b></span>
+              <span><small>IMC</small><b>27.4</b></span>
+            </div>
+            <div class="mk-campo">
+              <small>Subjetivo</small>
+              <p>Acude a control. Refiere apego al tratamiento y cefalea ocasional matutina.</p>
+            </div>
+            <div class="mk-campo">
+              <small>Diagnóstico</small>
+              <p><span class="mk-dx">I10</span> Hipertensión esencial (primaria)</p>
+            </div>
+            <div class="mk-campo">
+              <small>Plan</small>
+              <p>Continuar losartán 50 mg cada 24 h. Control en 4 semanas con perfil de lípidos.</p>
+            </div>
+          </div>
+          <div class="mk-semaforo">
+            <p class="mk-micro">Semáforo NOM-004</p>
+            <p class="mk-cumple"><span class="mk-luces"><i></i><i></i><i class="on"></i></span> 7 de 7 requisitos</p>
+            <ul>
+              {REQUISITOS.map((r) => <li><Icono nombre="check" />{r}</li>)}
+            </ul>
+            <span class="mk-boton mk-boton-primario"><Icono nombre="firma" /> Firmar y sellar</span>
+            <p class="mk-sello"><Icono nombre="sello" /> Ed25519 · SHA-256 encadenado</p>
+          </div>
+        </div>
+      )
+    }
+  </div>
+  <figcaption class="mockup-pie">Ilustración de la app con expedientes ficticios.</figcaption>
+</figure>
+
+<style>
+  .mockup {
+    margin: 0;
+    container-type: inline-size;
+    background: none;
+  }
+
+  /* Todo en em: la maqueta crece y se encoge entera con su contenedor (1 em ≈ 1/68 del ancho). */
+  .mk {
+    --u: calc(100cqi / 68);
+    font-size: var(--u);
+    overflow: hidden;
+    border: 1px solid color-mix(in srgb, var(--borde) 80%, rgb(255 255 255 / 0.18));
+    border-radius: 1.3em;
+    background:
+      radial-gradient(40% 50% at 10% 0%, color-mix(in srgb, var(--aurora-1) 55%, transparent), transparent 72%),
+      radial-gradient(40% 60% at 100% 100%, color-mix(in srgb, var(--aurora-3) 30%, transparent), transparent 72%),
+      var(--fondo);
+    color: var(--texto);
+    line-height: 1.35;
+    letter-spacing: -0.01em;
+    text-align: left;
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.1),
+      0 2.5em 5em -2em rgb(0 4 12 / 0.7),
+      0 0 0 0.5px rgb(255 255 255 / 0.08);
+    user-select: none;
+  }
+
+  /* La nota tiene menos columnas: letra más grande para el mismo ancho. */
+  .mockup-nota .mk {
+    --u: calc(100cqi / 46);
+  }
+
+  .mk :global(.icono) {
+    width: 1.15em;
+    height: 1.15em;
+  }
+
+  .mk b {
+    font-weight: 650;
+  }
+
+  .mk small {
+    display: block;
+    color: var(--texto-suave);
+    font-size: 0.82em;
+  }
+
+  .mk-titulo {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    height: 2.2em;
+    padding: 0 1em;
+    color: var(--texto-suave);
+    font-size: 0.9em;
+    background: rgb(0 4 12 / 0.35);
+  }
+
+  .mk-ventana-botones {
+    display: flex;
+    gap: 1.6em;
+  }
+
+  .mk-ventana-botones i {
+    font-style: normal;
+    font-size: 0.95em;
+    line-height: 1;
+    opacity: 0.75;
+  }
+
+  .mk-topbar {
+    display: flex;
+    align-items: center;
+    gap: 1em;
+    height: 3.6em;
+    padding: 0 1.2em;
+    border-bottom: 1px solid var(--cristal-borde);
+    background: linear-gradient(180deg, var(--cristal-denso), var(--cristal));
+  }
+
+  .mk-marca {
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+    font-size: 1.15em;
+  }
+
+  .mk-marca img {
+    width: auto;
+    height: 1.9em;
+  }
+
+  .mk-buscar {
+    display: flex;
+    align-items: center;
+    gap: 0.6em;
+    flex: 1;
+    max-width: 30em;
+    height: 2.3em;
+    margin-left: 1.5em;
+    padding: 0 0.8em;
+    border: 1px solid var(--cristal-borde);
+    border-radius: 0.7em;
+    background: rgb(255 255 255 / 0.04);
+    color: var(--texto-suave);
+  }
+
+  .mk-buscar kbd {
+    margin-left: auto;
+    padding: 0.1em 0.45em;
+    border: 1px solid var(--cristal-borde);
+    border-radius: 0.35em;
+    font-family: var(--fuente);
+    font-size: 0.8em;
+  }
+
+  .mk-respaldo {
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+    margin-left: auto;
+    padding: 0.35em 0.9em 0.35em 0.4em;
+    border: 1px solid var(--exito-borde);
+    border-radius: 999px;
+    background: var(--exito-suave);
+    color: var(--exito);
+    font-size: 0.9em;
+    white-space: nowrap;
+  }
+
+  .mk-luces {
+    display: inline-flex;
+    gap: 0.22em;
+    padding: 0.22em 0.35em;
+    border-radius: 999px;
+    background: rgb(0 4 12 / 0.45);
+  }
+
+  .mk-luces i {
+    width: 0.6em;
+    height: 0.6em;
+    border-radius: 50%;
+    background: rgb(255 255 255 / 0.18);
+  }
+
+  .mk-luces i.on {
+    background: #22c55e;
+    box-shadow: 0 0 0.5em 0.06em #22c55e;
+  }
+
+  .mk-medico,
+  .mk-avatar {
+    display: inline-grid;
+    place-items: center;
+    flex: none;
+    width: 2.3em;
+    height: 2.3em;
+    border-radius: 50%;
+    background: var(--grad-primario);
+    color: var(--sobre-primario);
+    font-size: 0.92em;
+    font-weight: 700;
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.35);
+  }
+
+  .mk-cuerpo {
+    display: grid;
+    grid-template-columns: 11.5em minmax(0, 1fr) 13.5em;
+    gap: 1em;
+    padding: 1em;
+  }
+
+  .mk-lateral,
+  .mk-agenda,
+  .mk-semaforo {
+    display: grid;
+    align-content: start;
+    gap: 0.35em;
+    padding: 0.8em;
+    border: 1px solid var(--cristal-borde);
+    border-radius: 1em;
+    background: linear-gradient(180deg, var(--cristal-denso), var(--cristal));
+    box-shadow: var(--cristal-brillo);
+  }
+
+  .mk-micro {
+    margin: 0.6em 0 0.2em;
+    color: var(--texto-suave);
+    font-size: 0.75em;
+    font-weight: 650;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+  }
+
+  .mk-micro:first-child {
+    margin-top: 0;
+  }
+
+  .mk-item {
+    display: flex;
+    align-items: center;
+    gap: 0.6em;
+    padding: 0.45em 0.6em;
+    border-radius: 0.6em;
+    color: var(--texto-suave);
+    font-size: 0.95em;
+  }
+
+  .mk-item span {
+    margin-left: auto;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .mk-item i {
+    width: 0.7em;
+    height: 0.7em;
+    border-radius: 0.2em;
+  }
+
+  .c1 { background: var(--primario); }
+  .c2 { background: #5fd4a0; }
+  .c3 { background: #f2c76b; }
+  .c4 { background: #b9a3ff; }
+
+  .mk-item.activo {
+    background: color-mix(in srgb, var(--primario) 13%, transparent);
+    color: var(--texto);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primario) 22%, transparent);
+  }
+
+  .mk-directorio {
+    display: grid;
+    align-content: start;
+    gap: 0.8em;
+    min-width: 0;
+  }
+
+  .mk-encabezado {
+    display: flex;
+    align-items: center;
+    gap: 0.6em;
+    padding: 0.6em 0.8em;
+    border: 1px solid var(--cristal-borde);
+    border-radius: 1em;
+    background: linear-gradient(180deg, var(--cristal-denso), var(--cristal));
+    font-size: 1.1em;
+  }
+
+  .mk-contador {
+    padding: 0 0.5em;
+    border-radius: 999px;
+    background: var(--primario-suave);
+    color: var(--primario);
+    font-size: 0.8em;
+    font-weight: 600;
+  }
+
+  .mk-segmento {
+    display: inline-flex;
+    gap: 0.15em;
+    margin-left: auto;
+    padding: 0.15em;
+    border: 1px solid var(--cristal-borde);
+    border-radius: 0.6em;
+    font-size: 0.72em;
+  }
+
+  .mk-segmento i {
+    padding: 0.2em 0.6em;
+    border-radius: 0.45em;
+    color: var(--texto-suave);
+    font-style: normal;
+  }
+
+  .mk-segmento i.on {
+    background: color-mix(in srgb, var(--primario) 22%, var(--superficie));
+    color: var(--texto);
+  }
+
+  .mk-tarjetas {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.7em;
+  }
+
+  .mk-tarjeta {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 0.5em 0.7em;
+    align-items: center;
+    padding: 0.8em 0.9em;
+    border: 1px solid var(--cristal-borde);
+    border-radius: 1em;
+    background: var(--grad-tarjeta);
+    box-shadow: var(--cristal-brillo), var(--elev-1);
+  }
+
+  .mk-tarjeta:first-child {
+    border-color: color-mix(in srgb, var(--acento) 42%, var(--borde));
+    box-shadow: var(--cristal-brillo), var(--elev-2), var(--halo-acento);
+  }
+
+  .mk-id {
+    display: grid;
+    min-width: 0;
+  }
+
+  .mk-id small {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .mk-id b {
+    overflow: hidden;
+    font-size: 1.02em;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .mk-clinica {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4em;
+    grid-column: 1 / -1;
+    color: var(--texto-suave);
+    font-size: 0.86em;
+  }
+
+  .mk-dx {
+    padding: 0.05em 0.45em;
+    border-radius: 0.35em;
+    background: var(--info-suave);
+    color: var(--info);
+    font-family: var(--mono);
+    font-size: 0.92em;
+  }
+
+  .mk-alergia {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3em;
+    margin-left: auto;
+    padding: 0.05em 0.55em;
+    border: 1px solid var(--peligro-borde);
+    border-radius: 999px;
+    background: var(--peligro-suave);
+    color: var(--peligro);
+    font-size: 0.92em;
+  }
+
+  .mk-alergia :global(.icono) {
+    width: 1em;
+    height: 1em;
+  }
+
+
+  .mk-cita {
+    display: flex;
+    align-items: center;
+    gap: 0.7em;
+    padding: 0.55em 0.6em;
+    border-radius: 0.7em;
+    font-size: 0.92em;
+  }
+
+  .mk-cita.activa {
+    background: color-mix(in srgb, var(--primario) 13%, transparent);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primario) 22%, transparent);
+  }
+
+  .mk-hora {
+    color: var(--primario);
+    font-weight: 650;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .mk-boton {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5em;
+    margin-top: 0.6em;
+    padding: 0.55em 0.8em;
+    border: 1px solid var(--cristal-borde);
+    border-radius: 0.6em;
+    background: rgb(255 255 255 / 0.05);
+    font-size: 0.92em;
+    font-weight: 600;
+  }
+
+  .mk-boton-primario {
+    border-color: transparent;
+    background: var(--grad-primario);
+    color: var(--sobre-primario);
+    font-size: 1em;
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.28),
+      0 0.6em 1.4em -0.6em color-mix(in srgb, var(--acento) 80%, transparent);
+  }
+
+  /* ── Nota de evolución ── */
+  .mk-cuerpo-nota {
+    grid-template-columns: minmax(0, 1fr) 17em;
+  }
+
+  .mk-nota {
+    display: grid;
+    gap: 0.8em;
+    padding: 1.1em;
+    border: 1px solid var(--cristal-borde);
+    border-radius: 1em;
+    background: var(--grad-tarjeta);
+    box-shadow: var(--cristal-brillo), var(--elev-1);
+  }
+
+  .mk-paciente {
+    display: flex;
+    align-items: center;
+    gap: 0.8em;
+  }
+
+  .mk-borrador {
+    margin-left: auto;
+    color: var(--texto-suave);
+    font-size: 0.82em;
+  }
+
+  .mk-signos {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 0.5em;
+  }
+
+  .mk-signos span {
+    padding: 0.5em 0.6em;
+    border: 1px solid var(--cristal-borde);
+    border-radius: 0.6em;
+    background: rgb(255 255 255 / 0.03);
+  }
+
+  .mk-signos b {
+    font-size: 1.1em;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .mk-campo {
+    padding: 0.6em 0.8em;
+    border: 1px solid var(--borde-campo);
+    border-radius: 0.6em;
+    background: rgb(255 255 255 / 0.025);
+  }
+
+  .mk-campo small {
+    margin-bottom: 0.2em;
+  }
+
+  .mk-campo p {
+    font-size: 0.95em;
+  }
+
+  .mk-cumple {
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+    color: var(--exito);
+    font-weight: 600;
+  }
+
+  .mk-semaforo ul {
+    display: grid;
+    gap: 0.35em;
+    margin: 0.3em 0 0;
+    padding: 0;
+    list-style: none;
+    font-size: 0.9em;
+  }
+
+  .mk-semaforo li {
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+    color: var(--texto-suave);
+  }
+
+  .mk-semaforo li :global(.icono) {
+    color: var(--exito);
+  }
+
+  .mk-sello {
+    display: flex;
+    align-items: center;
+    gap: 0.4em;
+    margin-top: 0.3em;
+    color: var(--texto-suave);
+    font-family: var(--mono);
+    font-size: 0.75em;
+  }
+
+  .mockup-pie {
+    margin-top: 0.75rem;
+    color: var(--texto-2);
+    font-size: 0.8125rem;
+    text-align: center;
+  }
+
+  /* Contenedores angostos (celular): sin columnas laterales, una columna de tarjetas y letra más grande. */
+  @container (max-width: 34rem) {
+    .mockup .mk {
+      --u: calc(100cqi / 27);
+    }
+
+    .mk-cuerpo {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .mk-lateral,
+    .mk-agenda,
+    .mk-respaldo,
+    .mk-buscar kbd,
+    .mk-segmento {
+      display: none;
+    }
+
+    .mk-tarjetas {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .mk-tarjeta:nth-child(n + 5) {
+      display: none;
+    }
+
+    .mk-buscar {
+      margin-left: 0.5em;
+      overflow: hidden;
+      white-space: nowrap;
+    }
+
+    .mk-marca b {
+      display: none;
+    }
+
+    .mk-signos {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+</style>

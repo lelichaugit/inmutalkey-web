@@ -1,0 +1,93 @@
+---
+// Selector segmentado de tema (`.control-vista` de la app): Sistema · Claro · Oscuro · Aurora.
+// Sin JS no se muestra (el sitio sigue a prefers-color-scheme). La elección vive en localStorage («ik-tema») y la
+// aplica public/clases.js antes del primer pintado; src/scripts/tema.ts maneja los clics y las flechas.
+import Icono from './Icono.astro';
+
+interface Props {
+  class?: string;
+}
+
+const { class: clase } = Astro.props;
+const opciones = [
+  { valor: 'sistema', etiqueta: 'Tema del sistema', icono: 'sistema' },
+  { valor: 'claro', etiqueta: 'Tema claro (Niebla)', icono: 'sol' },
+  { valor: 'oscuro', etiqueta: 'Tema oscuro (Marino)', icono: 'luna' },
+  { valor: 'aurora', etiqueta: 'Tema Aurora', icono: 'destello' },
+] as const;
+---
+
+<div class:list={['selector-tema', clase]} role="radiogroup" aria-label="Tema de color" data-selector-tema hidden>
+  {
+    opciones.map((o) => (
+      <button type="button" role="radio" aria-checked="false" data-tema={o.valor} aria-label={o.etiqueta} title={o.etiqueta} tabindex="-1">
+        <Icono nombre={o.icono} />
+      </button>
+    ))
+  }
+</div>
+
+<style>
+  .selector-tema {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    padding: 2px;
+    border: 1px solid var(--cristal-borde);
+    border-radius: 11px;
+    background: color-mix(in srgb, var(--texto) 6%, transparent);
+  }
+
+  .selector-tema[hidden] {
+    display: none;
+  }
+
+  button {
+    display: inline-grid;
+    place-items: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    padding: 0;
+    border: 0;
+    border-radius: var(--radio-sm);
+    background: transparent;
+    color: var(--texto-2);
+    cursor: pointer;
+    transition:
+      background-color 160ms ease,
+      color 160ms ease;
+  }
+
+  button:hover:not([aria-checked='true']) {
+    background: color-mix(in srgb, var(--texto) 7%, transparent);
+    color: var(--texto);
+  }
+
+  button[aria-checked='true'] {
+    background: var(--superficie);
+    color: var(--primario);
+    box-shadow:
+      var(--elev-1),
+      inset 0 1px 0 rgb(255 255 255 / 0.6);
+  }
+
+  :global(:root[data-theme='oscuro']) button[aria-checked='true'],
+  :global(:root[data-theme='aurora']) button[aria-checked='true'] {
+    background: color-mix(in srgb, var(--primario) 22%, var(--superficie));
+    color: var(--texto);
+    box-shadow: var(--elev-1);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :global(:root:not([data-theme])) button[aria-checked='true'] {
+      background: color-mix(in srgb, var(--primario) 22%, var(--superficie));
+      color: var(--texto);
+      box-shadow: var(--elev-1);
+    }
+  }
+
+  button :global(.icono) {
+    width: 1.1rem;
+    height: 1.1rem;
+  }
+</style>

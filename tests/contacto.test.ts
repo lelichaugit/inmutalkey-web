@@ -79,16 +79,16 @@ describe('/contacto', () => {
 
   it('el texto visible de cada botón está dentro de su nombre accesible (WCAG 2.5.3)', () => {
     expect(html).toContain('aria-label="Escribir correo a contacto@inmutalkey.com"');
-    expect(html).toMatch(/aria-label="Abrir WhatsApp Business, \+52 229 152 5847, se abre en una pestaña nueva"/);
+    expect(html).toMatch(/aria-label="Abrir WhatsApp Business, \+52 221 345 3487, se abre en una pestaña nueva"/);
     expect(html).toContain('aria-label="Seguir a InmutalKey en Instagram, se abre en una pestaña nueva"');
     expect(html).toContain('aria-label="Conectar con Alan Vargas Fregoso, fundador de InmutalKey, en LinkedIn, se abre en una pestaña nueva"');
   });
 
   it('correo como canal principal antes de las redes, y QR con su texto alternativo', () => {
     expect(html.indexOf('mailto:contacto@inmutalkey.com')).toBeGreaterThan(-1);
-    expect(html.indexOf('Contacto directo')).toBeLessThan(html.indexOf('Síguenos'));
+    expect(html.indexOf('Contacto directo')).toBeLessThan(html.indexOf('Síganos'));
     expect(html).toContain('alt="Código QR para abrir el perfil @inmutalkey en Instagram"');
-    expect(html).toContain('Escanea para seguirnos en Instagram');
+    expect(html).toContain('Escanee para seguirnos en Instagram');
   });
 
   it('head: rel="me" y JSON-LD Organization/Person', () => {

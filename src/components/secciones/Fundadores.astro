@@ -1,767 +1,122 @@
 ---
-// Programa Fundadores: el corazón comercial del sitio. Licencia digital; precio, lugares y fechas en site.config.ts
-// (mientras sean TODO_DEFINIR, el sitio invita a preguntar por WhatsApp en lugar de inventar cifras).
-//
-// Movimiento (mejora progresiva; sin JS o con movimiento reducido, la tarjeta se ve completa y quieta):
-//   · la tarjeta entra creciendo dentro de un visor (data-animar) y la llave la recorre con su luz
-//   · borde de luz: conic-gradient que gira con la @property local --plan-giro (solo mientras la sección está a la vista)
-//   · medidor de lugares que se llena al verse (solo si cupos.totales y cupos.ocupados están definidos)
-//   · con ratón o trackpad, la tarjeta se inclina un poco hacia el puntero (script de abajo)
-import QRCode from 'qrcode';
-
-import { enlaceWhatsApp } from '../../lib/whatsapp';
-import { estaDefinido, sitio, type Valor } from '../../site.config';
-import ChatSimulado, { type Mensaje } from '../ChatSimulado.astro';
+// Programa Fundadores (IDENTIDAD_MARCA §9.6): beta privada, prueba de 30 días a cambio de una reseña verificada,
+// licencia vitalicia a precio especial y soporte personalizado. Precio y lugares salen de site.config.ts; si no están
+// definidos no se inventan. El cupo en vivo lo pinta formularios.ts desde /api/fundadores/cupo (oculto sin dato).
+import { estaDefinido, sitio } from '../../site.config';
 import Icono from '../Icono.astro';
-import Isotipo3D from '../Isotipo3D.astro';
 
-const { precios, cupos, licencia } = sitio;
-const enlace = enlaceWhatsApp(sitio.contacto.whatsapp, sitio.contacto.mensajes.fundadores);
-// Casi negro sobre blanco y dos módulos de margen: se lee al primer intento incluso desde otra pantalla.
-const qr = enlace
-  ? await QRCode.toString(enlace, { type: 'svg', margin: 2, errorCorrectionLevel: 'M', color: { dark: '#060b16', light: '#ffffff' } })
-  : null;
+const { precios, licencia } = sitio;
+const precio = estaDefinido(precios.fundadores) ? `$${precios.fundadores.toLocaleString('es-MX')} ${precios.moneda}` : null;
 
-const dinero = (v: Valor<number>): string | null =>
-  estaDefinido(v) ? `$${v.toLocaleString('es-MX', { maximumFractionDigits: 0 })}` : null;
-const precio = dinero(precios.fundadores);
-const publico = dinero(precios.publico);
-
-const fecha = estaDefinido(precios.finPrecioFundador)
-  ? new Date(`${precios.finPrecioFundador}T12:00:00`).toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' })
-  : null;
-
-const lugares =
-  estaDefinido(cupos.totales) && estaDefinido(cupos.ocupados) && cupos.totales > 0
-    ? { total: cupos.totales, libres: Math.max(cupos.totales - cupos.ocupados, 0), avance: Math.min(cupos.ocupados / cupos.totales, 1) }
-    : null;
-const claseAvance = lugares ? `avance-${Math.round(lugares.avance * 20) * 5}` : '';
-
-const INCLUYE = [
-  'Licencia digital vitalicia para tu instalación',
-  'Todas las funciones actuales del programa',
-  `${licencia.diasPrueba} días de prueba completos antes de pagar`,
-  'Contacto directo con el equipo que lo desarrolla',
-  'Tu opinión cuenta para lo que viene',
-  'Reseña verificada como médico fundador',
+const BENEFICIOS = [
+  { icono: 'llave', titulo: 'Acceso a la beta privada', texto: `${licencia.diasPrueba} días con todas las funciones, sin tarjeta.` },
+  { icono: 'firma', titulo: 'Su reseña, verificada', texto: 'A cambio de la prueba, nos cuenta qué le sirvió y qué no. La publicamos solo con su autorización.' },
+  { icono: 'sello', titulo: 'Licencia vitalicia', texto: precio ? `A precio de fundador: ${precio}. Se paga una vez.` : 'A precio especial de fundador. Se paga una vez y se activa sin internet.' },
+  { icono: 'chat', titulo: 'Soporte personalizado', texto: 'Lo atiende el mismo equipo que desarrolla InmutalKey, por WhatsApp o correo.' },
 ] as const;
-
-const CHAT: readonly Mensaje[] = [
-  { de: 'medico', hora: '18:40', texto: sitio.contacto.mensajes.fundadores },
-  {
-    de: 'inmutalkey',
-    hora: '18:41',
-    texto: 'Hola, doctor. Como fundador tiene precio exclusivo, licencia vitalicia y contacto directo con nosotros.',
-  },
-  { de: 'medico', hora: '18:42', texto: '¿Puedo probarlo antes de pagar?' },
-  {
-    de: 'inmutalkey',
-    hora: '18:43',
-    texto: `Claro: tiene ${licencia.diasPrueba} días completos. Si le convence, activa su licencia y conserva todo lo capturado.`,
-  },
-  { de: 'medico', hora: '18:44', texto: 'Perfecto, apárteme un lugar.' },
-  { de: 'inmutalkey', hora: '18:44', texto: '¡Listo, doctor! Le comparto los pasos para confirmarlo.' },
-];
 ---
 
-<section class="seccion fondo-luz fondo-cuadricula fundadores" id="fundadores" aria-labelledby="fundadores-titulo" data-fundadores data-sin-flotante>
-  <div class="fundadores-aura" data-parallax="medio" aria-hidden="true"></div>
-
+<section class="seccion fundadores" id="fundadores" aria-labelledby="fundadores-titulo">
   <div class="contenedor">
-    <div class="entrada fundadores-cabecera">
-      <p class="pildora" data-animar="subir"><Icono nombre="llave" /> Lugares limitados</p>
-      <h2 id="fundadores-titulo" data-animar="titulo">Programa Fundadores</h2>
-      <p class="texto-grande tenue" data-animar="subir" data-retraso="2">
-        Para los primeros médicos que confían en InmutalKey: precio exclusivo de fundador, licencia vitalicia y una línea
-        directa con quien hace el programa.
-      </p>
-    </div>
-
-    <div class="fundadores-rejilla">
-      <div class="plan-columna">
-        <div class="plan-revelado" data-animar="escala">
-          <span class="plan-visor" aria-hidden="true"></span>
-          <div class="plan-inclinacion" data-plan-inclinacion>
-            <article class="plan" aria-labelledby="plan-titulo">
-              <span class="plan-luz" aria-hidden="true"><span class="plan-borde"></span></span>
-              <span class="plan-reflejo" aria-hidden="true"><span></span></span>
-
-              <header class="plan-cabecera">
-                <div class="plan-credencial">
-                  <h3 class="plan-etiqueta" id="plan-titulo">Licencia de fundador</h3>
-                  <p class="plan-mono">Se activa sin internet</p>
-                </div>
-                <span class="plan-llave" aria-hidden="true">
-                  <Isotipo3D sizes="48px" brillo />
-                </span>
-                <p class="plan-precio">
-                  {
-                    precio ? (
-                      <>
-                        <strong>{precio}</strong> <span>{precios.moneda}</span>
-                        {publico && <s class="tenue">{publico}</s>}
-                      </>
-                    ) : (
-                      <strong class="plan-precio-consulta">Precio de fundador: pregúntalo por WhatsApp</strong>
-                    )
-                  }
-                </p>
-                <p class="tenue plan-pago">Un solo pago. Sin mensualidades.</p>
-              </header>
-
-              {
-                lugares && (
-                  <div class="lugares" data-animar="aparecer" role="img" aria-label={`Quedan ${lugares.libres} de ${lugares.total} lugares`}>
-                    <span class="lugares-texto">
-                      <span>
-                        Quedan <strong>{lugares.libres}</strong> de {lugares.total} lugares
-                      </span>
-                      <span class="plan-mono">{Math.round(lugares.avance * 100)} % apartado</span>
-                    </span>
-                    <span class="lugares-barra">
-                      <span class:list={['lugares-avance', claseAvance]} />
-                    </span>
-                  </div>
-                )
-              }
-
-              <ul class="plan-incluye" data-escalonar>
-                {
-                  INCLUYE.map((i) => (
-                    <li data-animar="subir">
-                      <span class="plan-check">
-                        <Icono nombre="check" />
-                      </span>
-                      {i}
-                    </li>
-                  ))
-                }
-              </ul>
-
-              {
-                enlace && (
-                  <a class="boton boton-primario plan-cta" href={enlace} target="_blank" rel="noopener noreferrer">
-                    <Icono nombre="chat" /> Apartar mi lugar
-                  </a>
-                )
-              }
-              <a class:list={['boton', enlace ? 'boton-secundario' : 'boton-primario', 'plan-cta']} href="/fundadores">
-                <Icono nombre="correo" /> {enlace ? 'Prefiero registrarme con mi correo' : 'Apartar mi lugar'}
-              </a>
-              <p class="plan-nota tenue">
-                {fecha && <>Precio de fundador válido hasta el {fecha}. </>}
-                {estaDefinido(precios.notaPrecios) && <>{precios.notaPrecios} </>}
-                Consulta los <a href="/terminos-fundadores">términos del programa</a>.
-              </p>
-            </article>
-          </div>
+    <div class="fundadores-panel tarjeta">
+      <div class="fundadores-texto">
+        <p class="antetitulo">Programa Fundadores</p>
+        <h2 id="fundadores-titulo">Sea de los primeros médicos en sellar su expediente.</h2>
+        <p class="texto-grande">
+          Un grupo pequeño de médicos usa InmutalKey antes que nadie y decide con nosotros qué mejora primero.
+        </p>
+        <p class="pildora fundadores-cupo" data-cupo hidden></p>
+        <div class="acciones">
+          <a class="boton boton-primario boton-grande" href="/fundadores">Solicitar acceso Fundador</a>
+          <a class="boton boton-grande" href="/terminos-fundadores">Ver los términos</a>
         </div>
-
-        {
-          qr && (
-            <div class="qr" data-animar="subir">
-              <span class="qr-marco">
-                <span class="qr-imagen" aria-hidden="true" set:html={qr} />
-              </span>
-              <span class="qr-texto">
-                <span class="plan-mono">QR · WhatsApp</span>
-                <strong class="qr-con-raton">¿Estás en la computadora?</strong>
-                <span class="tenue qr-con-raton">Escanea con la cámara de tu celular y escríbenos por WhatsApp.</span>
-                <strong class="qr-tactil">¿Se lo muestras a un colega?</strong>
-                <span class="tenue qr-tactil">Que lo escanee con la cámara de su celular para escribirnos por WhatsApp.</span>
-              </span>
-            </div>
-          )
-        }
       </div>
-      <ChatSimulado
-        mensajes={CHAT}
-        etiqueta="Conversación de ejemplo: un médico pregunta por el programa Fundadores y aparta su lugar."
-        class="fundadores-chat"
-      />
+      <ul class="beneficios" data-escalonar>
+        {
+          BENEFICIOS.map((b) => (
+            <li class="revelar">
+              <span class="sello">
+                <Icono nombre={b.icono} />
+              </span>
+              <div>
+                <h3>{b.titulo}</h3>
+                <p>{b.texto}</p>
+              </div>
+            </li>
+          ))
+        }
+      </ul>
     </div>
   </div>
 </section>
 
-<script>
-  // El borde de luz solo gira con la sección a la vista (en el celular no gasta batería fuera de ella) y, con ratón o
-  // trackpad, la tarjeta se inclina un poco hacia el puntero. Sin este script: tarjeta completa y quieta.
-  const seccion = document.querySelector<HTMLElement>('[data-fundadores]');
-  const tarjeta = seccion?.querySelector<HTMLElement>('[data-plan-inclinacion]');
-  const base = tarjeta?.parentElement;
-
-  if (seccion && 'IntersectionObserver' in window) {
-    new IntersectionObserver(([e]) => {
-      if (e) seccion.classList.toggle('en-vista', e.isIntersecting);
-    }).observe(seccion);
-  }
-
-  const conPuntero = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
-  const reducir = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  if (tarjeta && base && conPuntero && !reducir) {
-    let x = 0;
-    let y = 0;
-    let pendiente = false;
-
-    // Una lectura y una escritura por cuadro. Se mide el envoltorio (sin la inclinación) para que el giro no se
-    // retroalimente; así también sigue bien si la página se desplaza con el puntero encima.
-    const pintar = (): void => {
-      pendiente = false;
-      const caja = base.getBoundingClientRect();
-      const nx = Math.min(Math.max((x - caja.left) / caja.width, 0), 1);
-      const ny = Math.min(Math.max((y - caja.top) / caja.height, 0), 1);
-      tarjeta.style.setProperty('--ry', `${((nx - 0.5) * 7).toFixed(2)}deg`);
-      tarjeta.style.setProperty('--rx', `${((0.5 - ny) * 5).toFixed(2)}deg`);
-      tarjeta.style.setProperty('--mx', `${(nx * caja.width).toFixed(0)}px`);
-      tarjeta.style.setProperty('--my', `${(ny * caja.height).toFixed(0)}px`);
-    };
-
-    tarjeta.addEventListener('pointermove', (ev) => {
-      if (ev.pointerType === 'touch') return;
-      x = ev.clientX;
-      y = ev.clientY;
-      tarjeta.classList.add('con-puntero');
-      if (pendiente) return;
-      pendiente = true;
-      window.requestAnimationFrame(pintar);
-    });
-    tarjeta.addEventListener('pointerleave', () => tarjeta.classList.remove('con-puntero'));
-  }
-</script>
-
 <style>
-  /* Ángulo del borde de luz: registrado para poder girarlo con @keyframes (antes de Safari 16.4 queda quieto). */
-  @property --plan-giro {
-    syntax: '<angle>';
-    inherits: false;
-    initial-value: 250deg;
-  }
-
-  .fundadores {
-    overflow-x: clip;
-  }
-
-  /* Luz azul detrás de la tarjeta; se desplaza más lento que la página (data-parallax). */
-  .fundadores-aura {
-    position: absolute;
-    top: 18%;
-    left: -10%;
-    z-index: -1;
-    width: min(900px, 120vw);
-    aspect-ratio: 1;
-    background: radial-gradient(closest-side, rgb(1 120 176 / 0.22), rgb(1 120 176 / 0.08) 55%, transparent);
-    pointer-events: none;
-  }
-
-  .fundadores-cabecera > .pildora {
-    margin-bottom: 4px;
-  }
-
-  .fundadores-rejilla {
-    display: grid;
-    gap: clamp(48px, 7vw, 80px);
-    align-items: start;
-    margin-top: clamp(40px, 6vw, 64px);
-  }
-
-  @media (min-width: 1000px) {
-    .fundadores-rejilla {
-      grid-template-columns: minmax(0, 1.12fr) minmax(0, 0.88fr);
-      align-items: center;
-    }
-  }
-
-  .plan-columna {
-    display: grid;
-    gap: 20px;
-  }
-
-  /* ── Tarjeta: revelado (escala) › inclinación (puntero) › tarjeta. Un transform por elemento. ── */
-
-  .plan-revelado {
+  .fundadores-panel {
     position: relative;
-  }
-
-  :global(.js) .plan-revelado {
-    transition-duration: 1.2s;
-  }
-
-  :global(.js) .plan-revelado:not(.es-visible) {
-    opacity: 0;
-    transform: translate3d(0, 32px, 0) scale(0.92);
-  }
-
-  /* Visor: cuatro esquinas que enfocan la tarjeta (se cierran sobre ella al revelarse). */
-  .plan-visor {
-    --c: rgb(46 159 224 / 0.7);
-    --l: 18px;
-    --g: 1.5px;
-    position: absolute;
-    inset: -10px;
-    background:
-      linear-gradient(var(--c) 0 0) top left / var(--l) var(--g),
-      linear-gradient(var(--c) 0 0) top left / var(--g) var(--l),
-      linear-gradient(var(--c) 0 0) top right / var(--l) var(--g),
-      linear-gradient(var(--c) 0 0) top right / var(--g) var(--l),
-      linear-gradient(var(--c) 0 0) bottom left / var(--l) var(--g),
-      linear-gradient(var(--c) 0 0) bottom left / var(--g) var(--l),
-      linear-gradient(var(--c) 0 0) bottom right / var(--l) var(--g),
-      linear-gradient(var(--c) 0 0) bottom right / var(--g) var(--l);
-    background-repeat: no-repeat;
-    pointer-events: none;
-    transition:
-      transform 1.4s var(--ease) 0.15s,
-      opacity 1s var(--ease) 0.15s;
-  }
-
-  :global(.js) .plan-revelado:not(.es-visible) .plan-visor {
-    opacity: 0;
-    transform: scale(1.06);
-  }
-
-  @media (hover: hover) and (pointer: fine) {
-    .plan-inclinacion {
-      transition: transform 0.7s var(--ease);
-    }
-
-    .plan-inclinacion:global(.con-puntero) {
-      transform: perspective(1400px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
-      transition-duration: 0.25s;
-    }
-  }
-
-  .plan {
-    position: relative;
-    display: grid;
-    gap: 26px;
-    padding: clamp(24px, 4vw, 40px);
-    border-radius: 28px;
-    background:
-      radial-gradient(110% 70% at 100% 0%, rgb(46 159 224 / 0.16), transparent 62%),
-      linear-gradient(180deg, rgb(13 27 53 / 0.94), rgb(6 11 22 / 0.97));
-    box-shadow:
-      0 1px 0 rgb(255 255 255 / 0.06) inset,
-      0 50px 100px -50px rgb(1 120 176 / 0.7);
-    isolation: isolate;
-  }
-
-  /* Borde de luz: un arco brillante recorre el contorno (la máscara deja ver solo el anillo). Con ratón o trackpad,
-     el anillo además irradia un poco de luz (drop-shadow en el envoltorio: el filtro va después de la máscara). */
-  .plan-luz {
-    position: absolute;
-    inset: 0;
-    z-index: 2;
-    border-radius: inherit;
-    pointer-events: none;
-  }
-
-  @media (hover: hover) and (pointer: fine) {
-    .plan-luz {
-      filter: drop-shadow(0 0 7px rgb(46 159 224 / 0.75));
-    }
-  }
-
-  .plan-borde {
-    position: absolute;
-    inset: 0;
-    padding: 1.5px;
-    border-radius: inherit;
-    background: conic-gradient(
-      from var(--plan-giro),
-      rgb(46 159 224 / 0.26) 0deg,
-      rgb(46 159 224 / 0.26) 200deg,
-      rgb(46 159 224 / 0.7) 260deg,
-      #f2faff 318deg,
-      var(--azul-vivo) 340deg,
-      rgb(46 159 224 / 0.26) 360deg
-    );
-    -webkit-mask-image: linear-gradient(#000 0 0), linear-gradient(#000 0 0);
-    -webkit-mask-clip: content-box, border-box;
-    -webkit-mask-composite: xor;
-    mask-image: linear-gradient(#000 0 0), linear-gradient(#000 0 0);
-    mask-clip: content-box, border-box;
-    mask-composite: exclude;
-    pointer-events: none;
-  }
-
-  @media (prefers-reduced-motion: no-preference) {
-    .plan-borde {
-      animation: plan-giro 9s linear infinite;
-      animation-play-state: paused;
-    }
-
-    .fundadores:global(.en-vista) .plan-borde {
-      animation-play-state: running;
-    }
-  }
-
-  @keyframes plan-giro {
-    from {
-      --plan-giro: 250deg;
-    }
-    to {
-      --plan-giro: 610deg;
-    }
-  }
-
-  /* Reflejo que sigue al puntero (solo ratón o trackpad): un círculo de luz que se mueve con transform. */
-  .plan-reflejo {
-    position: absolute;
-    inset: 0;
-    z-index: -1;
-    border-radius: inherit;
     overflow: clip;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.5s var(--ease);
-  }
-
-  .plan-reflejo span {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 560px;
-    height: 560px;
-    border-radius: 50%;
-    background: radial-gradient(closest-side, rgb(46 159 224 / 0.16), transparent);
-    transform: translate3d(calc(var(--mx, 0px) - 280px), calc(var(--my, 0px) - 280px), 0);
-  }
-
-  .plan-inclinacion:global(.con-puntero) .plan-reflejo {
-    opacity: 1;
-  }
-
-  /* ── Contenido de la tarjeta ── */
-
-  .plan-cabecera {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    gap: 6px 16px;
-    padding-bottom: 24px;
-    border-bottom: 1px solid var(--linea-oscura);
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: clamp(2rem, 5vw, 4.5rem);
+    padding: clamp(1.75rem, 5vw, 4rem);
+    border-radius: var(--radio-xl);
+    box-shadow: var(--cristal-brillo), var(--elev-2);
   }
 
-  /* Renglón 1: credencial + llave; debajo, precio y forma de pago a todo lo ancho (no se aprietan en 360 px). */
-  .plan-cabecera > * {
-    grid-column: 1 / -1;
+  .fundadores-panel::before {
+    content: '';
+    position: absolute;
+    inset: -40% auto auto -20%;
+    z-index: 0;
+    width: 70%;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: radial-gradient(closest-side, color-mix(in srgb, var(--aurora-2) 22%, transparent), transparent);
+    pointer-events: none;
   }
 
-  .plan-cabecera > .plan-credencial {
+  .fundadores-texto,
+  .beneficios {
+    position: relative;
+  }
+
+  .fundadores-texto {
     display: grid;
     align-content: start;
-    gap: 4px;
-    margin-bottom: 10px;
-    grid-column: 1;
-    grid-row: 1;
+    gap: 1.25rem;
   }
 
-  .plan-etiqueta {
-    color: var(--azul-vivo);
-    font-family: var(--fuente-texto);
-    font-size: 1.0625rem;
-    font-weight: 600;
-    letter-spacing: 0;
+  .fundadores-cupo {
+    justify-self: start;
   }
 
-  .plan-mono {
-    color: var(--texto-tenue);
-    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-    font-size: 0.75rem;
-    font-weight: 500;
-    letter-spacing: 0.08em;
-    line-height: 1.4;
+  .fundadores-texto .acciones {
+    margin-top: 0.75rem;
   }
 
-  /* La llave como emblema de la credencial: entra con su luz cuando la tarjeta se revela. */
-  .plan-cabecera > .plan-llave {
-    grid-column: 2;
-    grid-row: 1;
-    align-self: start;
-    display: block;
-    width: calc(clamp(64px, 7vw, 88px) * 304 / 724);
-    height: clamp(64px, 7vw, 88px);
-    filter: drop-shadow(0 10px 18px rgb(0 0 0 / 0.55)) drop-shadow(0 0 22px rgb(46 159 224 / 0.25));
-  }
-
-  /* Con espacio (tableta y escritorio) la llave acompaña también al precio y no deja un hueco bajo la credencial. */
-  @media (min-width: 640px) {
-    .plan-cabecera > .plan-llave {
-      grid-row: 1 / span 2;
-    }
-
-    .plan-cabecera > .plan-precio {
-      grid-column: 1;
-    }
-  }
-
-  @media (prefers-reduced-motion: no-preference) {
-    :global(.js) .plan-revelado:not(.es-visible) .plan-llave :global(.isotipo-brillo) {
-      animation: none;
-    }
-
-    .plan-revelado.es-visible .plan-llave :global(.isotipo-brillo) {
-      animation-delay: 0.9s;
-      animation-duration: 1.6s;
-    }
-  }
-
-  .plan-precio {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    gap: 10px;
-  }
-
-  .plan-precio strong {
-    font-family: var(--fuente-titulo);
-    font-size: clamp(2.5rem, 2rem + 2vw, 3.5rem);
-    font-weight: 600;
-    letter-spacing: -0.02em;
-    line-height: 1;
-  }
-
-  .plan-precio .plan-precio-consulta {
-    font-size: clamp(1.625rem, 1.25rem + 1.2vw, 2.25rem);
-    line-height: 1.12;
-    text-wrap: balance;
-  }
-
-  .plan-pago {
-    font-size: 1rem;
-  }
-
-  .plan-incluye {
+  .beneficios {
     display: grid;
-    gap: 14px;
+    gap: 1.5rem;
     margin: 0;
     padding: 0;
     list-style: none;
   }
 
-  @media (min-width: 640px) {
-    .plan-incluye {
-      grid-template-columns: 1fr 1fr;
-      gap: 16px 28px;
-    }
-  }
-
-  .plan-incluye li {
+  .beneficios li {
     display: flex;
-    gap: 12px;
-    align-items: flex-start;
-    line-height: 1.45;
+    gap: 1rem;
   }
 
-  .plan-check {
-    display: grid;
-    place-items: center;
-    flex: none;
-    width: 24px;
-    height: 24px;
-    margin-top: 1px;
-    border: 1px solid rgb(46 159 224 / 0.45);
-    border-radius: 50%;
-    background: rgb(46 159 224 / 0.1);
-    color: var(--azul-vivo);
+  .beneficios h3 {
+    margin: 0.125rem 0 0.25rem;
   }
 
-  .plan-check :global(.icono) {
-    width: 14px;
-    height: 14px;
-    stroke-width: 2.2;
+  .beneficios p {
+    color: var(--texto-2);
   }
 
-  .plan-cta {
-    justify-self: start;
-    min-height: 56px;
-    padding-inline: 1.8em;
-  }
-
-  @media (max-width: 559px) {
-    .plan-cta {
-      justify-self: stretch;
+  @media (max-width: 60rem) {
+    .fundadores-panel {
+      grid-template-columns: minmax(0, 1fr);
     }
-  }
-
-  .plan-nota {
-    font-size: 0.95rem;
-  }
-
-  .plan-nota a {
-    color: var(--texto);
-  }
-
-  /* ── Medidor de lugares (solo con datos): se llena al entrar en vista ── */
-
-  .lugares {
-    display: grid;
-    gap: 10px;
-  }
-
-  .lugares-texto {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 8px;
-  }
-
-  .lugares strong {
-    font-family: var(--fuente-titulo);
-    font-size: 1.4rem;
-  }
-
-  /* Barra con marcas cada 5 % (como la escala de un instrumento). */
-  .lugares-barra {
-    position: relative;
-    display: block;
-    height: 10px;
-    border-radius: 999px;
-    background: rgb(255 255 255 / 0.08);
-    overflow: hidden;
-  }
-
-  .lugares-barra::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: repeating-linear-gradient(90deg, transparent 0 calc(5% - 1px), rgb(6 11 22 / 0.9) calc(5% - 1px) 5%);
-  }
-
-  .lugares-avance {
-    display: block;
-    height: 100%;
-    background: linear-gradient(90deg, var(--azul), var(--azul-vivo) 80%, #bfe6ff);
-    transform-origin: 0 50%;
-    transition: transform 1.6s var(--ease) 0.35s;
-  }
-
-  :global(.js) .lugares:not(.es-visible) .lugares-avance {
-    transform: scaleX(0);
-  }
-
-  /* Avance en pasos de 5 % (sin estilos en línea por la CSP). */
-  .avance-0 { transform: scaleX(0.02); }
-  .avance-5 { transform: scaleX(0.05); }
-  .avance-10 { transform: scaleX(0.1); }
-  .avance-15 { transform: scaleX(0.15); }
-  .avance-20 { transform: scaleX(0.2); }
-  .avance-25 { transform: scaleX(0.25); }
-  .avance-30 { transform: scaleX(0.3); }
-  .avance-35 { transform: scaleX(0.35); }
-  .avance-40 { transform: scaleX(0.4); }
-  .avance-45 { transform: scaleX(0.45); }
-  .avance-50 { transform: scaleX(0.5); }
-  .avance-55 { transform: scaleX(0.55); }
-  .avance-60 { transform: scaleX(0.6); }
-  .avance-65 { transform: scaleX(0.65); }
-  .avance-70 { transform: scaleX(0.7); }
-  .avance-75 { transform: scaleX(0.75); }
-  .avance-80 { transform: scaleX(0.8); }
-  .avance-85 { transform: scaleX(0.85); }
-  .avance-90 { transform: scaleX(0.9); }
-  .avance-95 { transform: scaleX(0.95); }
-  .avance-100 { transform: scaleX(1); }
-
-  /* ── QR: para escanear desde la computadora o mostrarlo desde el celular a un colega ── */
-
-  .qr {
-    display: flex;
-    align-items: center;
-    gap: 22px;
-    padding: 18px;
-    border: 1px solid var(--linea-oscura);
-    border-radius: 20px;
-    background: rgb(255 255 255 / 0.025);
-  }
-
-  .qr-marco {
-    --c: rgb(46 159 224 / 0.75);
-    --l: 12px;
-    --g: 1.5px;
-    position: relative;
-    flex: none;
-    padding: 7px;
-    background:
-      linear-gradient(var(--c) 0 0) top left / var(--l) var(--g),
-      linear-gradient(var(--c) 0 0) top left / var(--g) var(--l),
-      linear-gradient(var(--c) 0 0) top right / var(--l) var(--g),
-      linear-gradient(var(--c) 0 0) top right / var(--g) var(--l),
-      linear-gradient(var(--c) 0 0) bottom left / var(--l) var(--g),
-      linear-gradient(var(--c) 0 0) bottom left / var(--g) var(--l),
-      linear-gradient(var(--c) 0 0) bottom right / var(--l) var(--g),
-      linear-gradient(var(--c) 0 0) bottom right / var(--g) var(--l);
-    background-repeat: no-repeat;
-  }
-
-  .qr-imagen {
-    display: block;
-    width: 132px;
-    padding: 4px;
-    border-radius: 10px;
-    background: #fff;
-  }
-
-  /* Módulos con bordes nítidos (sin suavizado) a cualquier escala. */
-  .qr-imagen :global(svg) {
-    width: 100%;
-    height: auto;
-    shape-rendering: crispEdges;
-  }
-
-  .qr-texto {
-    display: grid;
-    gap: 6px;
-    min-width: 0;
-  }
-
-  .qr-texto strong {
-    font-size: 1.0625rem;
-    line-height: 1.3;
-  }
-
-  .qr-texto .plan-mono {
-    color: var(--azul-vivo);
-  }
-
-  /* El texto depende de cómo se usa el dispositivo: con ratón es una computadora (escanear con el celular); en
-     pantallas táctiles (celular, iPad) lo normal es mostrárselo a otra persona. */
-  .qr-tactil {
-    display: none;
-  }
-
-  @media (hover: none), (pointer: coarse) {
-    .qr-con-raton {
-      display: none;
-    }
-
-    .qr-tactil {
-      display: block;
-    }
-  }
-
-  @media (max-width: 719px) {
-    /* En el celular el código va primero y más grande: es el que se muestra para que otro lo escanee. */
-    .qr {
-      flex-direction: column;
-      align-items: stretch;
-      text-align: center;
-    }
-
-    .qr-marco {
-      align-self: center;
-    }
-
-    .qr-imagen {
-      width: min(200px, 56vw);
-    }
-
-    .qr-texto {
-      justify-items: center;
-    }
-  }
-
-  .fundadores :global(.fundadores-chat) {
-    width: min(360px, 100%);
   }
 </style>

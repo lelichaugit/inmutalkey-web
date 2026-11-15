@@ -9,20 +9,34 @@ import PasosRegistro from '../../components/PasosRegistro.astro';
 import PaginaTexto from '../../layouts/PaginaTexto.astro';
 ---
 
-<PaginaTexto titulo="Confirma tu correo" descripcion="Un clic y listo: así sabemos que este correo es tuyo." antetitulo="Programa Fundadores" indexar={false}>
+<PaginaTexto titulo="Confirme su correo" descripcion="Un clic y listo: así sabemos que este correo es suyo." antetitulo="Programa Fundadores" indexar={false} estrecho>
   <PasosRegistro actual={2} />
-  <div data-confirmacion>
-    <div class="aviso-paso" data-paso="confirmar" hidden>
-      <p>Un clic y pasas directo a tu instalación guiada de la prueba de 30 días.</p>
-      <button type="button" class="boton boton-primario" data-confirmar><Icono nombre="check" /> Confirmar y continuar</button>
+  <div class="tarjeta panel-formulario" data-confirmacion>
+    <div class="estado-paso" data-paso="confirmar" hidden>
+      <p class="texto-grande">Un clic y pasa directo a su instalación guiada de la prueba de 30 días.</p>
+      <button type="button" class="boton boton-primario boton-grande" data-confirmar><Icono nombre="check" /> Confirmar y continuar</button>
     </div>
     <div class="aviso-paso problema" data-paso="vencido" hidden>
       <h2>Este enlace ya no es válido</h2>
-      <p>Los enlaces de confirmación vencen a las 72 horas. Vuelve a <a href="/fundadores">registrarte</a> y te mandamos uno nuevo.</p>
+      <p>Los enlaces de confirmación vencen a las 72 horas. <a href="/fundadores">Regístrese de nuevo</a> y le enviamos uno nuevo.</p>
     </div>
     <div class="aviso-paso problema" data-paso="error" hidden>
-      <p>No pudimos confirmar en este momento. Revisa tu conexión e intenta de nuevo.</p>
+      <p>No pudimos confirmar en este momento. Revise su conexión e intente de nuevo.</p>
     </div>
-    <noscript><p class="aviso-paso">Para confirmar necesitas JavaScript activado.</p></noscript>
+    <noscript><p class="aviso-paso">Para confirmar necesita JavaScript activado.</p></noscript>
   </div>
 </PaginaTexto>
+
+<style>
+  /* El paso visible lo elige formularios.ts al cargar: el alto queda reservado para no mover la página (CLS). */
+  [data-confirmacion] {
+    min-height: 12.5rem;
+    align-content: start;
+  }
+
+  .estado-paso {
+    display: grid;
+    gap: 1.25rem;
+    justify-items: start;
+  }
+</style>

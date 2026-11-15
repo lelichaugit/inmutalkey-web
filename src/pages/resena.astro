@@ -1,6 +1,8 @@
 ---
 // Formulario de reseña para fundadores. El envío (validación zod, Turnstile, límite de frecuencia y guardado en D1)
 // llega en la Fase C: src/scripts/formulario.ts + functions/api/resena.ts. Sin JS, el formulario hace POST normal.
+import '../styles/formularios.css';
+
 import Icono from '../components/Icono.astro';
 import PaginaTexto from '../layouts/PaginaTexto.astro';
 import { enlaceWhatsApp } from '../lib/whatsapp';
@@ -12,31 +14,32 @@ const whatsapp = enlaceWhatsApp(sitio.contacto.whatsapp, 'Hola, soy médico fund
 ---
 
 <PaginaTexto
-  titulo="Deja tu reseña"
-  descripcion="Solo para médicos fundadores. Usa el código que te enviamos por WhatsApp; revisamos cada reseña antes de publicarla."
+  titulo="Deje su reseña"
+  descripcion="Solo para médicos fundadores. Use el código que le enviamos por WhatsApp; revisamos cada reseña antes de publicarla."
   antetitulo="Fundadores"
   indexar={false}
+  estrecho
 >
   {
     !envioActivo && (
       <div class="aviso">
         <p>
           El envío desde esta página se habilita muy pronto. Mientras tanto,
-          {whatsapp ? <a href={whatsapp} target="_blank" rel="noopener noreferrer"> mándanos tu reseña por WhatsApp</a> : ' mándanos tu reseña por WhatsApp'}
-          y la publicamos con tu autorización.
+          {whatsapp ? <a href={whatsapp} target="_blank" rel="noopener noreferrer"> envíenos su reseña por WhatsApp</a> : ' envíenos su reseña por WhatsApp'}
+          y la publicamos con su autorización.
         </p>
       </div>
     )
   }
-  <form class="formulario" method="post" action="/api/resena" data-formulario="resena" novalidate>
+  <form class="tarjeta panel-formulario formulario" method="post" action="/api/resena" data-formulario="resena" novalidate>
     <label class="campo">
       <span>Código de fundador</span>
       <input name="codigo" required autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="24" />
-      <small>Lo encuentras en tu conversación de WhatsApp con nosotros.</small>
+      <small>Lo encuentra en su conversación de WhatsApp con nosotros.</small>
     </label>
 
     <label class="campo">
-      <span>Nombre como quieres que aparezca</span>
+      <span>Nombre como desea que aparezca</span>
       <input name="nombre" required maxlength="60" placeholder="Dra. Ana López" autocomplete="name" />
     </label>
 
@@ -47,7 +50,7 @@ const whatsapp = enlaceWhatsApp(sitio.contacto.whatsapp, 'Hola, soy médico fund
 
     <fieldset class="campo estrellas-campo">
       <legend>Calificación</legend>
-      <div class="estrellas-opciones">
+      <div class="opciones">
         {
           [5, 4, 3, 2, 1].map((n) => (
             <label>
@@ -62,9 +65,9 @@ const whatsapp = enlaceWhatsApp(sitio.contacto.whatsapp, 'Hola, soy médico fund
     </fieldset>
 
     <label class="campo">
-      <span>Tu reseña</span>
+      <span>Su reseña</span>
       <textarea name="texto" required minlength="20" maxlength="400" rows="5"></textarea>
-      <small>Entre 20 y 400 caracteres. Por favor no incluyas datos de pacientes.</small>
+      <small>Entre 20 y 400 caracteres. Por favor no incluya datos de pacientes.</small>
     </label>
 
     <label class="casilla">
@@ -80,119 +83,8 @@ const whatsapp = enlaceWhatsApp(sitio.contacto.whatsapp, 'Hola, soy médico fund
 </PaginaTexto>
 
 <style>
-  .formulario {
-    display: grid;
-    gap: 20px;
-    padding: clamp(20px, 4vw, 32px);
-    border: 1px solid var(--linea-oscura-fuerte);
-    border-radius: 20px;
-    background: rgb(255 255 255 / 0.02);
-  }
-
-  .campo {
-    display: grid;
-    gap: 6px;
-    margin: 0;
-    padding: 0;
-    border: 0;
-  }
-
-  .campo > span,
-  .campo legend {
-    color: var(--texto);
-    font-weight: 600;
-  }
-
-  .campo small {
-    color: var(--texto-tenue);
-    font-size: 0.9rem;
-  }
-
-  .formulario input:not([type='radio']):not([type='checkbox']),
-  .formulario textarea {
-    width: 100%;
-    min-height: 52px;
-    padding: 12px 14px;
-    border: 1px solid var(--linea-oscura-fuerte);
-    border-radius: 12px;
-    background: var(--medianoche-2);
-    color: var(--texto);
-    font-size: 1.0625rem;
-  }
-
-  .formulario textarea {
-    resize: vertical;
-  }
-
-  .formulario input:focus,
-  .formulario textarea:focus {
-    outline: 3px solid rgb(46 159 224 / 0.4);
-    outline-offset: 1px;
-    border-color: var(--azul-vivo);
-  }
-
-  .estrellas-opciones {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-top: 6px;
-  }
-
-  .estrellas-opciones label {
-    position: relative;
-  }
-
-  .estrellas-opciones input {
-    position: absolute;
-    opacity: 0;
-  }
-
-  .estrellas-opciones span {
-    display: inline-flex;
-    align-items: center;
-    min-height: 44px;
-    padding: 0 16px;
-    border: 1px solid var(--linea-oscura-fuerte);
-    border-radius: 999px;
-    cursor: pointer;
-  }
-
-  .estrellas-opciones input:checked + span {
-    border-color: #f3c969;
-    background: rgb(243 201 105 / 0.12);
-    color: #f3c969;
-  }
-
-  .estrellas-opciones input:focus-visible + span {
-    outline: 3px solid var(--azul-vivo);
-    outline-offset: 2px;
-  }
-
-  .casilla {
-    display: flex;
-    gap: 12px;
-    align-items: flex-start;
-    color: var(--texto-tenue);
-  }
-
-  .casilla input {
-    width: 22px;
-    height: 22px;
-    margin-top: 2px;
-    accent-color: var(--azul);
-  }
-
-  .formulario .boton {
-    justify-self: start;
-  }
-
-  .formulario .boton:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    transform: none;
-  }
-
-  .formulario-estado:empty {
-    display: none;
+  .panel-formulario {
+    padding: clamp(1.25rem, 4vw, 2.5rem);
+    border-radius: var(--radio-xl);
   }
 </style>

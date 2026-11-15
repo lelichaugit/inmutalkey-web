@@ -72,10 +72,11 @@ Cloudflare, con los encabezados de `public/_headers`).
 
 | Qué | Dónde |
 |---|---|
-| Precio, lugares, fechas, correo, instalador, datos legales | `src/site.config.ts` (los `TODO_DEFINIR`) |
-| Render 3D del logo, avatar del chat, capturas de la app | Subir a `capturas/` (ver `capturas/LEEME.md`) |
+| Precio, lugares, fechas, correo, datos legales | `src/site.config.ts` (los `TODO_DEFINIR`) |
+| Versión vigente y huellas SHA-256 | `src/site.config.ts` → `version` |
+| Logos, favicon, iconos, imagen OG | `marca/` → `npm run marca` · `npm run og` |
+| Capturas de la app (solo bóveda demo) | Subir a `capturas/` (ver `capturas/LEEME.md`) |
 | Preguntas frecuentes | `src/data/faq.ts` |
-| Funciones del producto | `src/data/funciones.ts` |
 
 Las ramas que no son de producción generan una versión de vista previa con su propia dirección.
 
@@ -98,7 +99,18 @@ cambios.
 1. **R2 Object Storage → Enable** (pide un método de pago aunque te quedes en el nivel gratuito: 10 GB y egreso gratis).
 2. **Create bucket** → `inmutalkey-instaladores` → ubicación automática. **No** actives acceso público ni dominio
    público: el bucket es privado y solo se descarga con URL firmada de 5 minutos.
-3. Sube el instalador (p. ej. a `instaladores/InmutalKey_0.3.0_x64-setup.exe`).
+3. Sube los archivos de la versión vigente a las rutas que espera el sitio (`src/site.config.ts` → `version.paquetes`):
+
+   | Objeto en `inmutalkey-instaladores` | SHA-256 |
+   |---|---|
+   | `instaladores/0.4.0/InmutalKey_0.4.0_Instalador.exe` | `d8cf81a06db3214e7ff460b1446aa533e44a893a84cd302efd77cc467516190e` |
+   | `instaladores/0.4.0/InmutalKey_0.4.0_Beta.zip` | `1f7c72d1111fca139b269f8f5abd1fad783a6efb5721e137decad1fba82f8d67` |
+
+   Luego en **/admin → Instaladores** registra la versión `0.4.0` con la ruta del **instalador** (los campos ya muestran
+   esos valores como ejemplo), su nombre de archivo y su huella, marcada como vigente: ese es el archivo que descarga el
+   enlace personal. El ZIP queda en R2 para compartirlo a mano; el sitio publica su huella en `/verificar`.
+   Al cambiar de versión: actualiza `version` en `site.config.ts` (las pruebas exigen huellas de 64 hex y el número de
+   versión en el nombre), sube los archivos y regístralos en /admin con las mismas huellas.
 4. **R2 → Manage API tokens → Create API token**: permiso **Object Read only**, limitado al bucket
    `inmutalkey-instaladores`, sin vencimiento o con el que prefieras. Guarda el *Access Key ID*, el
    *Secret Access Key* y tu *Account ID* (sale en la misma pantalla).

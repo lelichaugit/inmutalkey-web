@@ -1,0 +1,133 @@
+---
+// Cómo funciona (IDENTIDAD_MARCA §9.3): 4 pasos — Instale → Registre → Consulte y firme → Respalde en su USB — junto a
+// la maqueta de una nota con el semáforo NOM-004. Cada paso sale de la guía rápida de la app v0.4.0 (src/guiaRapida.ts).
+import { sitio } from '../../site.config';
+import Icono from '../Icono.astro';
+import MockupApp from '../MockupApp.astro';
+
+const PASOS = [
+  {
+    icono: 'descarga',
+    titulo: 'Instale',
+    texto: `Un instalador para Windows 10 y 11, sin permisos de administrador. Tiene ${sitio.licencia.diasPrueba} días con todas las funciones.`,
+  },
+  {
+    icono: 'usuario',
+    titulo: 'Registre',
+    texto: 'Cree su cuenta y su contraseña: con ella se cifra su expediente. Active su Clave de Rescate por si algún día la olvida.',
+  },
+  {
+    icono: 'firma',
+    titulo: 'Consulte y firme',
+    texto: 'Escriba la nota con sus signos vitales y su diagnóstico CIE-10. El semáforo le dice qué falta; al firmar, la nota queda sellada.',
+  },
+  {
+    icono: 'usb',
+    titulo: 'Respalde en su USB',
+    texto: 'Un respaldo cifrado con su frase de paso. Si cambia de computadora, lo restaura en la nueva desde la bienvenida.',
+  },
+] as const;
+---
+
+<section class="seccion como" id="como-funciona" aria-labelledby="como-titulo">
+  <div class="contenedor como-rejilla">
+    <div class="como-texto">
+      <div class="seccion-cabecera">
+        <p class="antetitulo">Cómo funciona</p>
+        <h2 id="como-titulo">De la instalación a la primera nota sellada, en minutos.</h2>
+        <p>Sin capacitación larga ni configuraciones técnicas. Si quiere practicar primero, cargue 50 pacientes ficticios.</p>
+      </div>
+      <ol class="pasos" data-escalonar>
+        {
+          PASOS.map((p, i) => (
+            <li class="paso revelar">
+              <span class="paso-numero cifras" aria-hidden="true">{i + 1}</span>
+              <div>
+                <h3>
+                  <Icono nombre={p.icono} /> {p.titulo}
+                </h3>
+                <p>{p.texto}</p>
+              </div>
+            </li>
+          ))
+        }
+      </ol>
+    </div>
+    <div class="como-maqueta revelar">
+      <MockupApp variante="nota" />
+    </div>
+  </div>
+</section>
+
+<style>
+  .como-rejilla {
+    display: grid;
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+    gap: clamp(2rem, 5vw, 5rem);
+    align-items: center;
+  }
+
+  .pasos {
+    display: grid;
+    gap: 0.5rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    counter-reset: paso;
+  }
+
+  .paso {
+    position: relative;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 1rem;
+    padding: 1rem 0 1.25rem;
+  }
+
+  /* Hilo que une los pasos (como la cadena de notas). */
+  .paso:not(:last-child)::before {
+    content: '';
+    position: absolute;
+    top: 3.25rem;
+    bottom: -0.25rem;
+    left: 1.0625rem;
+    width: 1px;
+    background: linear-gradient(var(--borde), transparent);
+  }
+
+  .paso-numero {
+    display: grid;
+    place-items: center;
+    width: 2.125rem;
+    height: 2.125rem;
+    border: 1px solid var(--cristal-borde);
+    border-radius: 50%;
+    background: var(--grad-tarjeta);
+    color: var(--primario);
+    font-size: 0.9375rem;
+    font-weight: 700;
+    box-shadow: var(--cristal-brillo), var(--elev-1);
+  }
+
+  .paso h3 {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0.25rem 0 0.375rem;
+    font-size: 1.1875rem;
+  }
+
+  .paso h3 :global(.icono) {
+    color: var(--primario);
+  }
+
+  .paso p {
+    color: var(--texto-2);
+  }
+
+  @media (max-width: 60rem) {
+    .como-rejilla {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+</style>

@@ -1,63 +1,27 @@
 ---
-// Preguntas frecuentes: acordeón nativo (<details>), sin JS. Apertura suave donde existen ::details-content e
-// interpolate-size (Chrome 131+); en el resto abre y cierra al instante. Las preguntas entran en cascada al verse.
-// El motor de scroll vuelve a medir solo al abrir una (ResizeObserver sobre el body).
-import { enlaceWhatsApp } from '../../lib/whatsapp';
+// Preguntas frecuentes (IDENTIDAD_MARCA §9.8). <details> nativo: funciona sin JS, con teclado y con lectores de
+// pantalla. Respuestas en src/data/faq.ts (verificadas contra la app v0.4.0).
 import { PREGUNTAS } from '../../data/faq';
-import { sitio } from '../../site.config';
 import Icono from '../Icono.astro';
-
-const whatsapp = enlaceWhatsApp(sitio.contacto.whatsapp, sitio.contacto.mensajeWhatsApp);
-const numero = (i: number): string => String(i + 1).padStart(2, '0');
-/** Parte el texto para que "NOM-004-SSA3-2012" no se corte en el guion al final de un renglón. */
-const partes = (texto: string): { texto: string; norma: boolean }[] =>
-  texto
-    .split(/(NOM-004(?:-SSA3-2012)?)/)
-    .filter((t) => t !== '')
-    .map((t) => ({ texto: t, norma: t.startsWith('NOM-004') }));
-
-const jsonLd = {
-  '@context': 'https://schema.org',
-  '@type': 'FAQPage',
-  mainEntity: PREGUNTAS.map((p) => ({
-    '@type': 'Question',
-    name: p.pregunta,
-    acceptedAnswer: { '@type': 'Answer', text: p.respuesta.join(' ') },
-  })),
-};
 ---
 
-<section class="seccion fondo-oscuro faq" id="preguntas" aria-labelledby="faq-titulo" data-sin-flotante>
+<section class="seccion faq" id="preguntas" aria-labelledby="faq-titulo">
   <div class="contenedor faq-rejilla">
-    <div class="entrada faq-cabecera">
-      <p class="faq-mono" data-animar="subir" aria-hidden="true">{PREGUNTAS.length} respuestas</p>
-      <h2 id="faq-titulo" data-animar="titulo">Preguntas frecuentes</h2>
-      <p class="tenue" data-animar="subir" data-retraso="2">¿No está tu duda? Escríbenos por WhatsApp y te responde una persona.</p>
-      {
-        whatsapp && (
-          <a class="faq-whatsapp" href={whatsapp} target="_blank" rel="noopener noreferrer" data-animar="subir" data-retraso="3">
-            <Icono nombre="chat" /> Pregúntanos por WhatsApp
-          </a>
-        )
-      }
+    <div class="seccion-cabecera faq-cabecera">
+      <p class="antetitulo">Preguntas frecuentes</p>
+      <h2 id="faq-titulo">Lo que los médicos nos preguntan.</h2>
+      <p>¿No encuentra su duda? <a href="#contacto">Escríbanos</a>: le responde una persona del equipo.</p>
     </div>
     <div class="faq-lista">
       {
-        PREGUNTAS.map((p, i) => (
-          <details class="pregunta" id={`faq-${p.id}`} data-animar="subir">
+        PREGUNTAS.map((p) => (
+          <details class="faq-item" id={`faq-${p.id}`}>
             <summary>
-              <span class="pregunta-numero" aria-hidden="true">
-                {numero(i)}
-              </span>
-              <span class="pregunta-texto">
-                {partes(p.pregunta).map((t) => (t.norma ? <span class="sin-corte">{t.texto}</span> : t.texto))}
-              </span>
-              <span class="pregunta-signo" aria-hidden="true" />
+              <span>{p.pregunta}</span>
+              <Icono nombre="mas" class="faq-signo" />
             </summary>
-            <div class="respuesta">
-              {p.respuesta.map((r) => (
-                <p>{partes(r).map((t) => (t.norma ? <span class="sin-corte">{t.texto}</span> : t.texto))}</p>
-              ))}
+            <div class="faq-respuesta">
+              {p.respuesta.map((parrafo) => <p>{parrafo}</p>)}
               {p.enlace && (
                 <p>
                   <a href={p.enlace.href}>{p.enlace.texto}</a>
@@ -69,249 +33,87 @@ const jsonLd = {
       }
     </div>
   </div>
-  <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
 </section>
 
 <style>
   .faq-rejilla {
     display: grid;
-    gap: 36px;
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+    gap: clamp(2rem, 5vw, 5rem);
+    align-items: start;
   }
 
-  @media (min-width: 960px) {
-    .faq-rejilla {
-      grid-template-columns: 0.75fr 1.25fr;
-      gap: 72px;
-      align-items: start;
-    }
-
-    .faq-cabecera {
-      position: sticky;
-      top: calc(var(--altura-nav) + 40px);
-    }
+  .faq-cabecera {
+    position: sticky;
+    top: calc(var(--altura-nav) + 2.5rem);
   }
-
-  .faq-mono {
-    color: var(--azul-vivo);
-    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-    font-size: 0.75rem;
-    font-weight: 500;
-    letter-spacing: 0.08em;
-  }
-
-  .faq-cabecera > p:not(.faq-mono) {
-    max-width: 34ch;
-  }
-
-  .faq-whatsapp {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.55em;
-    min-height: 48px;
-    padding: 0 1.2em 0 1em;
-    border: 1px solid var(--linea-oscura-fuerte);
-    border-radius: 999px;
-    color: var(--texto);
-    font-weight: 600;
-    text-decoration: none;
-    transition:
-      border-color 0.3s var(--ease),
-      background-color 0.3s var(--ease);
-  }
-
-  .faq-whatsapp :global(.icono) {
-    width: 20px;
-    height: 20px;
-    color: var(--azul-vivo);
-  }
-
-  @media (hover: hover) {
-    .faq-whatsapp:hover {
-      border-color: var(--azul-vivo);
-      background: rgb(46 159 224 / 0.08);
-    }
-  }
-
-  /* ── Lista ── */
 
   .faq-lista {
-    border-top: 1px solid var(--linea-oscura);
+    border-top: 1px solid var(--linea);
   }
 
-  /* Cascada sin JS extra: las preguntas que entran juntas en la ventana se escalonan de a cinco (85 ms). */
-  .pregunta:nth-child(5n + 2) { --i: 1; }
-  .pregunta:nth-child(5n + 3) { --i: 2; }
-  .pregunta:nth-child(5n + 4) { --i: 3; }
-  .pregunta:nth-child(5n + 5) { --i: 4; }
-
-  .pregunta {
-    position: relative;
-    border-bottom: 1px solid var(--linea-oscura);
-    interpolate-size: allow-keywords;
+  .faq-item {
+    border-bottom: 1px solid var(--linea);
   }
 
-  /* Línea de luz a la izquierda de la pregunta abierta: se traza de arriba hacia abajo. */
-  .pregunta::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: -1px;
-    bottom: -1px;
-    width: 2px;
-    background: linear-gradient(180deg, var(--azul-vivo), rgb(46 159 224 / 0.15));
-    transform: scaleY(0);
-    transform-origin: 50% 0;
-    transition: transform 0.6s var(--ease);
-    pointer-events: none;
-  }
-
-  .pregunta[open]::before {
-    transform: scaleY(1);
-  }
-
-  /* Número y pregunta comparten línea base (también si la pregunta ocupa dos renglones); el signo va centrado. */
-  .pregunta summary {
+  .faq-item summary {
     display: flex;
-    align-items: baseline;
-    gap: 16px;
-    padding: 22px 4px 22px 18px;
-    font-size: 1.125rem;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    min-height: 3.5rem;
+    padding: 1rem 0.5rem;
+    color: var(--texto);
+    font-size: 1.0625rem;
     font-weight: 600;
-    line-height: 1.35;
+    letter-spacing: -0.012em;
     cursor: pointer;
     list-style: none;
-    transition: color 0.3s var(--ease);
+    border-radius: var(--radio-sm);
   }
 
-  .pregunta summary::-webkit-details-marker {
+  .faq-item summary::-webkit-details-marker {
     display: none;
   }
 
-  .pregunta summary:focus-visible {
-    outline-offset: -3px;
+  .faq-item summary:hover {
+    color: var(--primario);
   }
 
-  @media (hover: hover) {
-    .pregunta summary:hover {
-      color: #fff;
-    }
-
-    .pregunta summary:hover .pregunta-signo {
-      border-color: rgb(46 159 224 / 0.6);
-    }
+  .faq-item :global(.faq-signo) {
+    color: var(--primario);
+    transition: transform 260ms var(--curva-cristal);
   }
 
-  .pregunta-numero {
-    flex: none;
-    min-width: 2ch;
-    color: var(--texto-tenue);
-    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-    font-size: 0.75rem;
-    font-weight: 500;
-    letter-spacing: 0.06em;
-    transition: color 0.3s var(--ease);
+  .faq-item[open] :global(.faq-signo) {
+    transform: rotate(45deg);
   }
 
-  .pregunta[open] .pregunta-numero {
-    color: var(--azul-vivo);
+  .faq-respuesta {
+    display: grid;
+    gap: 0.75rem;
+    padding: 0 0.5rem 1.5rem;
+    color: var(--texto-2);
   }
 
-  .pregunta-texto {
-    flex: 1;
-    min-width: 0;
+  .faq-item[open] .faq-respuesta {
+    animation: faq-entrada 300ms var(--curva-cristal);
   }
 
-  /* Signo + que gira media vuelta y queda en −. */
-  .pregunta-signo {
-    position: relative;
-    flex: none;
-    align-self: center;
-    width: 30px;
-    height: 30px;
-    border: 1px solid var(--linea-oscura-fuerte);
-    border-radius: 50%;
-    transition:
-      transform 0.5s var(--ease),
-      background-color 0.35s var(--ease),
-      border-color 0.35s var(--ease);
-  }
-
-  .pregunta-signo::before,
-  .pregunta-signo::after {
-    content: '';
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    width: 11px;
-    height: 1.5px;
-    margin: -0.75px 0 0 -5.5px;
-    border-radius: 1px;
-    background: currentColor;
-  }
-
-  .pregunta-signo::after {
-    transform: rotate(90deg);
-    transition: transform 0.5s var(--ease);
-  }
-
-  .pregunta[open] .pregunta-signo {
-    transform: rotate(180deg);
-    background: rgb(46 159 224 / 0.15);
-    border-color: rgb(46 159 224 / 0.55);
-    color: var(--azul-vivo);
-  }
-
-  .pregunta[open] .pregunta-signo::after {
-    transform: rotate(0deg);
-  }
-
-  /* Apertura suave en navegadores que lo soportan (el resto abre al instante). */
-  .pregunta::details-content {
-    block-size: 0;
-    overflow: clip;
-    transition:
-      block-size 0.5s var(--ease),
-      content-visibility 0.5s allow-discrete;
-  }
-
-  .pregunta[open]::details-content {
-    block-size: auto;
-  }
-
-  .respuesta {
-    max-width: 62ch;
-    padding: 0 4px 24px calc(18px + 2ch + 16px);
-    color: var(--texto-tenue);
-    transition:
-      opacity 0.5s var(--ease) 0.08s,
-      transform 0.5s var(--ease) 0.08s;
-  }
-
-  .pregunta:not([open]) .respuesta {
-    opacity: 0;
-    transform: translate3d(0, -6px, 0);
-  }
-
-  @starting-style {
-    .pregunta[open] .respuesta {
+  @keyframes faq-entrada {
+    from {
       opacity: 0;
-      transform: translate3d(0, -6px, 0);
+      transform: translateY(-4px);
     }
   }
 
-  /* Celulares angostos (360 px): más ancho para el texto de la pregunta. */
-  @media (max-width: 479px) {
-    .pregunta summary {
-      gap: 12px;
-      padding-left: 12px;
+  @media (max-width: 60rem) {
+    .faq-rejilla {
+      grid-template-columns: minmax(0, 1fr);
     }
 
-    .respuesta {
-      padding-left: 12px;
+    .faq-cabecera {
+      position: static;
     }
-  }
-
-  .respuesta a {
-    color: var(--azul-vivo);
   }
 </style>

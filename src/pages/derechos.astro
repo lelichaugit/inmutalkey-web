@@ -23,25 +23,27 @@ const ETIQUETAS: Record<(typeof TIPOS_ARCO)[number], string> = {
 ---
 
 <PaginaTexto
-  titulo="Tus derechos sobre tus datos"
-  descripcion="Pide ver, corregir o borrar los datos que nos diste, u oponerte a algún uso. Respondemos por correo."
+  titulo="Sus derechos sobre sus datos"
+  descripcion="Pida ver, corregir o borrar los datos que nos dio, u oponerse a algún uso. Respondemos por correo."
   antetitulo="Privacidad"
   borrador={!sitio.legal.revisadoPorAbogado}
   indexar={sitio.legal.revisadoPorAbogado}
+  estrecho
 >
+  <div class="tarjeta panel-formulario">
   <p>
-    Te respondemos al correo que escribas en un máximo de 20 días hábiles y, si procede, lo hacemos efectivo en los 15
-    siguientes. Para protegerte, antes de entregar o borrar datos podemos pedirte que confirmes que el correo es tuyo.
-    {correo && <>También puedes escribir directo a <a href={`mailto:${correo}`}>{correo}</a>.</>}
+    Le respondemos al correo que escriba en un máximo de 20 días hábiles y, si procede, lo hacemos efectivo en los 15
+    siguientes. Para protegerle, antes de entregar o borrar datos podemos pedirle que confirme que el correo es suyo.
+    {correo && <>También puede escribir directo a <a href={`mailto:${correo}`}>{correo}</a>.</>}
   </p>
 
   <form class="formulario" data-formulario="arco" data-sitekey={sitekey ?? undefined}>
     <label class="campo">
-      <span>Correo con el que te registraste</span>
+      <span>Correo con el que se registró</span>
       <input name="correo" type="email" required maxlength="160" autocomplete="email" />
     </label>
     <fieldset class="campo">
-      <legend>¿Qué quieres hacer?</legend>
+      <legend>¿Qué desea hacer?</legend>
       <div class="opciones">
         {
           TIPOS_ARCO.map((t) => (
@@ -56,14 +58,22 @@ const ETIQUETAS: Record<(typeof TIPOS_ARCO)[number], string> = {
     <label class="campo">
       <span>Detalle <span class="opcional">(opcional)</span></span>
       <textarea name="detalle" maxlength="1000" rows="4" placeholder="Por ejemplo: corrijan mi especialidad a Pediatría."></textarea>
-      <small>No incluyas datos de pacientes ni documentos de identidad aquí.</small>
+      <small>No incluya datos de pacientes ni documentos de identidad aquí.</small>
     </label>
     <div class="trampa" aria-hidden="true">
-      <label>No llenes este campo <input name="sitio_web" tabindex="-1" autocomplete="off" /></label>
+      <label>No llene este campo <input name="sitio_web" tabindex="-1" autocomplete="off" /></label>
     </div>
     <div class="turnstile" data-turnstile></div>
     <button type="submit" class="boton boton-primario" disabled={!sitekey}><Icono nombre="enviar" /> Enviar solicitud</button>
     <p class="formulario-estado" data-estado role="status" aria-live="polite"></p>
-    <noscript><p>Sin JavaScript, escríbenos directo por correo.</p></noscript>
+    <noscript><p>Sin JavaScript, escríbanos directo por correo.</p></noscript>
   </form>
+  </div>
 </PaginaTexto>
+
+<style>
+  .panel-formulario {
+    display: grid;
+    gap: 1.5rem;
+  }
+</style>

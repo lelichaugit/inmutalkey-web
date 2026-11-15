@@ -71,222 +71,119 @@ const { variant, class: clase } = Astro.props;
   }
 
   .red {
-    --marca-fondo: var(--azul);
-    --marca-glifo: #fff;
     color: var(--texto);
     text-decoration: none;
-    -webkit-tap-highlight-color: transparent;
-  }
-
-  /* Marca en reposo: monocromo de la paleta del sitio. En hover/foco el sello se rellena con el color de marca
-     (degradado de Instagram, X en blanco, LinkedIn #0A66C2) con el glifo en negativo, que mantiene el contraste. */
-  .red-instagram {
-    --marca-fondo: linear-gradient(45deg, #feda75 0%, #fa7e1e 25%, #d62976 50%, #962fbf 75%, #4f5bd5 100%);
-  }
-
-  .red-x {
-    --marca-fondo: #fff;
-    --marca-glifo: #000;
-  }
-
-  .red-linkedin {
-    --marca-fondo: #0a66c2;
   }
 
   .red-sello {
-    position: relative;
-    display: grid;
-    flex: none;
+    display: inline-grid;
     place-items: center;
-    width: 44px;
-    height: 44px;
-    border: 1px solid var(--linea-oscura-fuerte);
-    border-radius: 12px;
-    background: rgb(255 255 255 / 0.04);
+    width: 2.75rem;
+    height: 2.75rem;
+    border: 1px solid var(--cristal-borde);
+    border-radius: var(--radio);
+    background: var(--grad-tarjeta);
     color: var(--texto);
-    font-size: 22px;
-    isolation: isolate;
-    overflow: hidden;
+    box-shadow: var(--cristal-brillo), var(--elev-1);
     transition:
-      color 0.2s var(--ease),
-      border-color 0.2s var(--ease),
-      transform 0.2s var(--ease);
+      border-color 160ms ease,
+      box-shadow 200ms ease,
+      color 160ms ease,
+      transform 160ms var(--curva-cristal);
   }
 
-  .red-sello::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    z-index: -1;
-    background: var(--marca-fondo);
-    opacity: 0;
-    transition: opacity 0.2s var(--ease);
-  }
-
-  .red:focus-visible {
-    outline-offset: 4px;
-    border-radius: 14px;
+  .red-sello :global(.icono-marca) {
+    width: 1.125rem;
+    height: 1.125rem;
   }
 
   .red:hover .red-sello,
   .red:focus-visible .red-sello {
-    border-color: transparent;
-    color: var(--marca-glifo);
-  }
-
-  .red:hover .red-sello::before,
-  .red:focus-visible .red-sello::before {
-    opacity: 1;
+    color: var(--primario);
+    border-color: color-mix(in srgb, var(--acento) 42%, var(--borde));
+    box-shadow: var(--cristal-brillo), var(--elev-2), var(--halo-acento);
   }
 
   .red:active .red-sello {
-    transform: scale(0.94);
+    transform: scale(0.96);
   }
-
-  /* ── Pie: fila compacta ── */
 
   .redes-pie {
     display: flex;
-    flex-wrap: wrap;
-    gap: 4px 10px;
-    margin-top: 1.25rem;
+    gap: 0.5rem;
   }
 
   .redes-pie .red {
-    display: grid;
-    place-items: center;
-    min-width: 44px;
-    min-height: 44px;
+    display: inline-flex;
+    border-radius: var(--radio);
   }
-
-  /* ── Tarjetas ── */
 
   .redes-tarjetas {
     display: grid;
-    gap: 16px;
-    grid-template-columns: 1fr;
-  }
-
-  @media (min-width: 900px) {
-    .redes-tarjetas {
-      grid-template-columns: repeat(3, 1fr);
-      gap: 20px;
-    }
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+    gap: 1rem;
   }
 
   .redes-tarjetas li {
     display: flex;
-    min-width: 0;
   }
 
   .redes-tarjetas .red {
-    position: relative;
     display: grid;
-    grid-template-columns: auto 1fr;
-    grid-template-areas:
-      'sello nombre'
-      'sello handle'
-      'texto texto'
-      'accion accion';
-    align-items: center;
-    column-gap: 16px;
-    row-gap: 2px;
-    width: 100%;
-    padding: 22px;
-    border: 1px solid var(--linea-oscura-fuerte);
-    border-radius: 20px;
-    background:
-      radial-gradient(90% 120% at 0% 0%, rgb(46 159 224 / 0.08), transparent 70%),
-      rgb(255 255 255 / 0.03);
+    flex: 1;
+    gap: 0.25rem;
+    align-content: start;
+    padding: 1.25rem;
+    border: 1px solid var(--cristal-borde);
+    border-radius: var(--radio-lg);
+    background: var(--grad-tarjeta);
+    box-shadow: var(--cristal-brillo), var(--elev-1);
     transition:
-      border-color 0.2s var(--ease),
-      background-color 0.2s var(--ease),
-      transform 0.2s var(--ease);
+      transform 240ms var(--curva-cristal),
+      box-shadow 240ms var(--curva-cristal),
+      border-color 200ms ease;
   }
 
   .redes-tarjetas .red-sello {
-    grid-area: sello;
-    width: 64px;
-    height: 64px;
-    border-radius: 16px;
-    font-size: 32px;
+    margin-bottom: 0.75rem;
+    color: var(--sobre-primario);
+    background: var(--grad-primario);
+    border-color: transparent;
   }
 
   .red-nombre {
-    grid-area: nombre;
-    align-self: end;
-    font-family: var(--fuente-titulo);
-    font-size: 1.375rem;
-    font-weight: 600;
-    letter-spacing: -0.01em;
-    line-height: 1.15;
+    font-size: 1.125rem;
+    font-weight: 650;
+    letter-spacing: -0.018em;
   }
 
   .red-handle {
-    grid-area: handle;
-    align-self: start;
-    color: var(--texto-tenue);
-    font-size: 0.9375rem;
-    overflow-wrap: anywhere;
+    color: var(--primario);
+    font-weight: 560;
   }
 
   .red-proposito {
-    grid-area: texto;
-    margin-top: 16px;
-    color: var(--texto-tenue);
+    color: var(--texto-2);
+    font-size: 0.9375rem;
   }
 
   .red-accion {
-    grid-area: accion;
-    justify-self: start;
     display: inline-flex;
     align-items: center;
-    gap: 8px;
-    min-height: 44px;
-    margin-top: 18px;
-    padding: 0 18px;
-    border: 1px solid var(--linea-oscura-fuerte);
-    border-radius: 999px;
+    gap: 0.25rem;
+    margin-top: 0.75rem;
+    color: var(--primario);
     font-weight: 600;
-    transition:
-      background-color 0.2s var(--ease),
-      border-color 0.2s var(--ease);
   }
 
   .redes-tarjetas .red:hover,
   .redes-tarjetas .red:focus-visible {
-    border-color: rgb(46 159 224 / 0.55);
-    background-color: rgb(255 255 255 / 0.05);
+    transform: translateY(-2px);
+    border-color: color-mix(in srgb, var(--acento) 42%, var(--borde));
+    box-shadow: var(--cristal-brillo), var(--elev-2), var(--halo-acento);
   }
 
-  .redes-tarjetas .red:hover .red-accion,
-  .redes-tarjetas .red:focus-visible .red-accion {
-    border-color: var(--azul-vivo);
-    background: var(--azul);
-    color: #fff;
-  }
-
-  .redes-tarjetas .red:active {
-    transform: scale(0.985);
-  }
-
-  @media (hover: hover) and (prefers-reduced-motion: no-preference) {
-    .redes-tarjetas .red:hover {
-      transform: translateY(-2px);
-    }
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .red,
-    .red *,
-    .red-sello::before {
-      transition: none !important;
-    }
-
-    .red:active,
-    .redes-tarjetas .red:active,
-    .red:active .red-sello {
-      transform: none;
-    }
+  .redes-tarjetas .red:hover .red-sello {
+    color: var(--sobre-primario);
   }
 </style>

@@ -17,35 +17,58 @@ const logo = existsSync(join(process.cwd(), 'public/brand/terceros/google-g.svg'
 </a>
 
 <style>
-  /* Tema oscuro de los lineamientos de Google: fondo #131314, borde #8E918F, texto #E3E3E3, esquinas redondeadas. */
+  /* Colores de los lineamientos de Google: claro (#FFF, borde #747775, texto #1F1F1F) u oscuro (#131314, borde
+     #8E918F, texto #E3E3E3) según el tema. La forma sigue a la marca (radio 9 px, foco doble). */
   .boton-google {
+    --g-fondo: #fff;
+    --g-borde: #747775;
+    --g-texto: #1f1f1f;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 12px;
+    gap: 0.75rem;
     width: 100%;
-    min-height: 52px;
-    padding: 0 20px;
-    border: 1px solid #8e918f;
-    border-radius: 999px;
-    background: #131314;
-    color: #e3e3e3;
+    min-height: 3rem;
+    padding: 0 1.25rem;
+    border: 1px solid var(--g-borde);
+    border-radius: var(--radio-sm);
+    background: var(--g-fondo);
+    color: var(--g-texto);
+    font-size: 1rem;
     font-weight: 600;
-    font-size: 1.0625rem;
     text-decoration: none;
+    box-shadow: var(--elev-1);
     transition:
-      border-color 0.2s var(--ease),
-      background-color 0.2s var(--ease);
+      box-shadow 200ms ease,
+      transform 160ms var(--curva-cristal);
+  }
+
+  :global(:root[data-theme='oscuro']) .boton-google,
+  :global(:root[data-theme='aurora']) .boton-google {
+    --g-fondo: #131314;
+    --g-borde: #8e918f;
+    --g-texto: #e3e3e3;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :global(:root:not([data-theme])) .boton-google {
+      --g-fondo: #131314;
+      --g-borde: #8e918f;
+      --g-texto: #e3e3e3;
+    }
   }
 
   .boton-google:hover {
-    border-color: #e3e3e3;
-    background: #1d1d1f;
+    color: var(--g-texto);
+    box-shadow: var(--elev-2), var(--halo-acento);
+  }
+
+  .boton-google:active {
+    transform: scale(0.98);
   }
 
   .boton-google:focus-visible {
-    outline: 3px solid var(--azul-vivo);
-    outline-offset: 3px;
+    box-shadow: var(--anillo-foco);
   }
 
   .boton-google[aria-disabled='true'] {
