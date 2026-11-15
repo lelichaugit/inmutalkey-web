@@ -1,0 +1,471 @@
+---
+// Monitor de signos: tarjetas de vidrio simulado sobre una banda Marino. Peso, talla y SpO₂ se pueden editar: el IMC
+// se calcula al instante con la clasificación de la OMS y un valor imposible de SpO₂ se marca en rojo, con las mismas
+// reglas que la app (src/lib/imc.ts; lógica en src/scripts/signos.ts).
+//
+// Movimiento (solo con `.movimiento` y mientras el monitor está a la vista): los trazos se descubren una vez con
+// clip-path y un barrido los recorre con transform; el corazón late con transform. Sin JS o con «reducir movimiento»:
+// monitor completo y quieto. Los trazos son ilustrativos (src/lib/trazos.ts), no la señal de ningún paciente.
+// Signos que registra la app: TA, FC, FR, temperatura, peso, talla, IMC, SpO₂ y glucemia capilar.
+import { calcularImc, clasificarImc, ETIQUETA_IMC } from '../../lib/imc';
+import { trazoEcg, trazoPleth } from '../../lib/trazos';
+import Icono from '../Icono.astro';
+
+const PESO = 70;
+const TALLA = 170;
+const imc = calcularImc(PESO, TALLA) ?? 0;
+const ANCHO = 520;
+const ALTO = 72;
+
+const LECTURAS = [
+  { sigla: 'TA', valor: '120/80', unidad: 'mmHg' },
+  { sigla: 'FR', valor: '16', unidad: 'rpm' },
+  { sigla: 'Temp', valor: '36.6', unidad: '°C' },
+  { sigla: 'Glucemia', valor: '92', unidad: 'mg/dL' },
+] as const;
+---
+
+<section class="banda lamina tema-marino cuadricula sg" id="signos" data-signos aria-labelledby="sg-titulo">
+  <div class="contenedor sg-rejilla">
+    <div class="sg-texto">
+      <div class="seccion-cabecera">
+        <p class="antetitulo">Signos vitales</p>
+        <h2 id="sg-titulo">Signos vitales sin calculadora.</h2>
+        <p>
+          Escriba el peso y la talla y el IMC aparece al instante, con su clasificación. Si un valor es imposible, el
+          programa le avisa antes de firmar.
+        </p>
+      </div>
+      <p class="sg-pista"><Icono nombre="editar" /> Pruébelo: cambie los números del monitor.</p>
+    </div>
+
+    <div class="sg-monitor revelar" role="group" aria-label="Monitor de signos de un paciente de ejemplo" data-sg-monitor data-brillo>
+      <p class="sg-paciente">
+        <span class="sg-avatar" aria-hidden="true"><Icono nombre="usuario" /></span>
+        <span><strong>Paciente de ejemplo</strong><small>34 años · en consulta</small></span>
+        <span class="sg-vivo"><i></i> Ilustración</span>
+      </p>
+
+      <div class="sg-tarjeta sg-ancha brillo">
+        <div class="sg-onda sg-ecg" aria-hidden="true">
+          <span>II</span>
+          <svg viewBox={`0 0 ${ANCHO} ${ALTO}`} preserveAspectRatio="xMinYMid slice" focusable="false"><path d={trazoEcg(ANCHO, ALTO)}></path></svg>
+          <i></i>
+        </div>
+        <p class="sg-cifra sg-fc">
+          <small>FC <Icono nombre="pulso" class="sg-latido" /></small>
+          <strong class="cifras">72</strong>
+          <small>lpm</small>
+        </p>
+      </div>
+
+      <div class="sg-tarjeta sg-ancha brillo" data-sg-spo2>
+        <div class="sg-onda sg-pleth" aria-hidden="true">
+          <span>Pleth</span>
+          <svg viewBox={`0 0 ${ANCHO} ${ALTO}`} preserveAspectRatio="xMinYMid slice" focusable="false"><path d={trazoPleth(ANCHO, ALTO)}></path></svg>
+          <i></i>
+        </div>
+        <label class="sg-cifra sg-spo2">
+          <small>SpO₂</small>
+          <input name="spo2" value="97" inputmode="numeric" autocomplete="off" aria-describedby="sg-aviso" />
+          <small>%</small>
+        </label>
+        <p class="sg-aviso" id="sg-aviso" data-sg-aviso hidden></p>
+      </div>
+
+      {
+        LECTURAS.map((l) => (
+          <p class="sg-tarjeta sg-cifra brillo">
+            <small>{l.sigla}</small>
+            <strong class="cifras">{l.valor}</strong>
+            <small>{l.unidad}</small>
+          </p>
+        ))
+      }
+
+      <div class="sg-tarjeta sg-ancha sg-imc brillo">
+        <label class="sg-campo">
+          <small>Peso (kg)</small>
+          <input name="peso" value={PESO} inputmode="decimal" autocomplete="off" />
+        </label>
+        <label class="sg-campo">
+          <small>Talla (cm)</small>
+          <input name="talla" value={TALLA} inputmode="decimal" autocomplete="off" />
+        </label>
+        <p class="sg-resultado" aria-live="polite">
+          <small>IMC</small>
+          <strong class="cifras" data-sg-imc>{imc.toFixed(1)}</strong>
+          <span data-sg-clase>{ETIQUETA_IMC[clasificarImc(imc)]}</span>
+          <small class="sg-formula" data-sg-formula>{PESO} kg ÷ ({(TALLA / 100).toFixed(2)} m)²</small>
+        </p>
+        <div class="sg-escala" aria-hidden="true">
+          <div class="sg-zonas"><i></i><i></i><i></i><i></i></div>
+          <span class="sg-marca" data-sg-marca><i></i></span>
+          <p><span>18.5</span><span>25</span><span>30</span></p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style is:global>
+  .sg-rejilla {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: clamp(1.5rem, 4vw, 4rem);
+    align-items: center;
+  }
+
+  .sg-texto .seccion-cabecera {
+    margin-bottom: 1.25rem;
+  }
+
+  .sg-pista {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.375rem 0.875rem;
+    border: 1px solid var(--cristal-borde);
+    border-radius: 999px;
+    background: var(--primario-suave);
+    color: var(--primario);
+    font-size: 0.875rem;
+    font-weight: 600;
+  }
+
+  .sg-pista .icono {
+    width: 1rem;
+    height: 1rem;
+  }
+
+  .sg-monitor {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.625rem;
+  }
+
+  .sg-monitor small {
+    color: var(--texto-suave);
+    font-size: 0.8125rem;
+  }
+
+  .sg-paciente {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.25rem;
+  }
+
+  .sg-paciente > span:nth-child(2) {
+    display: grid;
+    line-height: 1.3;
+  }
+
+  .sg-avatar {
+    display: grid;
+    place-items: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 50%;
+    background: var(--grad-primario);
+    color: var(--sobre-primario);
+  }
+
+  .sg-vivo {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-left: auto;
+    color: var(--texto-suave);
+    font-size: 0.8125rem;
+  }
+
+  .sg-vivo i {
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 50%;
+    background: var(--exito);
+  }
+
+  /* Tarjeta de vidrio simulado (sin blur: son varias). */
+  .sg-tarjeta {
+    margin: 0;
+    padding: 0.875rem 1rem;
+    border: 1px solid var(--cristal-borde);
+    border-radius: var(--radio-lg);
+    background: linear-gradient(180deg, var(--cristal-denso), var(--cristal));
+    box-shadow: var(--cristal-brillo), var(--elev-1);
+  }
+
+  .sg-ancha {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0.5rem 1rem;
+    align-items: center;
+  }
+
+  .sg-cifra {
+    display: grid;
+    align-content: center;
+    line-height: 1.15;
+  }
+
+  .sg-cifra strong,
+  .sg-spo2 input {
+    font-size: clamp(1.625rem, 1.3rem + 1.4vw, 2.25rem);
+    font-weight: 650;
+    letter-spacing: -0.03em;
+  }
+
+  .sg-fc {
+    min-width: 4.5rem;
+    color: var(--exito);
+  }
+
+  .sg-fc small:first-child {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+  }
+
+  .sg-latido {
+    width: 1rem;
+    height: 1rem;
+    color: var(--exito);
+  }
+
+  .sg-spo2 {
+    width: 5.5rem;
+    color: var(--primario);
+    cursor: text;
+  }
+
+  .sg-monitor input {
+    min-height: 2.75rem;
+    padding: 0.125rem 0.5rem;
+    background: rgb(255 255 255 / 0.04);
+    box-shadow: none;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .sg-spo2 input {
+    margin-left: -0.5rem;
+    color: inherit;
+  }
+
+  .sg-invalido .sg-spo2 {
+    color: var(--peligro);
+  }
+
+  .sg-aviso {
+    grid-column: 1 / -1;
+    color: var(--peligro);
+    font-size: 0.875rem;
+    font-weight: 560;
+  }
+
+  /* Franja del trazo: fondo sólido para que el barrido (un bloque del mismo color) lo «borre» solo con transform. */
+  .sg-onda {
+    position: relative;
+    height: 4.5rem;
+    overflow: hidden;
+    border-radius: var(--radio-sm);
+    background: var(--fondo);
+  }
+
+  .sg-onda > span {
+    position: absolute;
+    top: 0.35rem;
+    left: 0.5rem;
+    z-index: 1;
+    color: var(--texto-suave);
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+
+  .sg-onda svg {
+    width: 100%;
+    height: 100%;
+    max-width: none;
+  }
+
+  .sg-onda path {
+    fill: none;
+    stroke: var(--exito);
+    stroke-width: 1.6;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    vector-effect: non-scaling-stroke;
+  }
+
+  .sg-pleth path {
+    stroke: var(--primario);
+  }
+
+  .sg-onda > i {
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 22%;
+    background: linear-gradient(90deg, transparent, var(--fondo) 45%, var(--fondo) 70%, transparent);
+    opacity: 0;
+  }
+
+  .movimiento .sg-onda svg {
+    clip-path: inset(0 100% 0 0);
+    transition: clip-path 1500ms cubic-bezier(0.3, 0, 0.3, 1) 200ms;
+  }
+
+  .movimiento .en-vista .sg-onda svg {
+    clip-path: inset(0);
+  }
+
+  .movimiento .en-vista .sg-onda > i {
+    animation: sg-barrido 3.34s linear 1.8s infinite;
+  }
+
+  .movimiento .en-vista .sg-latido {
+    animation: sg-latir 0.835s ease-in-out infinite;
+  }
+
+  @keyframes sg-barrido {
+    from {
+      opacity: 1;
+      transform: translateX(-100%);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(455%);
+    }
+  }
+
+  @keyframes sg-latir {
+    0%,
+    60%,
+    100% {
+      transform: none;
+    }
+    20% {
+      transform: scale(1.25);
+    }
+  }
+
+  /* IMC */
+  .sg-imc {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+  }
+
+  .sg-campo {
+    display: grid;
+    gap: 0.25rem;
+  }
+
+  .sg-campo input {
+    font-size: 1.125rem;
+    font-weight: 600;
+  }
+
+  .sg-resultado {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.25rem 0.625rem;
+  }
+
+  .sg-resultado strong {
+    font-size: clamp(1.75rem, 1.4rem + 1.4vw, 2.375rem);
+    font-weight: 700;
+    letter-spacing: -0.03em;
+  }
+
+  .sg-resultado span {
+    font-weight: 600;
+  }
+
+  .sg-formula {
+    margin-left: auto;
+    font-family: var(--mono);
+  }
+
+  .sg-escala {
+    grid-column: 1 / -1;
+    position: relative;
+    padding-top: 0.75rem;
+  }
+
+  .sg-zonas {
+    display: grid;
+    grid-template-columns: 11.7fr 21.6fr 16.7fr 50fr;
+    gap: 2px;
+    height: 0.5rem;
+    overflow: hidden;
+    border-radius: 999px;
+  }
+
+  .sg-zonas i:nth-child(1) { background: var(--info); }
+  .sg-zonas i:nth-child(2) { background: var(--exito); }
+  .sg-zonas i:nth-child(3) { background: var(--alerta); }
+  .sg-zonas i:nth-child(4) { background: var(--peligro); }
+
+  /* La marca viaja con transform: el carril mide todo el ancho y --pos (0–1) lo desplaza. */
+  .sg-marca {
+    position: absolute;
+    inset: 0.375rem 0 auto;
+    height: 1.25rem;
+    pointer-events: none;
+    transform: translateX(calc(var(--pos, 0.307) * 100%));
+    transition: transform 420ms var(--curva-cristal);
+  }
+
+  .sg-marca i {
+    display: block;
+    width: 4px;
+    height: 100%;
+    margin-left: -2px;
+    border-radius: 2px;
+    background: var(--texto);
+    box-shadow: 0 0 0 2px var(--superficie);
+  }
+
+  .sg-escala p {
+    position: relative;
+    height: 1.25rem;
+    margin-top: 0.25rem;
+    color: var(--texto-suave);
+    font-size: 0.75rem;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .sg-escala p span {
+    position: absolute;
+    transform: translateX(-50%);
+  }
+
+  .sg-escala p span:nth-child(1) { left: 11.7%; }
+  .sg-escala p span:nth-child(2) { left: 33.3%; }
+  .sg-escala p span:nth-child(3) { left: 50%; }
+
+  @media (min-width: 40rem) {
+    .sg-monitor {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .sg-imc {
+      grid-template-columns: 8rem 8rem minmax(0, 1fr);
+      align-items: end;
+    }
+
+    .sg-resultado {
+      grid-column: auto;
+    }
+  }
+
+  @media (min-width: 62rem) {
+    .sg-rejilla {
+      grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+    }
+  }
+</style>
