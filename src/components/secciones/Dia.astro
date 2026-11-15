@@ -1,0 +1,483 @@
+---
+// Un día en su consultorio: cinco momentos (agenda → consulta → receta → laboratorios → respaldo), cada uno con una
+// miniatura dibujada de la pantalla. Todo lo que se menciona existe en la app (docs/TRASPASO.md §1 y §4).
+//   · Escritorio con movimiento: recorrido HORIZONTAL fijado. El carril se desliza con el avance de la escena (--p,
+//     solo en el carril y en la línea del reloj) y abajo corre la hora del día.
+//   · Celular, tableta, sin JS o con «reducir movimiento»: tarjetas apiladas con su hora, sin secuestrar el scroll.
+// Las miniaturas son decorativas (aria-hidden) y usan datos ficticios. Estilos globales con prefijo `dia-`.
+import Icono from '../Icono.astro';
+
+const MOMENTOS = [
+  {
+    id: 'agenda',
+    hora: '08:00',
+    corto: 'Agenda',
+    titulo: 'Abre su agenda.',
+    texto: 'Citas de hoy, próximas y pacientes de primera vez, aunque todavía no tengan expediente.',
+  },
+  {
+    id: 'consulta',
+    hora: '09:30',
+    corto: 'Consulta',
+    titulo: 'Consulta y escribe la nota.',
+    texto: 'Signos vitales con IMC automático, diagnósticos CIE-10 de uso frecuente y el semáforo de 7 requisitos.',
+  },
+  {
+    id: 'receta',
+    hora: '09:50',
+    corto: 'Receta',
+    titulo: 'Firma y sale la receta.',
+    texto: 'Sale de la nota firmada, con folio, expediente y sello. En media hoja o en Carta, como usted prefiera.',
+  },
+  {
+    id: 'labs',
+    hora: '13:00',
+    corto: 'Laboratorios',
+    titulo: 'Revisa laboratorios.',
+    texto: 'Glucosa, HbA1c, creatinina, colesterol y triglicéridos, con la gráfica de su evolución.',
+  },
+  {
+    id: 'respaldo',
+    hora: '19:30',
+    corto: 'Respaldo',
+    titulo: 'Respalda al cerrar.',
+    texto: 'Un respaldo cifrado con su frase de paso, a su USB. Si cambia de computadora, lo restaura en la nueva.',
+  },
+] as const;
+
+const CITAS = [
+  { hora: '08:30', nombre: 'María F. Ruiz', estado: 'Atendida', clase: 'hecha' },
+  { hora: '09:30', nombre: 'José L. Herrera', estado: 'En atención', clase: 'ahora' },
+  { hora: '10:15', nombre: 'Primera vez', estado: 'Programada', clase: '' },
+  { hora: '11:00', nombre: 'Ana S. Navarro', estado: 'Programada', clase: '' },
+] as const;
+
+// Glucosa en ayuno de ejemplo (mg/dL) en seis consultas: puntos de la gráfica en un lienzo de 300 × 110.
+const GLUCOSA = [148, 139, 131, 126, 118, 112];
+const puntos = GLUCOSA.map((v, i) => `${14 + i * 54},${(100 - ((v - 100) / 55) * 84).toFixed(1)}`);
+const linea = puntos.join(' ');
+const area = `M14,108 L${puntos.join(' L')} L284,108 Z`;
+---
+
+<section class="seccion dia" id="dia" aria-labelledby="dia-titulo">
+  <div class="dia-escena" data-escena>
+    <div class="dia-escenario" data-escenario>
+      <div class="contenedor dia-cabeza">
+        <div class="seccion-cabecera">
+          <p class="antetitulo">Un día en su consultorio</p>
+          <h2 id="dia-titulo">Todo lo que su consulta necesita, de la primera cita al respaldo.</h2>
+          <p>Un solo programa, sin módulos sueltos. Funciona en Windows 10 y 11, con o sin internet.</p>
+        </div>
+      </div>
+
+      <div class="dia-pista">
+        <ol class="dia-carril" data-p data-brillo>
+          {
+            MOMENTOS.map((m) => (
+              <li class="tarjeta brillo dia-tarjeta revelar">
+                <div class="dia-mock tema-marino" aria-hidden="true">
+                  {m.id === 'agenda' && (
+                    <ul class="dia-citas">
+                      {CITAS.map((c) => (
+                        <li class:list={[c.clase && `dia-cita-${c.clase}`]}>
+                          <b>{c.hora}</b>
+                          <span>{c.nombre}</span>
+                          <i>{c.estado}</i>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  {m.id === 'consulta' && (
+                    <div class="dia-nota">
+                      <p><small>Motivo</small>Control de hipertensión</p>
+                      <p><small>Signos</small>TA 128/82 · FC 74 · IMC 27.4</p>
+                      <p><small>Dx</small><span><em>I10</em> Hipertensión esencial</span></p>
+                      <p class="dia-semaforo"><span>NOM-004</span><span class="dia-luces"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span><b>7 de 7</b></p>
+                    </div>
+                  )}
+                  {m.id === 'receta' && (
+                    <div class="dia-hoja">
+                      <p class="dia-hoja-cabeza"><b>Receta médica</b><span>Folio 0248</span></p>
+                      <p><b>Losartán 50 mg</b> · 1 tableta cada 24 h</p>
+                      <p>Dieta baja en sodio. Control en 4 semanas.</p>
+                      <p class="dia-hoja-pie"><span>Sello de la nota</span><span>9f2c41e8…b07a</span></p>
+                    </div>
+                  )}
+                  {m.id === 'labs' && (
+                    <div class="dia-labs">
+                      <p><span>Glucosa en ayuno</span><small>mg/dL</small></p>
+                      <svg viewBox="0 0 300 110" focusable="false">
+                        <path class="dia-guias" d="M0 24.5H300M0 52.5H300M0 80.5H300"></path>
+                        <path class="dia-area" d={area}></path>
+                        <polyline points={linea}></polyline>
+                        <circle cx="284" cy={puntos[5]?.split(',')[1]} r="4"></circle>
+                      </svg>
+                      <p><span><b>112</b> última</span><span>HbA1c <b>6.1 %</b></span></p>
+                    </div>
+                  )}
+                  {m.id === 'respaldo' && (
+                    <div class="dia-respaldo">
+                      <p class="dia-ruta">
+                        <span><Icono nombre="computadora" /></span>
+                        <i></i>
+                        <span><Icono nombre="usb" /></span>
+                      </p>
+                      <p class="dia-ok"><Icono nombre="candado" /> Respaldo cifrado</p>
+                      <small>Se abre solo con su frase de paso</small>
+                    </div>
+                  )}
+                </div>
+                <p class="dia-hora cifras">{m.hora}</p>
+                <h3>{m.titulo}</h3>
+                <p class="dia-texto">{m.texto}</p>
+              </li>
+            ))
+          }
+        </ol>
+      </div>
+
+      <div class="contenedor dia-reloj" aria-hidden="true">
+        <div class="dia-linea"><i data-p></i></div>
+        <ol>
+          {MOMENTOS.map((m) => <li><b class="cifras">{m.hora}</b> {m.corto}</li>)}
+        </ol>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style is:global>
+  .dia-carril {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+    gap: 1rem;
+    width: min(100% - 2 * var(--medianil), var(--ancho));
+    margin: 0 auto;
+    padding: 0;
+    list-style: none;
+  }
+
+  .dia-tarjeta {
+    display: grid;
+    align-content: start;
+    gap: 0.5rem;
+    padding: 0.875rem 0.875rem 1.375rem;
+  }
+
+  .dia-hora {
+    margin: 0.625rem 0.5rem 0;
+    color: var(--primario);
+    font-size: 0.875rem;
+    font-weight: 650;
+    letter-spacing: 0.04em;
+  }
+
+  .dia-tarjeta h3 {
+    margin-inline: 0.5rem;
+    font-size: 1.25rem;
+  }
+
+  .dia-texto {
+    margin-inline: 0.5rem;
+    color: var(--texto-2);
+  }
+
+  /* ── Miniaturas: la app en tema Marino (vidrio simulado) ── */
+
+  .dia-mock {
+    display: grid;
+    align-content: center;
+    min-height: 11.5rem;
+    padding: 0.875rem;
+    border-radius: var(--radio);
+    background:
+      radial-gradient(60% 70% at 10% 0%, color-mix(in srgb, var(--aurora-1) 55%, transparent), transparent 72%),
+      var(--fondo);
+    color: var(--texto);
+    font-size: 0.8125rem;
+    line-height: 1.4;
+    user-select: none;
+  }
+
+  .dia-mock small {
+    color: var(--texto-suave);
+  }
+
+  .dia-mock .icono {
+    width: 1.1rem;
+    height: 1.1rem;
+  }
+
+  .dia-citas {
+    display: grid;
+    gap: 0.25rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .dia-citas li {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 0.625rem;
+    align-items: center;
+    padding: 0.4rem 0.6rem;
+    border-radius: 0.5rem;
+  }
+
+  .dia-citas b {
+    color: var(--primario);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .dia-citas i {
+    color: var(--texto-suave);
+    font-size: 0.75rem;
+    font-style: normal;
+  }
+
+  .dia-cita-ahora {
+    background: color-mix(in srgb, var(--primario) 14%, transparent);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primario) 24%, transparent);
+  }
+
+  .dia-cita-hecha i {
+    color: var(--exito);
+  }
+
+  .dia-nota,
+  .dia-labs,
+  .dia-respaldo {
+    display: grid;
+    gap: 0.4rem;
+  }
+
+  .dia-nota p {
+    display: grid;
+    grid-template-columns: 3.4rem minmax(0, 1fr);
+    gap: 0.5rem;
+  }
+
+  .dia-nota em {
+    padding: 0 0.35rem;
+    border-radius: 0.3rem;
+    background: var(--info-suave);
+    color: var(--info);
+    font-family: var(--mono);
+    font-style: normal;
+  }
+
+  .dia-nota .dia-semaforo {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    margin-top: 0.35rem;
+    padding: 0.45rem 0.6rem;
+    border: 1px solid var(--exito-borde);
+    border-radius: 0.5rem;
+    background: var(--exito-suave);
+    color: var(--exito);
+  }
+
+  .dia-luces {
+    display: flex;
+    gap: 0.25rem;
+  }
+
+  .dia-luces i {
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 50%;
+    background: #22c55e;
+  }
+
+  /* Receta: papel blanco y tinta Marino, como lo impreso. */
+  .dia-hoja {
+    display: grid;
+    gap: 0.35rem;
+    width: 86%;
+    margin-inline: auto;
+    padding: 0.75rem;
+    border-radius: 3px;
+    background: #fff;
+    color: #043259;
+    font-size: 0.75rem;
+    box-shadow: 0 1rem 1.75rem -1rem rgb(0 4 12 / 0.9);
+    transform: rotate(-1.5deg);
+  }
+
+  .dia-hoja-cabeza,
+  .dia-hoja-pie,
+  .dia-labs p {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.5rem;
+  }
+
+  .dia-hoja-cabeza {
+    padding-bottom: 0.3rem;
+    border-bottom: 1.5px solid #043259;
+  }
+
+  .dia-hoja-cabeza span,
+  .dia-hoja-pie {
+    color: #566573;
+    font-family: var(--mono);
+    font-size: 0.625rem;
+  }
+
+  .dia-labs svg {
+    width: 100%;
+    height: auto;
+  }
+
+  .dia-guias {
+    fill: none;
+    stroke: var(--linea);
+  }
+
+  .dia-area {
+    fill: color-mix(in srgb, var(--primario) 18%, transparent);
+  }
+
+  .dia-labs polyline {
+    fill: none;
+    stroke: var(--primario);
+    stroke-width: 2.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .dia-labs circle {
+    fill: var(--primario);
+  }
+
+  .dia-respaldo {
+    justify-items: center;
+    text-align: center;
+  }
+
+  .dia-ruta {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 0.625rem;
+    align-items: center;
+    width: 100%;
+    margin-bottom: 0.25rem;
+  }
+
+  .dia-ruta span {
+    display: grid;
+    place-items: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    border: 1px solid var(--cristal-borde);
+    border-radius: var(--radio-sm);
+    background: rgb(255 255 255 / 0.05);
+  }
+
+  .dia-ruta i {
+    height: 0.3rem;
+    border-radius: 999px;
+    background: linear-gradient(90deg, color-mix(in srgb, var(--exito) 35%, transparent), var(--exito));
+  }
+
+  .dia-ok {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    color: var(--exito);
+    font-weight: 650;
+  }
+
+  .dia-reloj {
+    display: none;
+  }
+
+  /* ── Escritorio con movimiento: recorrido horizontal fijado ── */
+
+  @media (min-width: 62rem) and (min-height: 42rem) {
+    .movimiento .dia {
+      padding-top: 0;
+    }
+
+    .movimiento .dia-escena {
+      height: 320svh;
+    }
+
+    .movimiento .dia-escenario {
+      position: sticky;
+      top: 0;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-rows: auto minmax(0, 1fr) auto;
+      align-items: center;
+      height: 100svh;
+      padding: calc(var(--altura-nav) + 1.5rem) 0 1.75rem;
+      overflow: clip;
+      container-type: inline-size;
+    }
+
+    .movimiento .dia-cabeza .seccion-cabecera {
+      margin-bottom: 1.25rem;
+    }
+
+    .movimiento .dia-cabeza h2 {
+      font-size: clamp(1.75rem, 1.2rem + 1.4vw, 2.25rem);
+    }
+
+    /* El carril mide lo que sus cinco tarjetas; se desplaza justo lo que le sobra respecto al escenario. */
+    .movimiento .dia-carril {
+      display: flex;
+      width: max-content;
+      margin: 0;
+      padding-inline: max(var(--medianil), (100cqi - var(--ancho)) / 2);
+      transform: translate3d(calc(var(--p, 0) * min(0px, 100cqi - 100%)), 0, 0);
+    }
+
+    /* Ancho ligado al escenario: en cualquier pantalla (también 4K) caben poco más de tres y hay recorrido. */
+    .movimiento .dia-tarjeta {
+      width: max(23rem, 30cqi);
+    }
+
+    /* Dentro del carril las tarjetas ya están a la vista al llegar: sin espera de revelado. */
+    .movimiento .dia-carril .revelar {
+      opacity: 1;
+      transform: none;
+    }
+
+    .movimiento .dia-reloj {
+      display: grid;
+      gap: 0.5rem;
+      margin-top: 1.25rem;
+    }
+
+    .dia-linea {
+      height: 3px;
+      overflow: hidden;
+      border-radius: 2px;
+      background: var(--linea);
+    }
+
+    .dia-linea i {
+      display: block;
+      height: 100%;
+      background: var(--primario);
+      transform: scaleX(var(--p, 0));
+      transform-origin: left;
+    }
+
+    .dia-reloj ol {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      color: var(--texto-2);
+      font-size: 0.8125rem;
+    }
+
+    .dia-reloj b {
+      color: var(--primario);
+    }
+  }
+</style>
