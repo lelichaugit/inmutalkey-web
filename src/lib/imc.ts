@@ -38,7 +38,7 @@ export function clasificarImc(imc: number): ClaseImc {
 
 /** Mensaje de error para SpO₂, o `null` si es válida (la app rechaza valores fuera de 30–100 %). */
 export function errorSpo2(valor: number): string | null {
-  if (!Number.isFinite(valor)) return 'Escribe un número.';
+  if (!Number.isFinite(valor)) return 'Escriba un número.';
   if (valor > RANGOS.spo2.max) return 'La saturación no puede pasar de 100 %.';
   if (valor < RANGOS.spo2.min) return 'Fuera de rango fisiológico (30–100 %).';
   return null;

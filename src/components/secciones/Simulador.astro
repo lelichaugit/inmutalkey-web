@@ -1,0 +1,1496 @@
+---
+// Simulador: una consulta completa dentro de una ventana dibujada como la app v0.4.0 (tema Marino, vidrio simulado).
+// Con JS (src/scripts/simulador.ts) los campos de la nota responden de verdad con las mismas reglas que la app:
+// semáforo de 7 requisitos (src/lib/semaforo.ts), IMC (src/lib/imc.ts) y búsqueda CIE-10 (src/lib/cie10.ts). Al firmar,
+// la huella SHA-256 se calcula en el navegador con lo que el médico escribió. Sin JS se ve la consulta terminada, con
+// el semáforo en verde, como una ilustración.
+//
+// Todo es ficticio: paciente y médica de ejemplo (los mismos de MockupApp.astro), sin cédula ni datos reales.
+// Formatos de receta de la app v0.4.0 (src/formatoHoja.ts): media hoja, Carta vertical y Carta horizontal.
+// `data-demo` lo usa eventos.ts para contar «demo_iniciada» (agregado, sin identificar a nadie).
+// Estilos globales con prefijo `sim-`: el módulo crea opciones y avisos que no llevan el atributo de alcance de Astro.
+import { calcularImc, clasificarImc, ETIQUETA_IMC } from '../../lib/imc';
+import { calcularSemaforo, ETIQUETA_SEMAFORO, type DatosNota } from '../../lib/semaforo';
+import { sitio } from '../../site.config';
+import Icono from '../Icono.astro';
+
+const CAPITULOS = [
+  { id: 'agenda', icono: 'calendario', titulo: 'Agenda', sub: 'Su día de un vistazo' },
+  { id: 'consulta', icono: 'nota', titulo: 'Consulta', sub: 'Escriba con el semáforo' },
+  { id: 'firma', icono: 'sello', titulo: 'Firma', sub: 'La nota queda sellada' },
+  { id: 'receta', icono: 'receta', titulo: 'Receta', sub: 'Media hoja o Carta' },
+  { id: 'respaldo', icono: 'usb', titulo: 'Respaldo', sub: 'Cifrado, en su USB' },
+] as const;
+
+const CITAS = [
+  { hora: '09:30', nombre: 'María Fernanda Ruiz Cano', motivo: 'Control de diabetes', estado: 'Atendida', clase: 'hecha' },
+  { hora: '10:15', nombre: 'Primera vez', motivo: 'Aún sin expediente', estado: 'Programada', clase: '' },
+  { hora: '11:00', nombre: 'José Luis Herrera Mota', motivo: 'Control de hipertensión', estado: 'En atención', clase: 'ahora' },
+  { hora: '12:30', nombre: 'Ana Sofía Navarro Díaz', motivo: 'Dolor de garganta y fiebre', estado: 'Programada', clase: '' },
+  { hora: '13:15', nombre: 'Lucía Campos Ibarra', motivo: 'Resultados de laboratorio', estado: 'Programada', clase: '' },
+] as const;
+
+// Nota de ejemplo: completa, para que sin JS el semáforo se vea en verde.
+const NOTA: DatosNota = {
+  motivo: 'Control de hipertensión. Cefalea ocasional por la mañana.',
+  evolucion: 'Refiere apego al tratamiento. Niega mareo, disnea o dolor torácico.',
+  taSistolica: '128',
+  taDiastolica: '82',
+  fc: '74',
+  fr: '16',
+  temperatura: '36.6',
+  peso: '82',
+  talla: '173',
+  omisionSignos: '',
+  exploracion: 'Ruidos cardiacos rítmicos, sin soplos. Campos pulmonares limpios. Sin edema.',
+  diagnostico: 'Hipertensión esencial (primaria)',
+  cie10: 'I10',
+  pronostico: 'Bueno para la vida y la función, con apego al tratamiento.',
+  plan: 'Losartán 50 mg por vía oral cada 24 h. Dieta baja en sodio. Control en 4 semanas con perfil de lípidos.',
+};
+const semaforo = calcularSemaforo(NOTA);
+const imc = calcularImc(Number(NOTA.peso), Number(NOTA.talla)) ?? 0;
+
+const SIGNOS = [
+  { nombre: 'taSistolica', etiqueta: 'TA sist.', valor: NOTA.taSistolica, modo: 'numeric' },
+  { nombre: 'taDiastolica', etiqueta: 'TA diast.', valor: NOTA.taDiastolica, modo: 'numeric' },
+  { nombre: 'fc', etiqueta: 'FC', valor: NOTA.fc, modo: 'numeric' },
+  { nombre: 'fr', etiqueta: 'FR', valor: NOTA.fr, modo: 'numeric' },
+  { nombre: 'temperatura', etiqueta: 'Temp °C', valor: NOTA.temperatura, modo: 'decimal' },
+  { nombre: 'spo2', etiqueta: 'SpO₂ %', valor: '97', modo: 'numeric' },
+  { nombre: 'peso', etiqueta: 'Peso kg', valor: NOTA.peso, modo: 'decimal' },
+  { nombre: 'talla', etiqueta: 'Talla cm', valor: NOTA.talla, modo: 'decimal' },
+] as const;
+
+// Motivos de adenda del catálogo de la app.
+const MOTIVOS_ADENDA = ['Corrección de captura', 'Aclaración', 'Información adicional', 'Resultado tardío de estudio', 'Cambio de diagnóstico'] as const;
+
+const FORMATOS = [
+  { id: 'media', texto: 'Media hoja' },
+  { id: 'vertical', texto: 'Carta vertical' },
+  { id: 'horizontal', texto: 'Carta horizontal' },
+] as const;
+
+const HUELLA = '9f2c41e8…b07a';
+---
+
+<section class="seccion sim" id="simulador" data-simulador data-demo aria-labelledby="sim-titulo">
+  <div class="contenedor">
+    <div class="seccion-cabecera">
+      <p class="antetitulo">Simulador · expedientes ficticios</p>
+      <h2 id="sim-titulo">Pruébelo aquí mismo: una consulta completa en un minuto.</h2>
+      <p>
+        En la consulta puede escribir de verdad: el semáforo, el IMC y la búsqueda de diagnósticos responden como en el
+        programa. Nada de lo que escriba sale de esta página.
+      </p>
+    </div>
+  </div>
+
+  <div class="contenedor-amplio">
+    <div class="sim-pasos" role="tablist" aria-label="Pasos de la consulta" data-sim-pasos>
+      {
+        CAPITULOS.map((c, i) => (
+          <button
+            type="button"
+            class="sim-paso"
+            role="tab"
+            id={`sim-tab-${c.id}`}
+            aria-controls={`sim-panel-${c.id}`}
+            aria-selected={c.id === 'consulta' ? 'true' : 'false'}
+            tabindex={c.id === 'consulta' ? 0 : -1}
+            data-sim-paso={c.id}
+          >
+            <span class="sim-paso-num cifras" aria-hidden="true">{i + 1}</span>
+            <span class="sim-paso-texto">
+              <strong>{c.titulo}</strong>
+              <small>{c.sub}</small>
+            </span>
+          </button>
+        ))
+      }
+    </div>
+
+    <div class="sim-app tema-marino" data-sim-app>
+      <div class="sim-ventana" aria-hidden="true">
+        <span>InmutalKey · expedientes de ejemplo</span>
+        <span class="sim-ventana-botones"><i>—</i><i>☐</i><i>✕</i></span>
+      </div>
+      <div class="sim-barra" aria-hidden="true">
+        <span class="sim-marca">
+          <img src="/brand/logo-plata-64.webp" alt="" width="23" height="64" loading="lazy" decoding="async" />
+          <b>InmutalKey</b>
+        </span>
+        <span class="sim-buscar"><Icono nombre="lupa" /> Buscar paciente, expediente o diagnóstico <kbd>Ctrl K</kbd></span>
+        <span class="sim-respaldo"><span class="sim-luces sim-luces-ok"><i></i><i></i><i></i></span> <span data-sim-ultimo>Último respaldo hace 2 días</span></span>
+        <span class="sim-medica">AR</span>
+      </div>
+
+      <div class="sim-cuerpo">
+        <!-- ── 1 · Agenda ── -->
+        <div class="sim-panel" role="tabpanel" id="sim-panel-agenda" aria-labelledby="sim-tab-agenda" data-sim-panel="agenda" hidden>
+          <div class="sim-cabeza">
+            <h3>Citas de hoy</h3>
+            <span class="sim-tenue">5 citas · 1 atendida</span>
+          </div>
+          <ul class="sim-citas">
+            {
+              CITAS.map((c) => (
+                <li class:list={['sim-cita', c.clase && `sim-cita-${c.clase}`]}>
+                  <time>{c.hora}</time>
+                  <span class="sim-cita-datos">
+                    <strong>{c.nombre}</strong>
+                    <small>{c.motivo}</small>
+                  </span>
+                  {c.clase === 'ahora' ? (
+                    <button type="button" class="sim-boton sim-boton-primario" data-sim-ir="consulta">Abrir consulta</button>
+                  ) : (
+                    <span class:list={['sim-chip', c.clase === 'hecha' && 'sim-chip-ok']}>
+                      {c.clase === 'hecha' && <Icono nombre="check" />}
+                      {c.estado}
+                    </span>
+                  )}
+                </li>
+              ))
+            }
+          </ul>
+          <p class="sim-nota-pie">Al firmar la nota, la cita se marca sola como atendida.</p>
+        </div>
+
+        <!-- ── 2 · Consulta: nota de evolución con semáforo ── -->
+        <div class="sim-panel sim-consulta" role="tabpanel" id="sim-panel-consulta" aria-labelledby="sim-tab-consulta" data-sim-panel="consulta" data-sim-semaforo data-estado={semaforo.estado}>
+          <p class="sim-tira" aria-hidden="true">
+            <span class="sim-luces"><i></i><i></i><i></i></span>
+            <span class="cifras" data-sim-cuenta>{semaforo.cumplidos} de {semaforo.requisitos.length} requisitos</span>
+            <span class="sim-tira-nom">NOM-004</span>
+          </p>
+          <form class="sim-nota" data-sim-nota novalidate>
+            <div class="sim-cabeza">
+              <span class="sim-avatar" aria-hidden="true">JH</span>
+              <span class="sim-id">
+                <h3>José Luis Herrera Mota</h3>
+                <small>Exp. 000131 · 64 años · Nota de evolución</small>
+              </span>
+              <span class="sim-tenue sim-borrador"><Icono nombre="reloj" /> Borrador guardado</span>
+            </div>
+
+            <label class="sim-campo sim-c-motivo">
+              <span>Motivo de consulta</span>
+              <input name="motivo" value={NOTA.motivo} autocomplete="off" />
+            </label>
+            <label class="sim-campo sim-c-evolucion">
+              <span>Evolución / padecimiento actual</span>
+              <textarea name="evolucion" rows="2">{NOTA.evolucion}</textarea>
+            </label>
+
+            <fieldset class="sim-signos">
+              <legend>Signos vitales</legend>
+              {
+                SIGNOS.map((s) => (
+                  <label>
+                    <span>{s.etiqueta}</span>
+                    <input name={s.nombre} value={s.valor} inputmode={s.modo} autocomplete="off" />
+                  </label>
+                ))
+              }
+              <p class="sim-imc">
+                <span>IMC</span>
+                <output data-sim-imc>{imc.toFixed(1)}</output>
+                <small data-sim-imc-clase>{ETIQUETA_IMC[clasificarImc(imc)]}</small>
+              </p>
+              <p class="sim-error" data-sim-spo2 hidden></p>
+            </fieldset>
+
+            <label class="sim-campo sim-c-exploracion">
+              <span>Exploración física</span>
+              <textarea name="exploracion" rows="2">{NOTA.exploracion}</textarea>
+            </label>
+            <div class="sim-campo sim-c-dx">
+              <label for="sim-cie10">Diagnóstico con clave CIE-10</label>
+              <input
+                id="sim-cie10"
+                name="buscarCie10"
+                value={`${NOTA.cie10} · ${NOTA.diagnostico}`}
+                autocomplete="off"
+                role="combobox"
+                aria-expanded="false"
+                aria-controls="sim-cie10-lista"
+                aria-autocomplete="list"
+              />
+              <input type="hidden" name="cie10" value={NOTA.cie10} />
+              <input type="hidden" name="diagnostico" value={NOTA.diagnostico} />
+              <ul class="sim-cie10" id="sim-cie10-lista" role="listbox" aria-label="Diagnósticos" data-sim-cie10 hidden></ul>
+            </div>
+            <label class="sim-campo sim-c-pronostico">
+              <span>Pronóstico</span>
+              <input name="pronostico" value={NOTA.pronostico} autocomplete="off" />
+            </label>
+            <label class="sim-campo sim-c-plan">
+              <span>Plan de tratamiento e indicaciones</span>
+              <textarea name="plan" rows="2">{NOTA.plan}</textarea>
+            </label>
+          </form>
+
+          <aside class="sim-semaforo" aria-label="Semáforo NOM-004">
+            <p class="sim-micro">Semáforo NOM-004</p>
+            <p class="sim-estado" role="status">
+              <span class="sim-luces" aria-hidden="true"><i></i><i></i><i></i></span>
+              <span class="cifras" data-sim-cuenta>{semaforo.cumplidos} de {semaforo.requisitos.length} requisitos</span>
+            </p>
+            <p class="sim-semaforo-texto" data-sim-estado-texto>{ETIQUETA_SEMAFORO[semaforo.estado]}</p>
+            <ul>
+              {
+                semaforo.requisitos.map((r) => (
+                  <li class:list={[{ cumple: r.cumple }]} data-sim-req={r.id}>
+                    <span class="sim-marca-req" aria-hidden="true"><Icono nombre="check" /></span>
+                    {r.etiqueta}
+                  </li>
+                ))
+              }
+            </ul>
+            <button type="button" class="sim-boton sim-boton-primario sim-firmar" data-sim-firmar>
+              <Icono nombre="firma" /> Firmar y sellar
+            </button>
+            <p class="sim-pista" data-sim-pista>Pruebe: borre el diagnóstico y vea cómo cambia el semáforo.</p>
+          </aside>
+        </div>
+
+        <!-- ── 3 · Firma: la nota sellada y su adenda ── -->
+        <div class="sim-panel sim-firma" role="tabpanel" id="sim-panel-firma" aria-labelledby="sim-tab-firma" data-sim-panel="firma" hidden>
+          <article class="sim-sellada" data-sim-sellada>
+            <div class="sim-cabeza">
+              <span class="sim-id">
+                <h3>Nota de evolución · n.º 8</h3>
+                <small>José Luis Herrera Mota · Exp. 000131 · hoy 11:24</small>
+              </span>
+              <span class="sim-chip sim-chip-ok"><Icono nombre="candado" /> Sellada</span>
+            </div>
+            <dl>
+              <div><dt>Motivo</dt><dd data-sim-ver="motivo">{NOTA.motivo}</dd></div>
+              <div><dt>Signos</dt><dd data-sim-ver="signos">TA 128/82 · FC 74 · FR 16 · T 36.6 °C · SpO₂ 97 % · IMC {imc.toFixed(1)}</dd></div>
+              <div><dt>Diagnóstico</dt><dd data-sim-ver="dx">{NOTA.cie10} · {NOTA.diagnostico}</dd></div>
+              <div><dt>Plan</dt><dd data-sim-ver="plan">{NOTA.plan}</dd></div>
+            </dl>
+            <p class="sim-huella">
+              <span><small>Huella</small> <b data-sim-huella>{HUELLA}</b></span>
+              <span class="sim-firmada"><Icono nombre="check" /> Firmada <em>Ed25519</em></span>
+            </p>
+            <span class="sim-sello" aria-hidden="true"><img src="/brand/logo-mono-blanco.svg" alt="" width="10" height="27" loading="lazy" decoding="async" /></span>
+          </article>
+          <div class="sim-lado">
+            <p class="sim-explica" data-sim-explica>
+              Ya no se puede editar ni borrar. Si regresa a la consulta, cambia una sola coma y vuelve a firmar, la huella
+              sale distinta: así se nota cualquier alteración.
+            </p>
+            <div class="sim-acciones">
+              <button type="button" class="sim-boton" data-sim-adenda-abrir><Icono nombre="mas" /> Agregar adenda</button>
+              <button type="button" class="sim-boton" data-sim-ir="receta"><Icono nombre="receta" /> Ver receta</button>
+            </div>
+            <div class="sim-adenda-form" data-sim-adenda-form hidden>
+              <label class="sim-campo">
+                <span>Motivo de la adenda</span>
+                <select name="motivoAdenda">
+                  {MOTIVOS_ADENDA.map((m) => <option>{m}</option>)}
+                </select>
+              </label>
+              <label class="sim-campo">
+                <span>Contenido</span>
+                <input name="textoAdenda" value="Se agrega: glucosa capilar 102 mg/dL." autocomplete="off" />
+              </label>
+              <button type="button" class="sim-boton sim-boton-primario" data-sim-adenda-firmar><Icono nombre="firma" /> Firmar adenda</button>
+            </div>
+            <article class="sim-adenda" data-sim-adenda hidden>
+              <strong data-sim-adenda-titulo>Adenda 1 · Información adicional</strong>
+              <span data-sim-adenda-texto></span>
+              <small><Icono nombre="check" /> Sellada y enlazada a la nota. La original no cambia.</small>
+            </article>
+          </div>
+        </div>
+
+        <!-- ── 4 · Receta ── -->
+        <div class="sim-panel sim-receta" role="tabpanel" id="sim-panel-receta" aria-labelledby="sim-tab-receta" data-sim-panel="receta" hidden>
+          <div class="sim-receta-lado">
+            <div class="sim-cabeza">
+              <h3>Receta médica</h3>
+            </div>
+            <div class="sim-formatos" role="group" aria-label="Formato de la hoja">
+              {
+                FORMATOS.map((f) => (
+                  <button type="button" class="sim-formato" data-sim-formato={f.id} aria-pressed={f.id === 'media' ? 'true' : 'false'}>
+                    {f.texto}
+                  </button>
+                ))
+              }
+            </div>
+            <p class="sim-explica">Sale de la nota firmada: lleva folio, número de expediente y el sello de la nota.</p>
+            <p class="sim-aviso" data-sim-aviso-hoja hidden>
+              <Icono nombre="impresora" /> El tratamiento no cabe en media hoja: se imprimirá completo en hoja Carta vertical.
+            </p>
+            <button type="button" class="sim-boton sim-boton-primario" data-sim-ir="respaldo"><Icono nombre="impresora" /> Imprimir y seguir</button>
+          </div>
+          <div class="sim-mesa" aria-hidden="true">
+            <div class="sim-hoja" data-sim-hoja data-formato="media">
+              {
+                [1, 2].map((n) => (
+                  <div class:list={['sim-copia', n === 2 && 'sim-copia-2']}>
+                    <p class="sim-membrete">
+                      <img src="/brand/logo-mono.svg" alt="" width="10" height="27" loading="lazy" decoding="async" />
+                      <span><b>Dra. Ana Robles</b><i>Medicina general · consultorio de ejemplo</i></span>
+                      <em>Folio 0248</em>
+                    </p>
+                    <p class="sim-rx-paciente">José Luis Herrera Mota · 64 años · Exp. 000131</p>
+                    <p class="sim-rx"><b>Rp.</b> <span data-sim-rx>{NOTA.plan}</span></p>
+                    <p class="sim-rx-pie"><span>Sello de la nota</span><span data-sim-rx-huella>{HUELLA}</span></p>
+                  </div>
+                ))
+              }
+            </div>
+          </div>
+        </div>
+
+        <!-- ── 5 · Respaldo cifrado ── -->
+        <div class="sim-panel sim-resp" role="tabpanel" id="sim-panel-respaldo" aria-labelledby="sim-tab-respaldo" data-sim-panel="respaldo" hidden>
+          <div class="sim-cabeza">
+            <h3>Respaldo cifrado</h3>
+            <span class="sim-tenue">Con una frase de paso distinta de su contraseña</span>
+          </div>
+          <div class="sim-ruta" aria-hidden="true">
+            <span class="sim-nodo"><Icono nombre="computadora" /> Su computadora</span>
+            <span class="sim-via"><i data-sim-progreso></i></span>
+            <span class="sim-nodo"><Icono nombre="usb" /> USB (E:)</span>
+          </div>
+          <div class="sim-acciones">
+            <button type="button" class="sim-boton sim-boton-primario" data-sim-respaldar><Icono nombre="respaldo" /> Crear respaldo</button>
+            <button type="button" class="sim-boton" data-sim-ir="consulta"><Icono nombre="reiniciar" /> Volver a la consulta</button>
+          </div>
+          <p class="sim-resultado" data-sim-resultado role="status" hidden>
+            <Icono nombre="check" /> Respaldo cifrado creado. Si cambia de computadora, lo restaura en la nueva con su frase de paso.
+          </p>
+          <p class="sim-nota-pie">Guárdelo en una USB que no viva junto a la computadora.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="sim-bajo">
+      <button type="button" class="boton sim-auto" data-sim-auto hidden>
+        <Icono nombre="play" class="sim-auto-play" /><Icono nombre="pausa" class="sim-auto-pausa" />
+        <span data-sim-auto-texto>Ver el recorrido</span>
+      </button>
+      <p class="sim-rotulo">Simulación con expedientes ficticios. Versión {sitio.version.numero} · {sitio.version.nombre}.</p>
+    </div>
+
+    <div class="sim-cta revelar">
+      <p>¿Se imagina su consulta así? Tiene {sitio.licencia.diasPrueba} días para probarlo completo en su consultorio.</p>
+      <a class="boton boton-primario boton-grande" href="/fundadores">Solicitar acceso Fundador</a>
+    </div>
+  </div>
+</section>
+
+<style is:global>
+  /* ── Pasos (pestañas) ── */
+
+  .sim-pasos {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    padding: 0.25rem;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  html:not(.js) .sim-pasos {
+    display: none;
+  }
+
+  .sim-paso {
+    display: flex;
+    flex: 1 0 auto;
+    align-items: center;
+    gap: 0.625rem;
+    min-height: 3.25rem;
+    padding: 0.5rem 0.875rem;
+    border: 1px solid var(--cristal-borde);
+    border-radius: var(--radio);
+    background: var(--grad-tarjeta);
+    color: var(--texto);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+    box-shadow: var(--cristal-brillo), var(--elev-1);
+    transition: border-color 200ms ease, box-shadow 200ms ease;
+  }
+
+  .sim-paso[aria-selected='true'] {
+    border-color: color-mix(in srgb, var(--acento) 55%, var(--borde));
+    box-shadow: var(--cristal-brillo), var(--halo-acento);
+  }
+
+  .sim-paso-num {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 1.75rem;
+    height: 1.75rem;
+    border-radius: 50%;
+    background: var(--primario-suave);
+    color: var(--primario);
+    font-size: 0.8125rem;
+    font-weight: 700;
+  }
+
+  .sim-paso[aria-selected='true'] .sim-paso-num {
+    background: var(--grad-primario);
+    color: var(--sobre-primario);
+  }
+
+  .sim-paso-texto {
+    display: grid;
+    line-height: 1.25;
+  }
+
+  .sim-paso-texto small {
+    display: none;
+    color: var(--texto-2);
+    font-size: 0.8125rem;
+  }
+
+  /* ── Ventana de la app (tema Marino) ── */
+
+  .sim-app {
+    overflow: clip;
+    border: 1px solid color-mix(in srgb, var(--borde) 80%, rgb(255 255 255 / 0.18));
+    border-radius: var(--radio-xl);
+    background:
+      radial-gradient(40% 50% at 10% 0%, color-mix(in srgb, var(--aurora-1) 55%, transparent), transparent 72%),
+      radial-gradient(40% 60% at 100% 100%, color-mix(in srgb, var(--aurora-3) 30%, transparent), transparent 72%),
+      var(--fondo);
+    color: var(--texto);
+    font-size: 0.9375rem;
+    line-height: 1.4;
+    box-shadow: var(--elev-3);
+  }
+
+  .sim-app small,
+  .sim-tenue {
+    color: var(--texto-suave);
+    font-size: 0.8125rem;
+  }
+
+  .sim-app .icono {
+    width: 1.05rem;
+    height: 1.05rem;
+  }
+
+  .sim-ventana {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    height: 2rem;
+    padding: 0 1rem;
+    background: rgb(0 4 12 / 0.35);
+    color: var(--texto-suave);
+    font-size: 0.8125rem;
+  }
+
+  .sim-ventana-botones {
+    display: flex;
+    gap: 1.25rem;
+  }
+
+  .sim-ventana-botones i {
+    font-style: normal;
+    opacity: 0.75;
+  }
+
+  .sim-barra {
+    display: flex;
+    align-items: center;
+    gap: 0.875rem;
+    min-height: 3.25rem;
+    padding: 0 1rem;
+    border-bottom: 1px solid var(--cristal-borde);
+    background: linear-gradient(180deg, var(--cristal-denso), var(--cristal));
+  }
+
+  .sim-marca {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .sim-marca img {
+    width: auto;
+    height: 1.75rem;
+  }
+
+  .sim-buscar {
+    display: none;
+    align-items: center;
+    gap: 0.5rem;
+    flex: 1;
+    max-width: 26rem;
+    height: 2.125rem;
+    padding: 0 0.75rem;
+    overflow: hidden;
+    border: 1px solid var(--cristal-borde);
+    border-radius: var(--radio-sm);
+    background: rgb(255 255 255 / 0.04);
+    color: var(--texto-suave);
+    font-size: 0.8125rem;
+    white-space: nowrap;
+  }
+
+  .sim-buscar kbd {
+    margin-left: auto;
+    padding: 0.05rem 0.4rem;
+    border: 1px solid var(--cristal-borde);
+    border-radius: 0.3rem;
+    font-family: var(--fuente);
+  }
+
+  .sim-respaldo {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 0;
+    margin-left: auto;
+    padding: 0.3rem 0.75rem 0.3rem 0.4rem;
+    border: 1px solid var(--exito-borde);
+    border-radius: 999px;
+    background: var(--exito-suave);
+    color: var(--exito);
+    font-size: 0.8125rem;
+    white-space: nowrap;
+  }
+
+  .sim-respaldo > span:last-child {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* Celular: la barra de la app se queda con el logo, el estado del respaldo y la médica. */
+  @media (max-width: 39.99rem) {
+    .sim-marca b {
+      display: none;
+    }
+  }
+
+  .sim-luces {
+    display: inline-flex;
+    flex: none;
+    gap: 0.25rem;
+    padding: 0.25rem 0.4rem;
+    border-radius: 999px;
+    background: rgb(0 4 12 / 0.5);
+  }
+
+  .sim-luces i {
+    width: 0.6rem;
+    height: 0.6rem;
+    border-radius: 50%;
+    background: rgb(255 255 255 / 0.2);
+  }
+
+  .sim-luces-ok i:nth-child(3),
+  [data-estado='verde'] .sim-luces i:nth-child(3) {
+    background: #22c55e;
+    box-shadow: 0 0 0.5rem 0.05rem #22c55e;
+  }
+
+  [data-estado='amarillo'] .sim-luces i:nth-child(2) {
+    background: #f2c76b;
+    box-shadow: 0 0 0.5rem 0.05rem #f2c76b;
+  }
+
+  [data-estado='rojo'] .sim-luces i:nth-child(1) {
+    background: #ff6b61;
+    box-shadow: 0 0 0.5rem 0.05rem #ff6b61;
+  }
+
+  .sim-medica,
+  .sim-avatar {
+    display: inline-grid;
+    place-items: center;
+    flex: none;
+    width: 2.125rem;
+    height: 2.125rem;
+    border-radius: 50%;
+    background: var(--grad-primario);
+    color: var(--sobre-primario);
+    font-size: 0.8125rem;
+    font-weight: 700;
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.35);
+  }
+
+  .sim-cuerpo {
+    padding: 0.75rem;
+  }
+
+  .sim-panel {
+    display: grid;
+    gap: 0.875rem;
+    align-content: start;
+  }
+
+  .sim-panel:not([hidden]) {
+    animation: sim-entrar 360ms var(--curva-cristal) both;
+  }
+
+  @keyframes sim-entrar {
+    from {
+      opacity: 0;
+      transform: translateY(0.5rem);
+    }
+  }
+
+  .sim-cabeza {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 0.75rem;
+  }
+
+  .sim-app h3 {
+    font-size: 1.0625rem;
+  }
+
+  .sim-id {
+    display: grid;
+    min-width: 0;
+  }
+
+  .sim-borrador {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin-left: auto;
+  }
+
+  .sim-cabeza > .sim-tenue,
+  .sim-cabeza > .sim-chip {
+    margin-left: auto;
+  }
+
+  /* Vidrio simulado de la app: tarjetas y paneles. */
+  .sim-nota,
+  .sim-semaforo,
+  .sim-sellada,
+  .sim-citas,
+  .sim-lado,
+  .sim-receta-lado,
+  .sim-resp {
+    padding: 1rem;
+    border: 1px solid var(--cristal-borde);
+    border-radius: var(--radio-lg);
+    background: var(--grad-tarjeta);
+    box-shadow: var(--cristal-brillo), var(--elev-1);
+  }
+
+  .sim-boton {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 2.75rem;
+    padding: 0.5rem 1rem;
+    border: 1px solid var(--cristal-borde);
+    border-radius: var(--radio-sm);
+    background: rgb(255 255 255 / 0.06);
+    color: var(--texto);
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 160ms var(--curva-cristal), opacity 160ms ease;
+  }
+
+  .sim-boton:not(:disabled):active {
+    transform: scale(0.97);
+  }
+
+  .sim-boton-primario {
+    border-color: transparent;
+    background: var(--grad-primario);
+    color: var(--sobre-primario);
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.28),
+      0 0.5rem 1.25rem -0.6rem color-mix(in srgb, var(--acento) 80%, transparent);
+  }
+
+  /* «Firmar» con requisitos pendientes: sigue enfocable (explica qué falta), pero se ve apagado. */
+  .sim-boton[aria-disabled='true'] {
+    opacity: 0.55;
+  }
+
+  .sim-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.15rem 0.7rem;
+    border: 1px solid var(--cristal-borde);
+    border-radius: 999px;
+    color: var(--texto-suave);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .sim-chip-ok {
+    border-color: var(--exito-borde);
+    background: var(--exito-suave);
+    color: var(--exito);
+  }
+
+  .sim-nota-pie,
+  .sim-explica {
+    color: var(--texto-suave);
+    font-size: 0.875rem;
+  }
+
+  .sim-acciones {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.625rem;
+  }
+
+  /* ── Agenda ── */
+
+  .sim-citas {
+    display: grid;
+    margin: 0;
+    padding: 0.25rem 1rem;
+    list-style: none;
+  }
+
+  .sim-cita {
+    display: grid;
+    grid-template-columns: 3.25rem minmax(0, 1fr) auto;
+    gap: 0.75rem;
+    align-items: center;
+    padding: 0.75rem 0;
+  }
+
+  .sim-cita + .sim-cita {
+    border-top: 1px solid var(--linea);
+  }
+
+  .sim-cita time {
+    color: var(--primario);
+    font-weight: 650;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .sim-cita-datos {
+    display: grid;
+    min-width: 0;
+  }
+
+  .sim-cita-hecha strong {
+    color: var(--texto-suave);
+  }
+
+  /* ── Consulta ── */
+
+  .sim-nota {
+    display: grid;
+    gap: 0.75rem;
+  }
+
+  .sim-nota .sim-cabeza {
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--linea);
+  }
+
+  .sim-campo {
+    position: relative;
+    display: grid;
+    gap: 0.25rem;
+    min-width: 0;
+  }
+
+  .sim-campo > span,
+  .sim-campo > label,
+  .sim-signos legend,
+  .sim-signos label > span {
+    color: var(--texto-suave);
+    font-size: 0.8125rem;
+    font-weight: 560;
+  }
+
+  .sim-app input,
+  .sim-app textarea,
+  .sim-app select {
+    min-height: 2.75rem;
+    padding: 0.5rem 0.75rem;
+    background-color: rgb(255 255 255 / 0.03);
+    box-shadow: none;
+  }
+
+  .sim-app textarea {
+    min-height: 4.25rem;
+    max-height: 10rem;
+    resize: none;
+    field-sizing: content;
+  }
+
+  .sim-signos {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.5rem;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+
+  .sim-signos legend {
+    padding: 0 0 0.25rem;
+  }
+
+  .sim-signos label {
+    display: grid;
+    gap: 0.125rem;
+    min-width: 0;
+  }
+
+  .sim-signos input {
+    padding-inline: 0.5rem;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .sim-imc {
+    display: grid;
+    align-content: center;
+    padding: 0.25rem 0.625rem;
+    border: 1px solid var(--info-borde);
+    border-radius: var(--radio-sm);
+    background: var(--info-suave);
+    line-height: 1.2;
+  }
+
+  .sim-imc span {
+    color: var(--texto-suave);
+    font-size: 0.8125rem;
+  }
+
+  .sim-imc output {
+    font-size: 1.125rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .sim-error {
+    grid-column: 1 / -1;
+    color: var(--peligro);
+    font-size: 0.8125rem;
+    font-weight: 560;
+  }
+
+  /* Lista de diagnósticos (la crea simulador.ts). */
+  .sim-cie10 {
+    position: absolute;
+    inset: 100% 0 auto;
+    z-index: 5;
+    margin: 0.25rem 0 0;
+    padding: 0.25rem;
+    list-style: none;
+    border: 1px solid var(--cristal-borde);
+    border-radius: var(--radio);
+    background: var(--superficie);
+    box-shadow: var(--elev-3);
+  }
+
+  .sim-cie10 li {
+    display: flex;
+    gap: 0.625rem;
+    align-items: baseline;
+    min-height: 2.75rem;
+    padding: 0.625rem 0.75rem;
+    border-radius: var(--radio-sm);
+    cursor: pointer;
+  }
+
+  .sim-cie10 li b {
+    flex: none;
+    color: var(--info);
+    font-family: var(--mono);
+    font-size: 0.875rem;
+    font-weight: 500;
+  }
+
+  .sim-cie10 li[aria-selected='true'],
+  .sim-cie10 li:hover {
+    background: var(--primario-suave);
+  }
+
+  .sim-semaforo {
+    display: grid;
+    gap: 0.625rem;
+    align-content: start;
+  }
+
+  /* Celular: el semáforo completo queda debajo de la nota, así que una tira con las luces y la cuenta acompaña al
+     médico mientras escribe (pegada bajo la barra del sitio). */
+  .sim-tira {
+    position: sticky;
+    top: calc(var(--altura-nav) + 1rem);
+    z-index: 3;
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--cristal-borde);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--marca-abismo) 92%, var(--luz-destello));
+    font-size: 0.875rem;
+    font-weight: 650;
+    box-shadow: var(--elev-2);
+  }
+
+  .sim-tira-nom {
+    margin-left: auto;
+    color: var(--texto-suave);
+    font-size: 0.75rem;
+    letter-spacing: 0.07em;
+  }
+
+  [data-estado='verde'] .sim-tira { color: var(--exito); }
+  [data-estado='amarillo'] .sim-tira { color: var(--alerta); }
+  [data-estado='rojo'] .sim-tira { color: var(--peligro); }
+
+  .sim-micro {
+    color: var(--texto-suave);
+    font-size: 0.75rem;
+    font-weight: 650;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+  }
+
+  .sim-estado {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    font-weight: 650;
+  }
+
+  [data-estado='verde'] .sim-estado { color: var(--exito); }
+  [data-estado='amarillo'] .sim-estado { color: var(--alerta); }
+  [data-estado='rojo'] .sim-estado { color: var(--peligro); }
+
+  .sim-semaforo-texto {
+    color: var(--texto-suave);
+    font-size: 0.875rem;
+  }
+
+  .sim-semaforo ul {
+    display: grid;
+    gap: 0.4rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-size: 0.875rem;
+  }
+
+  .sim-semaforo li {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--texto-suave);
+  }
+
+  .sim-marca-req {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 1.125rem;
+    height: 1.125rem;
+    border: 1.5px solid var(--borde-campo);
+    border-radius: 50%;
+  }
+
+  .sim-marca-req .icono {
+    width: 0.75rem;
+    height: 0.75rem;
+    opacity: 0;
+    transform: scale(0.4);
+    transition: opacity 200ms ease, transform 260ms var(--curva-cristal);
+  }
+
+  .sim-semaforo li.cumple {
+    color: var(--texto);
+  }
+
+  .sim-semaforo li.cumple .sim-marca-req {
+    border-color: var(--exito);
+    background: var(--exito-suave);
+    color: var(--exito);
+  }
+
+  .sim-semaforo li.cumple .icono {
+    opacity: 1;
+    transform: none;
+  }
+
+  .sim-pista {
+    color: var(--texto-suave);
+    font-size: 0.8125rem;
+  }
+
+  /* ── Firma ── */
+
+  .sim-sellada {
+    position: relative;
+    display: grid;
+    gap: 0.75rem;
+    overflow: clip;
+  }
+
+  .sim-sellada dl {
+    display: grid;
+    gap: 0.5rem;
+    margin: 0;
+  }
+
+  .sim-sellada dl div {
+    display: grid;
+    grid-template-columns: 5.5rem minmax(0, 1fr);
+    gap: 0.5rem;
+  }
+
+  .sim-sellada dt {
+    color: var(--texto-suave);
+    font-size: 0.8125rem;
+  }
+
+  .sim-sellada dd {
+    margin: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .sim-huella {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.25rem 1rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--linea);
+  }
+
+  .sim-huella b {
+    font-family: var(--mono);
+    font-weight: 500;
+  }
+
+  .sim-firmada {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    color: var(--exito);
+    font-weight: 600;
+  }
+
+  .sim-firmada em {
+    color: var(--texto-suave);
+    font-family: var(--mono);
+    font-size: 0.8125rem;
+    font-style: normal;
+    font-weight: 400;
+  }
+
+  .sim-sello {
+    position: absolute;
+    right: 1rem;
+    bottom: 3.75rem;
+    display: grid;
+    place-items: center;
+    width: 3.5rem;
+    height: 3.5rem;
+    border-radius: 50%;
+    background: var(--grad-primario);
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.4),
+      0 0 0 0.25rem color-mix(in srgb, var(--primario) 18%, transparent);
+    transform: rotate(-12deg);
+  }
+
+  .sim-sello img {
+    width: auto;
+    height: 2.125rem;
+    filter: brightness(0.25);
+  }
+
+  .movimiento .sim-firma:not([hidden]) .sim-sello {
+    animation: sim-sellar 620ms var(--curva-cristal) 200ms both;
+  }
+
+  @keyframes sim-sellar {
+    from {
+      opacity: 0;
+      transform: rotate(-30deg) scale(2.2);
+    }
+    60% {
+      opacity: 1;
+      transform: rotate(-9deg) scale(0.94);
+    }
+  }
+
+  .sim-lado,
+  .sim-receta-lado {
+    display: grid;
+    gap: 0.875rem;
+    align-content: start;
+  }
+
+  .sim-adenda-form {
+    display: grid;
+    gap: 0.625rem;
+  }
+
+  .sim-adenda {
+    display: grid;
+    gap: 0.2rem;
+    padding: 0.75rem;
+    border: 1px solid var(--exito-borde);
+    border-radius: var(--radio);
+    background: var(--exito-suave);
+  }
+
+  .sim-adenda small {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    color: var(--exito);
+  }
+
+  /* ── Receta: papel blanco y tinta Marino, como lo impreso ── */
+
+  .sim-formatos {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.375rem;
+  }
+
+  .sim-formato {
+    min-height: 2.75rem;
+    padding: 0.375rem 0.875rem;
+    border: 1px solid var(--cristal-borde);
+    border-radius: var(--radio-sm);
+    background: rgb(255 255 255 / 0.04);
+    color: var(--texto-suave);
+    font: inherit;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .sim-formato[aria-pressed='true'] {
+    border-color: color-mix(in srgb, var(--primario) 55%, transparent);
+    background: var(--primario-suave);
+    color: var(--primario);
+  }
+
+  .sim-aviso {
+    display: flex;
+    gap: 0.5rem;
+    padding: 0.625rem 0.75rem;
+    border: 1px solid var(--alerta-borde);
+    border-radius: var(--radio-sm);
+    background: var(--alerta-suave);
+    color: var(--alerta);
+    font-size: 0.875rem;
+  }
+
+  .sim-aviso .icono {
+    flex: none;
+    margin-top: 0.1rem;
+  }
+
+  .sim-mesa {
+    display: grid;
+    place-items: center;
+    min-height: 19rem;
+    padding: 1rem;
+    border-radius: var(--radio-lg);
+    background: rgb(0 4 12 / 0.3);
+  }
+
+  .sim-hoja {
+    display: grid;
+    width: min(100%, 15rem);
+    aspect-ratio: 8.5 / 11;
+    padding: 0.875rem;
+    border-radius: 3px;
+    background: #fff;
+    color: #043259;
+    font-size: 0.6875rem;
+    line-height: 1.35;
+    box-shadow: 0 1.25rem 2.5rem -1.25rem rgb(0 4 12 / 0.9);
+  }
+
+  .sim-hoja[data-formato='media'] {
+    grid-template-rows: 1fr 1fr;
+  }
+
+  .sim-hoja[data-formato='horizontal'] {
+    width: min(100%, 21rem);
+    aspect-ratio: 11 / 8.5;
+  }
+
+  .sim-copia {
+    display: grid;
+    grid-template-rows: auto auto 1fr auto;
+    gap: 0.35rem;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .sim-copia-2 {
+    display: none;
+    padding-top: 0.625rem;
+    border-top: 1px dashed #8aa0b6;
+  }
+
+  [data-formato='media'] .sim-copia-2 {
+    display: grid;
+  }
+
+  [data-formato='media'] .sim-copia:first-child {
+    padding-bottom: 0.625rem;
+  }
+
+  .sim-membrete {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding-bottom: 0.35rem;
+    border-bottom: 1.5px solid #043259;
+  }
+
+  .sim-membrete img {
+    width: auto;
+    height: 1.5rem;
+  }
+
+  .sim-membrete span {
+    display: grid;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .sim-membrete i {
+    color: #566573;
+    font-size: 0.5625rem;
+    font-style: normal;
+  }
+
+  .sim-membrete em,
+  .sim-rx-pie {
+    font-family: var(--mono);
+    font-size: 0.5625rem;
+    font-style: normal;
+  }
+
+  .sim-rx-paciente {
+    color: #224d73;
+  }
+
+  .sim-rx {
+    overflow: hidden;
+  }
+
+  .sim-rx-pie {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.5rem;
+    color: #566573;
+  }
+
+  /* ── Respaldo ── */
+
+  .sim-resp {
+    gap: 1.125rem;
+  }
+
+  .sim-ruta {
+    display: grid;
+    grid-template-columns: auto minmax(2rem, 1fr) auto;
+    gap: 0.75rem;
+    align-items: center;
+  }
+
+  .sim-nodo {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.625rem 0.75rem;
+    border: 1px solid var(--cristal-borde);
+    border-radius: var(--radio);
+    background: rgb(255 255 255 / 0.04);
+    font-size: 0.875rem;
+    font-weight: 600;
+  }
+
+  .sim-via {
+    height: 0.375rem;
+    overflow: hidden;
+    border-radius: 999px;
+    background: var(--campo-inactivo);
+  }
+
+  .sim-via i {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: var(--exito);
+    transform: scaleX(0);
+    transform-origin: left;
+  }
+
+  .sim-via i.va {
+    transform: none;
+    transition: transform 1600ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .sim-resultado {
+    display: flex;
+    gap: 0.5rem;
+    padding: 0.75rem;
+    border: 1px solid var(--exito-borde);
+    border-radius: var(--radio);
+    background: var(--exito-suave);
+    color: var(--exito);
+    font-weight: 560;
+  }
+
+  .sim-resultado .icono {
+    flex: none;
+    margin-top: 0.15rem;
+  }
+
+  /* ── Pie del simulador ── */
+
+  .sim-bajo {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 1rem;
+    margin-top: 1rem;
+  }
+
+  .sim-rotulo {
+    color: var(--texto-2);
+    font-size: 0.8125rem;
+  }
+
+  .sim-auto-pausa,
+  .sim-auto[aria-pressed='true'] .sim-auto-play {
+    display: none;
+  }
+
+  .sim-auto[aria-pressed='true'] .sim-auto-pausa {
+    display: block;
+  }
+
+  .sim-cta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem 2rem;
+    margin-top: clamp(2rem, 4vw, 3rem);
+    padding-top: clamp(1.5rem, 3vw, 2rem);
+    border-top: 1px solid var(--linea);
+  }
+
+  .sim-cta p {
+    max-width: 34rem;
+    font-size: clamp(1.0625rem, 1rem + 0.4vw, 1.3125rem);
+    font-weight: 560;
+    letter-spacing: -0.015em;
+  }
+
+  /* ── Tableta y escritorio ── */
+
+  @media (min-width: 40rem) {
+    .sim-paso-texto small {
+      display: block;
+    }
+
+    .sim-buscar {
+      display: flex;
+    }
+
+    .sim-signos {
+      grid-template-columns: repeat(9, minmax(0, 1fr));
+    }
+
+    .sim-cuerpo {
+      padding: 1rem;
+    }
+  }
+
+  @media (min-width: 62rem) {
+    .sim-pasos {
+      overflow: visible;
+    }
+
+    /* Mismo alto en los cinco pasos: al cambiar de paso, lo que sigue en la página no se mueve. */
+    .sim-cuerpo {
+      display: grid;
+      min-height: 35.5rem;
+    }
+
+    .sim-consulta,
+    .sim-firma,
+    .sim-receta {
+      grid-template-columns: minmax(0, 1fr) 19rem;
+      align-items: start;
+    }
+
+    .sim-tira {
+      display: none;
+    }
+
+    .sim-receta {
+      grid-template-columns: 19rem minmax(0, 1fr);
+    }
+
+    .sim-receta .sim-mesa {
+      min-height: 33rem;
+    }
+
+    .sim-hoja {
+      width: 19rem;
+      font-size: 0.75rem;
+    }
+
+    .sim-hoja[data-formato='horizontal'] {
+      width: 27rem;
+    }
+
+    .sim-nota {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .sim-nota .sim-cabeza,
+    .sim-signos,
+    .sim-c-plan {
+      grid-column: 1 / -1;
+    }
+
+    .sim-c-exploracion {
+      grid-row: span 2;
+    }
+
+    .sim-c-exploracion textarea {
+      height: 100%;
+    }
+
+    .sim-app input,
+    .sim-app select {
+      min-height: 2.5rem;
+    }
+
+    .sim-resp {
+      align-self: start;
+    }
+  }
+</style>
