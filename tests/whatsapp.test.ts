@@ -5,30 +5,30 @@ import { TODO_DEFINIR } from '../src/site.config';
 
 describe('enlaceWhatsApp', () => {
   it('arma wa.me con el mensaje codificado', () => {
-    expect(enlaceWhatsApp('522291525847', 'Hola, ¿qué tal? & más')).toBe(
-      'https://wa.me/522291525847?text=Hola%2C%20%C2%BFqu%C3%A9%20tal%3F%20%26%20m%C3%A1s',
+    expect(enlaceWhatsApp('522213453487', 'Hola, ¿qué tal? & más')).toBe(
+      'https://wa.me/522213453487?text=Hola%2C%20%C2%BFqu%C3%A9%20tal%3F%20%26%20m%C3%A1s',
     );
   });
 
   it('sin mensaje no agrega ?text', () => {
-    expect(enlaceWhatsApp('522291525847', '  ')).toBe('https://wa.me/522291525847');
+    expect(enlaceWhatsApp('522213453487', '  ')).toBe('https://wa.me/522213453487');
   });
 
   it('null con WhatsApp apagado (WHATSAPP_ENABLED = false), aunque el número sea válido', () => {
-    expect(enlaceWhatsApp('522291525847', 'Hola', false)).toBeNull();
-    expect(numeroVisible('522291525847', false)).toBeNull();
+    expect(enlaceWhatsApp('522213453487', 'Hola', false)).toBeNull();
+    expect(numeroVisible('522213453487', false)).toBeNull();
   });
 
   it('null si falta o no es válido', () => {
     expect(enlaceWhatsApp(TODO_DEFINIR, 'x')).toBeNull();
-    expect(enlaceWhatsApp('+52 229 152 5847', 'x')).toBeNull();
-    expect(enlaceWhatsApp('2291525847', 'x')).toBeNull();
+    expect(enlaceWhatsApp('+52 221 345 3487', 'x')).toBeNull();
+    expect(enlaceWhatsApp('2213453487', 'x')).toBeNull();
   });
 });
 
 describe('numeroVisible', () => {
   it('lada de tres dígitos', () => {
-    expect(numeroVisible('522291525847')).toBe('+52 229 152 5847');
+    expect(numeroVisible('522213453487')).toBe('+52 221 345 3487');
   });
 
   it('lada de dos dígitos (CDMX)', () => {

@@ -116,7 +116,7 @@ Del traspaso anterior:
 
 ## 5. TODO_DEFINIR (para Alan)
 
-WhatsApp `522291525847` **confirmado** · textos prellenados (provisionales) · correo de contacto · precio de fundador y precio público · nota de precios (IVA, medios de pago) · lugares totales y ocupados · fecha fin del precio de fundador · actualizaciones incluidas · "después de la prueba" · soporte fuera de Fundadores · nombre de archivo, versión y SHA-256 del instalador · razón social, domicilio y correo del aviso de privacidad · cancelaciones y jurisdicción de los términos · revisión legal · subir a `capturas/` el render 3D, el avatar y las capturas de la app.
+WhatsApp `522213453487` **confirmado** · textos prellenados (provisionales) · correo de contacto · precio de fundador y precio público · nota de precios (IVA, medios de pago) · lugares totales y ocupados · fecha fin del precio de fundador · actualizaciones incluidas · "después de la prueba" · soporte fuera de Fundadores · nombre de archivo, versión y SHA-256 del instalador · razón social, domicilio y correo del aviso de privacidad · cancelaciones y jurisdicción de los términos · revisión legal · subir a `capturas/` el render 3D, el avatar y las capturas de la app.
 
 ## Estado 16-oct (escenas estilo Apple + auditoría)
 
