@@ -1,0 +1,225 @@
+---
+// Rejilla Bento «Todo lo que incluye»: la recapitulación antes de la oferta (decisión de Alan, 15-nov-2026). Absorbe los
+// tres pilares de la marca (IDENTIDAD_MARCA §9.2: privacidad real, inmutable, NOM-004) y suma seis funciones que las
+// escenas no cuentan a fondo. Cada afirmación está verificada contra la app (docs/TRASPASO.md §1 y §4).
+// Celdas de vidrio simulado con el brillo que sigue al cursor (`data-brillo` + `.brillo`, src/scripts/brillo.ts): solo
+// con puntero fino; en táctiles y con «reducir movimiento» son tarjetas quietas.
+import Icono from '../Icono.astro';
+
+const PILARES = [
+  {
+    id: 'privacidad',
+    icono: 'sin-nube',
+    titulo: 'Privacidad real',
+    texto: 'Sus expedientes viven en su computadora, cifrados. No hay nube ni telemetría clínica: nadie más ve a sus pacientes.',
+    etiqueta: 'Cifrado · SQLCipher AES-256',
+  },
+  {
+    id: 'inmutable',
+    icono: 'sello',
+    titulo: 'Inmutable y verificable',
+    texto: 'Cada nota se sella al firmarla y se encadena con la anterior. Las correcciones son adendas, nunca borrones.',
+    etiqueta: 'Firma · Ed25519',
+  },
+  {
+    id: 'nom',
+    icono: 'nota',
+    titulo: 'Conforme a la NOM-004',
+    texto: 'Un semáforo revisa los 7 requisitos de la nota antes de firmar. Recetas y documentos con los datos que pide la norma.',
+    etiqueta: 'NOM-004-SSA3-2012',
+  },
+] as const;
+
+const FUNCIONES = [
+  { icono: 'sin-wifi', titulo: 'Sin internet', texto: 'Consulte, firme, imprima y respalde con el wifi apagado.' },
+  { icono: 'usb', titulo: 'Respaldo cifrado', texto: 'Con su frase de paso, en su USB. Se restaura en otra computadora desde la bienvenida.' },
+  { icono: 'llave', titulo: 'Clave de Rescate', texto: '24 letras y números para crear una contraseña nueva si olvida la suya.' },
+  { icono: 'lupa', titulo: 'Diagnósticos CIE-10', texto: 'Catálogo de uso frecuente, con búsqueda por clave o por nombre.' },
+  { icono: 'calendario', titulo: 'Agenda', texto: 'Citas programadas, en atención y atendidas. Admite pacientes de primera vez.' },
+  { icono: 'usuario', titulo: 'Práctica sin riesgo', texto: '50 pacientes de demostración en una base aparte. Se purga sin tocar sus expedientes.' },
+] as const;
+
+const CADENA = ['bd12c0e7…d679', '35d2e1a4…f0bd', '9f2c41e8…b07a'] as const;
+const SIN = [
+  { icono: 'sin-nube', texto: 'Sin nube' },
+  { icono: 'ojo', texto: 'Sin telemetría' },
+  { icono: 'usuario', texto: 'Sin cuentas en línea' },
+] as const;
+---
+
+<section class="seccion bento" id="incluye" aria-labelledby="bento-titulo">
+  <div class="contenedor">
+    <div class="seccion-cabecera centrada">
+      <p class="antetitulo">Todo lo que incluye</p>
+      <h2 id="bento-titulo">Transparente para usted. Impenetrable para cualquier otro.</h2>
+      <p>Lo esencial de InmutalKey, de un vistazo. Y un principio más: que nada estorbe su consulta.</p>
+    </div>
+
+    <ul class="bento-rejilla" data-brillo data-escalonar>
+      {
+        PILARES.map((p) => (
+          <li class:list={['tarjeta tarjeta-viva brillo celda pilar revelar', `celda-${p.id}`]}>
+            <span class="sello"><Icono nombre={p.icono} /></span>
+            <h3>{p.titulo}</h3>
+            <p>{p.texto}</p>
+            <div class="adorno" aria-hidden="true">
+              {p.id === 'privacidad' && SIN.map((s) => <span class="pildora"><Icono nombre={s.icono} />{s.texto}</span>)}
+              {p.id === 'inmutable' && CADENA.map((h) => <span class="eslabon">{h}</span>)}
+              {p.id === 'nom' && (
+                <span class="luces">
+                  <i /><i /><i /><i /><i /><i /><i />
+                  <b class="cifras">7 de 7</b>
+                </span>
+              )}
+            </div>
+            <p class="tecnico">{p.etiqueta}</p>
+          </li>
+        ))
+      }
+      {
+        FUNCIONES.map((f) => (
+          <li class="tarjeta tarjeta-viva brillo celda revelar">
+            <span class="sello"><Icono nombre={f.icono} /></span>
+            <h3>{f.titulo}</h3>
+            <p>{f.texto}</p>
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+</section>
+
+<style>
+  .bento-rejilla {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .celda {
+    display: grid;
+    align-content: start;
+    gap: 0.625rem;
+    padding: clamp(1.25rem, 2.2vw, 1.75rem);
+  }
+
+  .celda h3 {
+    margin-top: 0.5rem;
+    font-size: 1.1875rem;
+  }
+
+  .celda p {
+    color: var(--texto-2);
+  }
+
+  .celda .sello {
+    width: 2.5rem;
+    height: 2.5rem;
+  }
+
+  .pilar h3 {
+    font-size: clamp(1.25rem, 1.1rem + 0.6vw, 1.625rem);
+  }
+
+  .pilar .tecnico {
+    margin-top: 0.25rem;
+    padding-top: 0.875rem;
+    border-top: 1px solid var(--linea);
+  }
+
+  .adorno {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+  }
+
+  /* Cadena de huellas: cada eslabón se une al siguiente con una raya. */
+  .eslabon {
+    position: relative;
+    padding: 0.2rem 0.6rem;
+    border: 1px solid var(--exito-borde);
+    border-radius: var(--radio-sm);
+    background: var(--exito-suave);
+    color: var(--exito);
+    font-family: var(--mono);
+    font-size: 0.75rem;
+  }
+
+  .eslabon + .eslabon::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    right: 100%;
+    width: 0.5rem;
+    height: 1px;
+    background: var(--exito);
+  }
+
+  .luces {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.375rem 0.75rem;
+    border: 1px solid var(--exito-borde);
+    border-radius: 999px;
+    background: var(--exito-suave);
+    color: var(--exito);
+    font-size: 0.875rem;
+  }
+
+  .luces i {
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 50%;
+    background: currentColor;
+  }
+
+  .luces b {
+    margin-left: 0.375rem;
+  }
+
+  @media (min-width: 40rem) {
+    .bento-rejilla {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .celda-privacidad {
+      grid-column: 1 / -1;
+    }
+  }
+
+  @media (min-width: 62rem) {
+    .bento-rejilla {
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+    }
+
+    .celda {
+      grid-column: span 2;
+    }
+
+    .pilar {
+      grid-column: span 3;
+    }
+
+    /* El primer pilar ocupa dos filas: es la promesa principal de la marca. */
+    .celda-privacidad {
+      grid-column: span 3;
+      grid-row: span 2;
+      align-content: center;
+    }
+
+    .celda-privacidad h3 {
+      font-size: clamp(1.625rem, 1.2rem + 1.4vw, 2.25rem);
+      letter-spacing: -0.024em;
+    }
+
+    .celda-privacidad > p:not(.tecnico) {
+      font-size: 1.125rem;
+    }
+  }
+</style>

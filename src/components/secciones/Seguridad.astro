@@ -45,10 +45,10 @@ const PUNTOS = [
       <h2 id="seguridad-titulo">Sin letra chiquita. Así se protege su expediente.</h2>
       <p>Lo que hace InmutalKey, dicho sin tecnicismos. Y lo que no puede hacer nadie más.</p>
     </div>
-    <dl class="seguridad-rejilla" data-escalonar>
+    <dl class="seguridad-rejilla" data-escalonar data-brillo>
       {
         PUNTOS.map((p) => (
-          <div class="tarjeta seguridad-punto revelar">
+          <div class="tarjeta brillo seguridad-punto revelar">
             <dt>
               <span class="sello">
                 <Icono nombre={p.icono} />

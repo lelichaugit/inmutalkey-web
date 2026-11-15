@@ -919,13 +919,18 @@ input[type='radio'] {
   background: radial-gradient(closest-side, color-mix(in srgb, var(--acento) 24%, transparent), transparent);
   opacity: 0;
   pointer-events: none;
-  transform: translate3d(var(--mx, -60rem), var(--my, -60rem), 0);
-  transition: opacity 320ms ease;
+  /* En reposo el halo no se pinta ni ocupa capa (son decenas de celdas): solo existe mientras el cursor está encima. */
+  visibility: hidden;
+  transform: translate(var(--mx, -60rem), var(--my, -60rem));
+  transition: opacity 320ms ease, visibility 0s 320ms;
 }
 
 .con-brillo .brillo::after,
 .brillo.con-brillo::after {
   opacity: 1;
+  visibility: visible;
+  transition-delay: 0s;
+  will-change: transform;
 }
 
 /* ───────────── Lenis (desplazamiento suave, solo escritorio): CSS que pide la librería ───────────── */

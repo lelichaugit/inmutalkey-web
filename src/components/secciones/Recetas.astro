@@ -23,10 +23,10 @@ const FORMATOS = [
       </p>
     </div>
 
-    <ul class="formatos" data-escalonar>
+    <ul class="formatos" data-escalonar data-brillo>
       {
         FORMATOS.map((f) => (
-          <li class="tarjeta tarjeta-viva formato revelar">
+          <li class="tarjeta tarjeta-viva brillo formato revelar">
             <div class:list={['hoja-escena', `hoja-${f.id}`]} aria-hidden="true">
               <div class="hoja">
                 {(f.id === 'media' ? [1, 2] : [1]).map(() => (
