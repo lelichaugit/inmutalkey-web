@@ -1,0 +1,603 @@
+---
+// El problema: el mismo intento de cambiar un tratamiento sobre un archivo editable y sobre una nota sellada.
+// Escena por pasos (src/scripts/escenas.ts): en escritorio se fija y avanza con el scroll; en celular no se fija y se
+// reproduce sola, una vez, al entrar en vista (con botón «Ver de nuevo»). Sin JS o con «reducir movimiento» se ve el
+// desenlace: el archivo ya alterado y en duda, la nota intacta y comprobada.
+//
+//   paso 0  10:14 · la misma nota, guardada de dos formas
+//   paso 1  23:41 · alguien cambia el tratamiento en el archivo (y lo deja en un AINE: la paciente es alérgica)
+//   paso 2  el mismo intento sobre la nota sellada: rebota («Firmada: no se puede modificar»)
+//   paso 3  desenlace: una en duda, la otra coincide con su huella
+//
+// La ilustración es decorativa (aria-hidden): el mensaje vive en el titular, el párrafo y la lista. Paciente ficticia,
+// la misma de la maqueta de la app (MockupApp.astro). Estilos globales con prefijo `pb-`: las clases de estado las
+// pone el motor en la raíz de la escena y así no hace falta `:global()` en cada regla.
+import Icono from '../Icono.astro';
+
+const PROBLEMAS = [
+  {
+    icono: 'editar',
+    titulo: 'Un tachón deja la nota en duda.',
+    texto: 'Con corrector o con una raya encima, lo que decía antes ya no se lee y nadie sabe cuándo se cambió.',
+  },
+  {
+    icono: 'nota',
+    titulo: 'El papel se moja, se traspapela, no aparece.',
+    texto: 'Encontrar el expediente correcto le quita minutos de consulta. Y la letra a mano no siempre se entiende.',
+  },
+  {
+    icono: 'nube',
+    titulo: 'La nube depende de su conexión.',
+    texto: 'Si el internet falla, usted no consulta. Y sus expedientes viven en servidores que no controla.',
+  },
+] as const;
+
+const NARRACION = [
+  '10:14 · La misma nota, guardada de dos formas.',
+  '23:41 · Alguien abre el archivo y cambia el tratamiento.',
+  'El mismo intento sobre la nota sellada: no pasa.',
+  'Una quedó en duda. La otra sigue idéntica, y se puede comprobar.',
+] as const;
+---
+
+<section class="seccion pb" id="problema" aria-labelledby="pb-titulo">
+  <div class="contenedor">
+    <div class="seccion-cabecera">
+      <p class="antetitulo">El problema</p>
+      <h2 id="pb-titulo">Sus expedientes merecen algo más firme que un archivo editable.</h2>
+      <p>Un documento de Word se abre y se cambia a cualquier hora, sin dejar rastro. Vea la diferencia.</p>
+    </div>
+  </div>
+
+  <div class="pb-duelo" data-escena data-escena-marcas="0.2 0.48 0.74" data-escena-auto="1700">
+    <div class="pb-escenario" data-escenario>
+      <div class="contenedor pb-rejilla">
+        <p class="pb-narracion" aria-hidden="true">
+          {NARRACION.map((n, i) => <span class={`pb-n pb-n${i}`}>{n}</span>)}
+        </p>
+
+        <figure class="pb-lado" aria-hidden="true">
+          <figcaption><Icono nombre="editar" /> Archivo editable</figcaption>
+          <div class="pb-doc pb-editable">
+            <p class="pb-cromo"><i></i><i></i><i></i><span>nota_paciente_final_v3.docx</span></p>
+            <p class="pb-linea"><b>Paciente</b>Ana Sofía Navarro Díaz</p>
+            <p class="pb-linea"><b>Alergia</b>AINE</p>
+            <p class="pb-linea"><b>Dx</b>J02.9 Faringitis aguda</p>
+            <p class="pb-linea pb-tx">
+              <b>Tx</b>
+              <span class="pb-viejo">Paracetamol 500 mg c/8 h<i></i></span>
+              <span class="pb-nuevo">Ibuprofeno 400 mg c/8 h</span>
+            </p>
+            <p class="pb-pie">
+              <span class="pb-antes">Guardado hoy 10:14</span>
+              <span class="pb-despues"><Icono nombre="alerta" /> Modificado hoy 23:41 · sin aviso</span>
+            </p>
+            <p class="pb-veredicto pb-duda">¿Quién lo cambió? No hay forma de saberlo.</p>
+          </div>
+        </figure>
+
+        <figure class="pb-lado" aria-hidden="true">
+          <figcaption><Icono nombre="sello" /> Nota sellada en InmutalKey</figcaption>
+          <div class="pb-doc pb-sellada tema-marino">
+            <p class="pb-cabeza">
+              <strong>Nota de evolución · n.º 12</strong>
+              <span class="pb-chip"><Icono nombre="candado" /> Sellada 10:14</span>
+            </p>
+            <p class="pb-linea"><b>Paciente</b>Ana Sofía Navarro Díaz</p>
+            <p class="pb-linea"><b>Alergia</b><span class="pb-alergia">AINE</span></p>
+            <p class="pb-linea"><b>Dx</b>J02.9 Faringitis aguda</p>
+            <p class="pb-linea pb-tx">
+              <b>Tx</b>
+              <span class="pb-intento">Paracetamol 500 mg c/8 h</span>
+            </p>
+            <p class="pb-rechazo"><Icono nombre="candado" /> Firmada: no se puede modificar</p>
+            <p class="pb-pie">
+              <span><span class="pb-micro">Huella</span> 9f2c41e8…b07a</span>
+            </p>
+            <p class="pb-veredicto pb-coincide"><Icono nombre="check" /> Coincide con lo que usted firmó</p>
+          </div>
+        </figure>
+
+        <button type="button" class="enlace-boton pb-repetir" data-escena-repetir>Ver de nuevo</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="contenedor">
+    <p class="pb-norma revelar">
+      La NOM-004 pide notas <strong>sin enmendaduras ni tachaduras</strong>. Con un archivo editable, cumplirlo depende de
+      la buena fe. Con una nota sellada, no hay forma de cambiarla sin que se note.
+      <span class="tecnico">NOM-004-SSA3-2012 · numeral 5.11</span>
+    </p>
+    <ul class="pb-lista" data-escalonar>
+      {
+        PROBLEMAS.map((p) => (
+          <li class="revelar">
+            <span class="sello"><Icono nombre={p.icono} /></span>
+            <div>
+              <h3>{p.titulo}</h3>
+              <p>{p.texto}</p>
+            </div>
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+</section>
+
+<style is:global>
+  .pb {
+    padding-top: var(--seccion);
+  }
+
+  .pb-rejilla {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1.25rem;
+    justify-items: center;
+  }
+
+  /* Narración: los cuatro renglones ocupan la misma celda; el motor deja visible el del paso en curso. */
+  .pb-narracion {
+    display: grid;
+    justify-items: center;
+    min-height: 3.2em;
+    color: var(--texto);
+    font-size: clamp(1.0625rem, 1rem + 0.5vw, 1.375rem);
+    font-weight: 600;
+    letter-spacing: -0.015em;
+    text-align: center;
+  }
+
+  .pb-n {
+    grid-area: 1 / 1;
+    max-width: 36rem;
+    transition: opacity 380ms ease, transform 380ms var(--curva-cristal);
+  }
+
+  .pb-n0,
+  .pb-n1,
+  .pb-n2 {
+    opacity: 0;
+  }
+
+  .escena-lista .pb-n {
+    opacity: 0;
+    transform: translateY(0.4rem);
+  }
+
+  .escena-lista[data-paso='0'] .pb-n0,
+  .escena-lista[data-paso='1'] .pb-n1,
+  .escena-lista[data-paso='2'] .pb-n2,
+  .escena-lista[data-paso='3'] .pb-n3 {
+    opacity: 1;
+    transform: none;
+  }
+
+  .pb-lado {
+    display: grid;
+    gap: 0.625rem;
+    width: min(100%, 27rem);
+    margin: 0;
+  }
+
+  .pb-lado figcaption {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--texto-2);
+    font-size: 0.875rem;
+    font-weight: 600;
+  }
+
+  .pb-lado figcaption .icono {
+    width: 1.1rem;
+    height: 1.1rem;
+    color: var(--primario);
+  }
+
+  .pb-doc {
+    display: grid;
+    gap: 0.5rem;
+    padding: 1rem 1.125rem 1.125rem;
+    border-radius: var(--radio-lg);
+    font-size: 0.9375rem;
+    line-height: 1.4;
+    user-select: none;
+  }
+
+  /* Archivo editable: papel blanco y tinta Abismo en cualquier tema (como las hojas de Recetas). */
+  .pb-editable {
+    border: 1px solid #c9d3de;
+    background: #fff;
+    color: var(--marca-abismo);
+    box-shadow: var(--elev-2);
+  }
+
+  .pb-cromo {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin: -0.25rem 0 0.25rem;
+    padding-bottom: 0.625rem;
+    border-bottom: 1px solid #dfe5ec;
+    color: var(--marca-pizarra);
+    font-size: 0.8125rem;
+  }
+
+  .pb-cromo i {
+    width: 0.55rem;
+    height: 0.55rem;
+    border-radius: 50%;
+    background: #c9d3de;
+  }
+
+  .pb-cromo span {
+    margin-left: 0.4rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .pb-linea {
+    display: grid;
+    grid-template-columns: 4.6rem minmax(0, 1fr);
+    gap: 0.5rem;
+    align-items: baseline;
+  }
+
+  .pb-linea > b {
+    color: var(--marca-pizarra);
+    font-size: 0.8125rem;
+    font-weight: 560;
+  }
+
+  .pb-sellada .pb-linea > b,
+  .pb-micro {
+    color: var(--texto-suave);
+  }
+
+  .pb-tx {
+    grid-template-rows: auto auto;
+  }
+
+  .pb-viejo {
+    position: relative;
+    justify-self: start;
+    color: var(--marca-pizarra);
+  }
+
+  /* Tachón: una raya que crece de izquierda a derecha (solo transform). */
+  .pb-viejo i {
+    position: absolute;
+    inset: 52% -0.15rem auto;
+    height: 2px;
+    border-radius: 1px;
+    background: #a8231c;
+    transform-origin: left;
+    transition: transform 420ms var(--curva-cristal);
+  }
+
+  .pb-nuevo {
+    grid-column: 2;
+    justify-self: start;
+    padding: 0 0.3rem;
+    border-radius: 0.25rem;
+    background: #fdecc8;
+    color: #5c3600;
+    font-weight: 600;
+    transition: clip-path 800ms steps(20);
+  }
+
+  .pb-pie {
+    display: grid;
+    margin-top: 0.25rem;
+    padding-top: 0.625rem;
+    border-top: 1px solid #dfe5ec;
+    font-size: 0.8125rem;
+  }
+
+  .pb-pie > * {
+    grid-area: 1 / 1;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    transition: opacity 300ms ease;
+  }
+
+  .pb-pie .icono,
+  .pb-rechazo .icono,
+  .pb-veredicto .icono,
+  .pb-chip .icono {
+    width: 1rem;
+    height: 1rem;
+  }
+
+  .pb-antes {
+    color: var(--marca-pizarra);
+    opacity: 0;
+  }
+
+  .pb-despues {
+    color: #8a5200;
+    font-weight: 600;
+  }
+
+  .pb-veredicto {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: var(--radio-sm);
+    font-size: 0.875rem;
+    font-weight: 600;
+    transition: opacity 420ms ease, transform 420ms var(--curva-cristal);
+  }
+
+  .pb-duda {
+    border: 1px solid #f3b4ae;
+    background: #fdeceb;
+    color: #a8231c;
+  }
+
+  /* Nota sellada: tarjeta de la app (tema Marino, vidrio simulado). */
+  .pb-sellada {
+    border: 1px solid var(--cristal-borde);
+    background: var(--grad-tarjeta);
+    color: var(--texto);
+    box-shadow: var(--cristal-brillo), var(--elev-2);
+  }
+
+  .pb-cabeza {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    margin-bottom: 0.25rem;
+    padding-bottom: 0.625rem;
+    border-bottom: 1px solid var(--linea);
+  }
+
+  .pb-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.1rem 0.6rem;
+    border: 1px solid var(--exito-borde);
+    border-radius: 999px;
+    background: var(--exito-suave);
+    color: var(--exito);
+    font-size: 0.8125rem;
+    font-weight: 600;
+  }
+
+  .pb-alergia {
+    justify-self: start;
+    padding: 0 0.5rem;
+    border: 1px solid var(--peligro-borde);
+    border-radius: 999px;
+    background: var(--peligro-suave);
+    color: var(--peligro);
+    font-size: 0.8125rem;
+    font-weight: 600;
+  }
+
+  .pb-intento {
+    position: relative;
+    justify-self: start;
+  }
+
+  /* Selección del intento de edición: una capa que solo cambia de opacidad. */
+  .pb-intento::before {
+    content: '';
+    position: absolute;
+    inset: -0.05rem -0.3rem;
+    border-radius: 0.25rem;
+    background: color-mix(in srgb, var(--acento) 45%, transparent);
+    opacity: 0;
+  }
+
+  .pb-rechazo {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-left: 5.1rem;
+    color: var(--alerta);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    transition: opacity 300ms ease;
+  }
+
+  .pb-sellada .pb-pie {
+    border-color: var(--linea);
+    font-family: var(--mono);
+  }
+
+  .pb-micro {
+    font-family: var(--fuente);
+  }
+
+  .pb-coincide {
+    border: 1px solid var(--exito-borde);
+    background: var(--exito-suave);
+    color: var(--exito);
+  }
+
+  .pb-repetir {
+    display: none;
+  }
+
+  /* ── Estados por paso (solo con el motor: sin él queda el desenlace) ── */
+
+  .escena-lista .pb-viejo i {
+    transform: scaleX(0);
+  }
+
+  .escena-lista .pb-nuevo {
+    clip-path: inset(0 100% 0 0);
+  }
+
+  .escena-lista .pb-antes {
+    opacity: 1;
+  }
+
+  .escena-lista .pb-despues,
+  .escena-lista .pb-rechazo {
+    opacity: 0;
+  }
+
+  .escena-lista .pb-veredicto {
+    opacity: 0;
+    transform: translateY(0.4rem);
+  }
+
+  .alcanzo-1 .pb-viejo i {
+    transform: none;
+  }
+
+  .alcanzo-1 .pb-nuevo {
+    clip-path: inset(0);
+    transition-delay: 380ms;
+  }
+
+  .alcanzo-1 .pb-antes {
+    opacity: 0;
+  }
+
+  .alcanzo-1 .pb-despues {
+    opacity: 1;
+    transition-delay: 1100ms;
+  }
+
+  /* El intento sobre la nota sellada: la selección aparece y la tarjeta rebota. */
+  .alcanzo-2 .pb-intento::before {
+    animation: pb-seleccion 900ms ease both;
+  }
+
+  .alcanzo-2 .pb-sellada {
+    animation: pb-rebote 520ms var(--curva-cristal) 520ms both;
+  }
+
+  .alcanzo-2 .pb-rechazo {
+    opacity: 1;
+    transition-delay: 620ms;
+  }
+
+  .alcanzo-3 .pb-veredicto {
+    opacity: 1;
+    transform: none;
+  }
+
+  .alcanzo-3 .pb-coincide {
+    transition-delay: 320ms;
+  }
+
+  @keyframes pb-seleccion {
+    0%,
+    100% {
+      opacity: 0;
+    }
+    30%,
+    60% {
+      opacity: 1;
+    }
+  }
+
+  @keyframes pb-rebote {
+    0%,
+    100% {
+      transform: none;
+    }
+    25% {
+      transform: translateX(-0.4rem);
+    }
+    55% {
+      transform: translateX(0.3rem);
+    }
+    80% {
+      transform: translateX(-0.12rem);
+    }
+  }
+
+  /* Celular: la escena se reproduce sola; el botón permite verla otra vez. */
+  .movimiento .escena-lista .pb-repetir {
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .pb-norma {
+    max-width: 46rem;
+    margin: clamp(2.5rem, 5vw, 4rem) 0 0;
+    color: var(--texto);
+    font-size: clamp(1.25rem, 1.05rem + 1vw, 1.75rem);
+    font-weight: 560;
+    letter-spacing: -0.02em;
+    line-height: 1.3;
+  }
+
+  .pb-norma .tecnico {
+    display: block;
+    margin-top: 0.875rem;
+    font-weight: 400;
+  }
+
+  .pb-lista {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+    gap: 1.5rem 2rem;
+    margin: clamp(2rem, 4vw, 3rem) 0 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .pb-lista li {
+    display: flex;
+    gap: 1rem;
+  }
+
+  .pb-lista h3 {
+    margin: 0.125rem 0 0.375rem;
+  }
+
+  .pb-lista p {
+    color: var(--texto-2);
+  }
+
+  /* Escritorio con movimiento: la escena se fija y avanza con el scroll. Los dos documentos, lado a lado. */
+  @media (min-width: 62rem) {
+    .pb-rejilla {
+      grid-template-columns: repeat(2, minmax(0, 27rem));
+      justify-content: center;
+      gap: 1.5rem 3rem;
+    }
+
+    .pb-narracion,
+    .pb-repetir {
+      grid-column: 1 / -1;
+    }
+
+    .pb-lado {
+      align-self: start;
+    }
+  }
+
+  @media (min-width: 62rem) and (min-height: 40rem) {
+    .movimiento .pb-duelo {
+      height: 300svh;
+    }
+
+    .movimiento .pb-escenario {
+      position: sticky;
+      top: 0;
+      display: grid;
+      align-content: center;
+      height: 100svh;
+      padding-top: var(--altura-nav);
+    }
+
+    .movimiento .escena-lista .pb-repetir {
+      display: none;
+    }
+  }
+</style>
