@@ -878,6 +878,76 @@ input[type='radio'] {
   transform: none;
 }
 
+/* ───────────── Bandas: láminas Marino a todo lo ancho (escenas y monitor) ───────────── */
+
+.banda {
+  position: relative;
+  margin-inline: clamp(0rem, (100vw - 40rem) * 0.04, 1.5rem);
+  padding-block: var(--seccion);
+  border-radius: clamp(1.5rem, 4vw, 3rem);
+}
+
+.banda + .banda {
+  margin-top: var(--seccion);
+}
+
+/* Etiqueta técnica: siempre secundaria, junto a su traducción al lenguaje de consultorio. */
+.tecnico {
+  font-family: var(--mono);
+  font-size: 0.8125rem;
+  letter-spacing: 0.01em;
+  color: var(--texto-2);
+}
+
+/* ───────────── Brillo que sigue al cursor (brillo.ts escribe --mx/--my; solo puntero fino) ───────────── */
+
+.brillo {
+  position: relative;
+  isolation: isolate;
+  overflow: clip;
+}
+
+.brillo::after {
+  content: '';
+  position: absolute;
+  top: -14rem;
+  left: -14rem;
+  z-index: -1;
+  width: 28rem;
+  height: 28rem;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--acento) 24%, transparent), transparent);
+  opacity: 0;
+  pointer-events: none;
+  transform: translate3d(var(--mx, -60rem), var(--my, -60rem), 0);
+  transition: opacity 320ms ease;
+}
+
+.con-brillo .brillo::after,
+.brillo.con-brillo::after {
+  opacity: 1;
+}
+
+/* ───────────── Lenis (desplazamiento suave, solo escritorio): CSS que pide la librería ───────────── */
+
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+
+/* Con Lenis el salto a una sección es suyo: sin esto, el suavizado del navegador pelearía con él. */
+html.lenis {
+  scroll-behavior: auto;
+}
+
+.lenis.lenis-stopped {
+  overflow: clip;
+}
+
+.lenis [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+
 /* ───────────── Accesibilidad: movimiento y transparencia reducidos ───────────── */
 
 @media (prefers-reduced-motion: reduce) {
