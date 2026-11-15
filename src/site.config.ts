@@ -71,7 +71,7 @@ export const sitio: ConfigSitio = {
   descripcion:
     'Expediente clínico para consultorio privado, diseñado para la NOM-004. Cada nota queda sellada y no se puede alterar. Funciona en tu computadora, sin internet.',
   contacto: {
-    whatsapp: '522291525847',
+    whatsapp: '522213453487',
     mensajeWhatsApp: 'Hola, vi InmutalKey en inmutalkey.com y quiero información para mi consultorio.',
     mensajes: {
       prueba: 'Hola, vi InmutalKey en inmutalkey.com y quiero probarlo 30 días en mi consultorio.',

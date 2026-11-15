@@ -16,7 +16,7 @@ export function enlaceWhatsApp(numero: Valor<string>, mensaje: string, activo: b
   return texto ? `https://wa.me/${numero}?text=${encodeURIComponent(texto)}` : `https://wa.me/${numero}`;
 }
 
-/** `522291525847` → `+52 229 152 5847`. Otros países: `+<dígitos>` sin agrupar. `null` si falta o está apagado. */
+/** `522213453487` → `+52 221 345 3487`. Otros países: `+<dígitos>` sin agrupar. `null` si falta o está apagado. */
 export function numeroVisible(numero: Valor<string>, activo: boolean = WHATSAPP_ENABLED): string | null {
   if (!activo || !estaDefinido(numero) || !SOLO_DIGITOS.test(numero)) return null;
   if (numero.startsWith('52') && numero.length === 12) {
